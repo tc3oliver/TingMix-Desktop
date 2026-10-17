@@ -1,0 +1,20 @@
+[project]
+name = "tingmix-coreml"
+version = "0.0.0"
+description = "Core ML incremental conversion study for TingMix-Large (research only, never shipped)"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "numpy",
+    "torch==2.9.1",
+    "transformers==5.19.0",
+    "huggingface_hub",
+    "safetensors",
+    "sentencepiece",
+    "soundfile",
+    "coremltools",
+    "embed2asr @ git+https://github.com/tc3oliver/embed2asr.git@b58275785501c084610b1570f1a446a31da5f933",
+    "tingmix @ git+https://github.com/tc3oliver/tingmix.git@f44cbdbd2cd99598c99cf8d60da6cb41bb15d1db",
+]
+
+[tool.uv]
+package = false

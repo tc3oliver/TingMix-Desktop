@@ -1,0 +1,183 @@
+{
+ "stage": "stage1b_reader_dynamic",
+ "hardware": {
+  "chip": "Apple M4 Max",
+  "mem_gb": 64,
+  "macos": "27.0",
+  "coremltools": "9.0",
+  "torch": "2.9.1"
+ },
+ "results": {
+  "fixed750_fp32": {
+   "CPU_ONLY": {
+    "ok": true,
+    "load_s": 0.27,
+    "median_ms": 129.8,
+    "min_ms": 125.98,
+    "max_ms": 144.1,
+    "n": 5,
+    "greedy_id_agree": 1.0
+   },
+   "CPU_AND_GPU": {
+    "ok": true,
+    "load_s": 0.32,
+    "median_ms": 130.92,
+    "min_ms": 125.02,
+    "max_ms": 160.17,
+    "n": 5,
+    "greedy_id_agree": 1.0
+   },
+   "CPU_AND_NE": {
+    "ok": true,
+    "load_s": 0.31,
+    "median_ms": 129.1,
+    "min_ms": 125.28,
+    "max_ms": 147.36,
+    "n": 5,
+    "greedy_id_agree": 1.0
+   },
+   "ALL": {
+    "ok": true,
+    "load_s": 0.26,
+    "median_ms": 121.36,
+    "min_ms": 119.23,
+    "max_ms": 162.08,
+    "n": 5,
+    "greedy_id_agree": 1.0
+   }
+  },
+  "fixed750_fp16": {
+   "CPU_ONLY": {
+    "ok": true,
+    "load_s": 0.14,
+    "median_ms": 133.86,
+    "min_ms": 125.37,
+    "max_ms": 162.86,
+    "n": 5,
+    "greedy_id_agree": 1.0
+   },
+   "CPU_AND_GPU": {
+    "ok": true,
+    "load_s": 0.16,
+    "median_ms": 125.74,
+    "min_ms": 125.0,
+    "max_ms": 127.14,
+    "n": 5,
+    "greedy_id_agree": 1.0
+   },
+   "CPU_AND_NE": {
+    "ok": true,
+    "load_s": 0.57,
+    "median_ms": 117.94,
+    "min_ms": 117.19,
+    "max_ms": 118.32,
+    "n": 5,
+    "greedy_id_agree": 1.0
+   },
+   "ALL": {
+    "ok": true,
+    "load_s": 0.56,
+    "median_ms": 116.63,
+    "min_ms": 116.51,
+    "max_ms": 116.92,
+    "n": 5,
+    "greedy_id_agree": 1.0
+   }
+  },
+  "enum": {
+   "convert": {
+    "ok": true,
+    "path": "<repo>/experiments/macos/coreml/out/s1_reader_enum.trace.fp16.mlpackage",
+    "seconds": 3.0,
+    "size_mb": 42.4
+   },
+   "run_188": {
+    "ALL": {
+     "ok": true,
+     "load_s": 1.84,
+     "median_ms": 42.85,
+     "min_ms": 42.11,
+     "max_ms": 43.45,
+     "n": 5,
+     "greedy_id_agree": 1.0
+    },
+    "CPU_ONLY": {
+     "ok": true,
+     "load_s": 0.16,
+     "median_ms": 24.4,
+     "min_ms": 24.27,
+     "max_ms": 24.93,
+     "n": 5,
+     "greedy_id_agree": 1.0
+    }
+   },
+   "run_750": {
+    "ALL": {
+     "ok": true,
+     "load_s": 1.87,
+     "median_ms": 392.5,
+     "min_ms": 387.41,
+     "max_ms": 393.8,
+     "n": 5,
+     "greedy_id_agree": 1.0
+    },
+    "CPU_ONLY": {
+     "ok": true,
+     "load_s": 0.16,
+     "median_ms": 198.98,
+     "min_ms": 198.13,
+     "max_ms": 199.69,
+     "n": 5,
+     "greedy_id_agree": 1.0
+    }
+   }
+  },
+  "range": {
+   "convert": {
+    "ok": true,
+    "path": "<repo>/experiments/macos/coreml/out/s1_reader_range.trace.fp16.mlpackage",
+    "seconds": 1.7,
+    "size_mb": 42.4
+   },
+   "run_188": {
+    "ALL": {
+     "ok": false,
+     "error": "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<repo>/experiments/macos/coreml/.venv/lib/python3.12/site-packages/coremltools/models/model.py\", line 892, in _get_predictions\n    return proxy.predict(data, state)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: {\n    NSLocalizedDescription = \"Failed to prepare the model for predictions. ML program was s1_reader_range.trace.fp16 and the function name was main.\";\n    NSUnderlyingError = \"Error Domain=com.apple.CoreML Code=0 \\\"E5RT: Port descriptor cannot be changed while memory object is bound to port. (2)\\\" UserInfo={NSLocalizedDescription=E5RT: Port descriptor cannot be changed while memory object is bound to port. (2)}\";\n}\n"
+    },
+    "CPU_ONLY": {
+     "ok": true,
+     "load_s": 0.16,
+     "median_ms": 24.42,
+     "min_ms": 24.09,
+     "max_ms": 24.49,
+     "n": 5,
+     "greedy_id_agree": 1.0
+    }
+   },
+   "run_750": {
+    "ALL": {
+     "ok": true,
+     "load_s": 0.63,
+     "median_ms": 89.93,
+     "min_ms": 89.19,
+     "max_ms": 91.02,
+     "n": 5,
+     "greedy_id_agree": 0.0013333333333333333
+    },
+    "CPU_ONLY": {
+     "ok": true,
+     "load_s": 0.16,
+     "median_ms": 200.06,
+     "min_ms": 198.49,
+     "max_ms": 201.39,
+     "n": 5,
+     "greedy_id_agree": 1.0
+    }
+   }
+  },
+  "padded_188_in_750": {
+   "torch_padded_vs_exact_greedy_agree": 0.9840425531914894,
+   "torch_padded_vs_exact_max_abs": 6.349909782409668
+  }
+ }
+}

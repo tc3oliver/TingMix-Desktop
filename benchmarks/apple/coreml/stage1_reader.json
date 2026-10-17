@@ -1,0 +1,289 @@
+{
+ "stage": "stage1_reader",
+ "hardware": {
+  "chip": "Apple M4 Max",
+  "mem_gb": 64,
+  "macos": "27.0",
+  "coremltools": "9.0",
+  "torch": "2.9.1"
+ },
+ "fixture": "mix_29s",
+ "input_shape": [
+  1,
+  750,
+  1536
+ ],
+ "results": {
+  "trace_fp32": {
+   "convert": {
+    "ok": true,
+    "path": "<repo>/experiments/macos/coreml/out/s1_reader_T750.trace.fp32.mlpackage",
+    "seconds": 1.0,
+    "size_mb": 85.7
+   },
+   "run": {
+    "CPU_ONLY": {
+     "ok": true,
+     "load_s": 0.19,
+     "median_ms": 116.48,
+     "min_ms": 115.67,
+     "max_ms": 118.07,
+     "n": 10,
+     "parity": {
+      "var_224": {
+       "max_abs": 3.147125244140625e-05,
+       "mean_abs": 3.3449218645492056e-06,
+       "rel_l2": 3.876162723931993e-07
+      }
+     }
+    },
+    "CPU_AND_GPU": {
+     "ok": true,
+     "load_s": 0.22,
+     "median_ms": 114.22,
+     "min_ms": 111.0,
+     "max_ms": 127.74,
+     "n": 10,
+     "parity": {
+      "var_224": {
+       "max_abs": 7.82012939453125e-05,
+       "mean_abs": 4.007080542466624e-06,
+       "rel_l2": 4.641918853617079e-07
+      }
+     }
+    },
+    "CPU_AND_NE": {
+     "ok": true,
+     "load_s": 0.22,
+     "median_ms": 117.7,
+     "min_ms": 116.61,
+     "max_ms": 120.02,
+     "n": 10,
+     "parity": {
+      "var_224": {
+       "max_abs": 3.147125244140625e-05,
+       "mean_abs": 3.3449218645492056e-06,
+       "rel_l2": 3.876162723931993e-07
+      }
+     }
+    },
+    "ALL": {
+     "ok": true,
+     "load_s": 0.26,
+     "median_ms": 112.31,
+     "min_ms": 111.33,
+     "max_ms": 116.61,
+     "n": 10,
+     "parity": {
+      "var_224": {
+       "max_abs": 7.82012939453125e-05,
+       "mean_abs": 4.007080542466624e-06,
+       "rel_l2": 4.641918853617079e-07
+      }
+     }
+    }
+   },
+   "placement": {
+    "ALL": {
+     "ops": 56,
+     "preferred": {
+      "GPU": 45,
+      "CPU": 11
+     },
+     "ne_supported_ops": 0,
+     "not_ne_supported_by_type": {
+      "ios18.transpose": 10,
+      "ios18.slice_by_index": 8,
+      "ios18.layer_norm": 5,
+      "ios18.gelu": 5,
+      "ios16.fill_like": 4,
+      "ios18.mul": 4,
+      "ios18.conv": 4,
+      "ios18.add": 4,
+      "while_loop": 4,
+      "ios18.reverse": 4,
+      "ios18.linear": 2,
+      "ios18.concat": 2
+     }
+    },
+    "CPU_AND_NE": {
+     "ops": 56,
+     "preferred": {
+      "CPU": 56
+     },
+     "ne_supported_ops": 0,
+     "not_ne_supported_by_type": {
+      "ios18.transpose": 10,
+      "ios18.slice_by_index": 8,
+      "ios18.layer_norm": 5,
+      "ios18.gelu": 5,
+      "ios16.fill_like": 4,
+      "ios18.mul": 4,
+      "ios18.conv": 4,
+      "ios18.add": 4,
+      "while_loop": 4,
+      "ios18.reverse": 4,
+      "ios18.linear": 2,
+      "ios18.concat": 2
+     }
+    },
+    "CPU_AND_GPU": {
+     "ops": 56,
+     "preferred": {
+      "GPU": 45,
+      "CPU": 11
+     },
+     "ne_supported_ops": 0,
+     "not_ne_supported_by_type": {
+      "ios18.transpose": 10,
+      "ios18.slice_by_index": 8,
+      "ios18.layer_norm": 5,
+      "ios18.gelu": 5,
+      "ios16.fill_like": 4,
+      "ios18.mul": 4,
+      "ios18.conv": 4,
+      "ios18.add": 4,
+      "while_loop": 4,
+      "ios18.reverse": 4,
+      "ios18.linear": 2,
+      "ios18.concat": 2
+     }
+    }
+   }
+  },
+  "trace_fp16": {
+   "convert": {
+    "ok": true,
+    "path": "<repo>/experiments/macos/coreml/out/s1_reader_T750.trace.fp16.mlpackage",
+    "seconds": 1.5,
+    "size_mb": 43.5
+   },
+   "run": {
+    "CPU_ONLY": {
+     "ok": true,
+     "load_s": 0.12,
+     "median_ms": 111.82,
+     "min_ms": 109.89,
+     "max_ms": 113.52,
+     "n": 10,
+     "parity": {
+      "var_224": {
+       "max_abs": 0.38604736328125,
+       "mean_abs": 0.03816022931534932,
+       "rel_l2": 0.004357316830731106
+      }
+     }
+    },
+    "CPU_AND_GPU": {
+     "ok": true,
+     "load_s": 0.16,
+     "median_ms": 116.8,
+     "min_ms": 112.39,
+     "max_ms": 122.93,
+     "n": 10,
+     "parity": {
+      "var_224": {
+       "max_abs": 0.18393230438232422,
+       "mean_abs": 0.019493539060725682,
+       "rel_l2": 0.002155699444955935
+      }
+     }
+    },
+    "CPU_AND_NE": {
+     "ok": true,
+     "load_s": 0.5,
+     "median_ms": 116.12,
+     "min_ms": 112.93,
+     "max_ms": 119.44,
+     "n": 10,
+     "parity": {
+      "var_224": {
+       "max_abs": 0.22022509574890137,
+       "mean_abs": 0.02653428259695322,
+       "rel_l2": 0.002931217274535356
+      }
+     }
+    },
+    "ALL": {
+     "ok": true,
+     "load_s": 0.47,
+     "median_ms": 111.93,
+     "min_ms": 111.21,
+     "max_ms": 114.78,
+     "n": 10,
+     "parity": {
+      "var_224": {
+       "max_abs": 0.22022509574890137,
+       "mean_abs": 0.02653428259695322,
+       "rel_l2": 0.002931217274535356
+      }
+     }
+    }
+   },
+   "placement": {
+    "ALL": {
+     "ops": 60,
+     "preferred": {
+      "NeuralEngine": 45,
+      "CPU": 15
+     },
+     "ne_supported_ops": 52,
+     "not_ne_supported_by_type": {
+      "while_loop": 4,
+      "ios18.cast": 4
+     }
+    },
+    "CPU_AND_NE": {
+     "ops": 60,
+     "preferred": {
+      "NeuralEngine": 45,
+      "CPU": 15
+     },
+     "ne_supported_ops": 52,
+     "not_ne_supported_by_type": {
+      "while_loop": 4,
+      "ios18.cast": 4
+     }
+    },
+    "CPU_AND_GPU": {
+     "ops": 60,
+     "preferred": {
+      "GPU": 46,
+      "CPU": 14
+     },
+     "ne_supported_ops": 0,
+     "not_ne_supported_by_type": {
+      "ios18.transpose": 10,
+      "ios18.slice_by_index": 8,
+      "ios18.layer_norm": 5,
+      "ios18.gelu": 5,
+      "ios16.fill_like": 4,
+      "ios18.mul": 4,
+      "ios18.conv": 4,
+      "ios18.add": 4,
+      "while_loop": 4,
+      "ios18.cast": 4,
+      "ios18.reverse": 4,
+      "ios18.linear": 2
+     }
+    }
+   }
+  },
+  "export_fp32": {
+   "convert": {
+    "ok": false,
+    "path": null,
+    "seconds": 5.5,
+    "error": "              ^^^^^^^^^^^^\n  File \"<repo>/experiments/macos/coreml/.venv/lib/python3.12/site-packages/coremltools/converters/mil/converter.py\", line 186, in mil_convert\n    return _mil_convert(\n           ^^^^^^^^^^^^^\n  File \"<repo>/experiments/macos/coreml/.venv/lib/python3.12/site-packages/coremltools/converters/mil/converter.py\", line 218, in _mil_convert\n    proto, mil_program = mil_convert_to_proto(\n                         ^^^^^^^^^^^^^^^^^^^^^\n  File \"<repo>/experiments/macos/coreml/.venv/lib/python3.12/site-packages/coremltools/converters/mil/converter.py\", line 294, in mil_convert_to_proto\n    prog = frontend_converter(model, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<repo>/experiments/macos/coreml/.venv/lib/python3.12/site-packages/coremltools/converters/mil/converter.py\", line 106, in __call__\n    return load(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n  File \"<repo>/experiments/macos/coreml/.venv/lib/python3.12/site-packages/coremltools/converters/mil/frontend/torch/load.py\", line 77, in load\n    converter = TorchConverter(\n                ^^^^^^^^^^^^^^^\n  File \"<repo>/experiments/macos/coreml/.venv/lib/python3.12/site-packages/coremltools/converters/mil/frontend/torch/converter.py\", line 633, in __init__\n    self.graph = InternalTorchIRGraph.from_exir(\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<repo>/experiments/macos/coreml/.venv/lib/python3.12/site-packages/coremltools/converters/mil/frontend/torch/internal_graph.py\", line 590, in from_exir\n    nodes.append(InternalTorchIRNode.from_exir_node(node=node))\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<repo>/experiments/macos/coreml/.venv/lib/python3.12/site-packages/coremltools/converters/mil/frontend/torch/internal_graph.py\", line 289, in from_exir_node\n    raise NotImplementedError(f\"Unsupported fx node {str(node)}, kind {kind}\")\nNotImplementedError: Unsupported fx node gru, kind gru.input\n"
+   }
+  },
+  "export_fp16": {
+   "convert": {
+    "ok": false,
+    "path": null,
+    "seconds": 2.2,
+    "error": "              ^^^^^^^^^^^^\n  File \"<repo>/experiments/macos/coreml/.venv/lib/python3.12/site-packages/coremltools/converters/mil/converter.py\", line 186, in mil_convert\n    return _mil_convert(\n           ^^^^^^^^^^^^^\n  File \"<repo>/experiments/macos/coreml/.venv/lib/python3.12/site-packages/coremltools/converters/mil/converter.py\", line 218, in _mil_convert\n    proto, mil_program = mil_convert_to_proto(\n                         ^^^^^^^^^^^^^^^^^^^^^\n  File \"<repo>/experiments/macos/coreml/.venv/lib/python3.12/site-packages/coremltools/converters/mil/converter.py\", line 294, in mil_convert_to_proto\n    prog = frontend_converter(model, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<repo>/experiments/macos/coreml/.venv/lib/python3.12/site-packages/coremltools/converters/mil/converter.py\", line 106, in __call__\n    return load(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n  File \"<repo>/experiments/macos/coreml/.venv/lib/python3.12/site-packages/coremltools/converters/mil/frontend/torch/load.py\", line 77, in load\n    converter = TorchConverter(\n                ^^^^^^^^^^^^^^^\n  File \"<repo>/experiments/macos/coreml/.venv/lib/python3.12/site-packages/coremltools/converters/mil/frontend/torch/converter.py\", line 633, in __init__\n    self.graph = InternalTorchIRGraph.from_exir(\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<repo>/experiments/macos/coreml/.venv/lib/python3.12/site-packages/coremltools/converters/mil/frontend/torch/internal_graph.py\", line 590, in from_exir\n    nodes.append(InternalTorchIRNode.from_exir_node(node=node))\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<repo>/experiments/macos/coreml/.venv/lib/python3.12/site-packages/coremltools/converters/mil/frontend/torch/internal_graph.py\", line 289, in from_exir_node\n    raise NotImplementedError(f\"Unsupported fx node {str(node)}, kind {kind}\")\nNotImplementedError: Unsupported fx node gru, kind gru.input\n"
+   }
+  }
+ }
+}
