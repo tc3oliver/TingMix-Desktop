@@ -27,17 +27,22 @@ Implements BRIEF sections 11 and 12. Status: EXPERIMENTAL (unit and integration 
   argument or output), `verify <signed.json>`.
 - Rotation: add the new key to `TRUSTED`, ship an app update, sign new manifests with it, remove the old key in a later
   update. Compromise response: ship an update that drops the key. There is no online revocation list.
-- Known gap: no anti-rollback. An attacker who can serve an old, validly signed manifest can make the app install an
-  older version. Mitigation to add before release: a monotonically increasing `manifest_serial` plus a persisted
-  high-water mark, and a signed expiry.
+- Anti-rollback: every manifest has `serial >= 1`, strictly increasing within a *lineage* (`family.backend.precision`).
+  `Registry` keeps a persisted high-water mark per lineage (`serials/<lineage>`, also derived from the versions on disk).
+  `prepare` rejects a lower serial, and an equal serial under a different id, with `Error::Replay` (so replaying an old
+  signed manifest fails even after the newer version was removed or the app restarted). `Registry::rollback` is exempt:
+  it only moves between versions that are already installed. Limits: the mark is local state (a user who deletes the
+  registry directory starts fresh), there is no signed expiry, and a compromised signing key defeats everything.
 
-## Manifest (schema_version 1)
+## Manifest (schema_version 2)
 
 `id`, `family`, `revision`, `backend`, `os`, `arch` (`any` allowed), `precision`, `requirements` (`min_ram_bytes`,
 `cpu_features`, `apple_chip_min_generation`), `runtime` (`name`, `min_version`), `base_model` / `adapter` / `tokenizer` /
 `lm` (`id` + immutable `revision`), `files[]` (`path`, `component`, `url`, `size`, `sha256`), `licenses[]` (`id`, `name`,
 `spdx`, `url`, `applies_to` components, `acceptance_required`, `attribution`, `notes`), `compat` (`status`, `rtf_x1000`,
-`notes`), `created`, `min_app_version`. Every file component must be covered by a licence entry.
+`notes`), `provenance` (`modified`, `sources` with immutable revisions, `converter`, `converter_commit`, `notes`; required
+in practice for derived artifacts), `created`, `min_app_version`. A file with an empty `url` is not published: the
+downloader refuses the whole manifest up front (`Error::ImportOnly`), offline import works as usual. Every file component must be covered by a licence entry.
 
 The first real manifest is `crates/tingmix-models/fixtures/tingmix-large-source.{manifest,signed}.json`: TingMix-Large
 `75071a1` (reader, config, units, BPE model, encoder delta, tingmix.json, 114 MB char 5-gram LM) plus the
@@ -47,13 +52,21 @@ Google hashes are the LFS oid / measured sha256 of the pinned revision. Status `
 weights for converters and the PyTorch reference, no native backend consumes the version directly, and the
 `source-safetensors` backend is not registered for selection.
 
-Licences in that manifest: `tingmix-large-model` (Apache-2.0 declared; notes the CC BY-NC Parliament data and NTUML2021
-train split without a stated licence, commercial use unresolved) and `google-embeddinggemma-2`. Acceptance is required for
-both. For the Google base: on 2026-10-17 the Hugging Face API reported `gated=false` and licence tag `apache-2.0` (README:
-Gemma 4 licence page), whereas the TingMix docs say users accept Google's terms and the Gemma prohibited-use policy.
-Acceptance is therefore required conservatively; the licence audit (task 1) should settle it. The installer does not
-carry a Hugging Face token and cannot download gated repos; if Google gates the repo later, the app must send the user to
-the page to accept and import the files offline.
+Second fixture: `tingmix-large-mlx-fp32.{manifest,signed}.json`, the converted MLX artifact from
+`experiments/macos/mlx/convert.py` (single fp32 safetensors, audio tower with LoRA merged, plus reader; 1,308,067,132 bytes,
+sha256 `9737153e...fc7ec`, verified against the file on disk). Backend `mlx`, runtime `mlx >= 0.32.4`, status `EXPERIMENTAL`
+until task 12 (native end-to-end parity) passes, no RTF recorded. The model file has no URL (not published anywhere; the
+licence review says derived artifacts stay unpublished until E1-E5 are decided), so it installs by offline import. Tokenizer,
+LM and config files point at the pinned TingMix-Large revision. `provenance` records the converter path and commit
+(`7574a39`), the two source revisions and the merge (`W + 2.0*B@A` in fp32, layout transposes). Both fixtures are signed
+with the dev key.
+
+Licences in the manifests (from `docs/research/licensing-review.md`, 2026-10-17): `tingmix-large-model` carries the
+unresolved items E1-E3 (CC BY-NC Parliament data, NTUML2021 without stated licence, ASCEND ShareAlike) and a note not to
+mirror or redistribute the weights or LM; acceptance required. `google-embeddinggemma-2` is Apache-2.0 and ungated per the
+Hub API; acceptance is still required because the review (E4) recommends showing the Gemma Prohibited Use Policy and the
+Apache notice and recording an acknowledgement at install (the licence URL in the manifest points at the policy). The
+installer carries no Hub token. Derived artifacts must keep the "modified" marker (section 4.5 of the review).
 
 ## On-disk layout and operations
 
@@ -97,12 +110,23 @@ diagnostics panel. `save_known_good` / `load_known_good` persist the choice with
 known-good choice on an unchanged machine and runtime version is kept, otherwise the reason says what changed
 (hardware, runtime version, or the old choice's failure) and the engine re-selects.
 
-Not implemented here: running the probe itself, the "ANE accelerated" label (needs profiling evidence; this crate never
+### Probe runner (`probe`)
+
+A backend implements `ProbeTarget` (`backend`, `backend_version`, `device`, `decode`). `run_probe` decodes one short fixture
+once (load plus first decode, timed as `first_run_ms`), then `timed_runs` more times; the probe passes only if every decode
+returns the expected text. RTF is the median timed run over the audio length (x1000, rounded up). A panic is caught and fails
+the probe; a crash of a native runtime is not, so real targets should decode in a child process. The `ProbeRecord` (backend,
+backend version, model id, sha256 of the canonical manifest, OS and OS version, arch, device, fixture, result, RTF, time) is
+stored under `probes/<backend>--<model hash>.json`, failed probes included. `consult` / `fresh` return it only while backend
+version, model hash, device, OS version and arch all still match; otherwise `Stale(reason)`. `select_probed` takes a lookup
+closure so each candidate manifest is judged by its own probe (`select` keeps using `BackendReg::probe`).
+
+Not implemented here: wiring a concrete probe target (the MLX/ONNX backends own that), the "ANE accelerated" label (needs profiling evidence; this crate never
 emits it), the diagnostics UI, and the benchmark-vs-CPU job that fills `rtf_x1000`.
 
 ## Verification
 
-`cargo test -p tingmix-models` (22 tests: tampered file, truncated file, tampered manifest, wrong key, unknown key and
+`cargo test -p tingmix-models` (30 tests: tampered file, truncated file, tampered manifest, wrong key, unknown key and
 fields, truncated download plus resume, ignored Range, corrupt partial, cancel, licence-before-request, interrupted
-activation, rollback, offline load after the server is gone, zip-slip, shipped fixture signature and SHA256SUMS) and
+activation, rollback, offline load after the server is gone, zip-slip, replayed older serial, probe persistence and invalidation, shipped fixtures) and
 `cargo clippy -p tingmix-models --all-targets -- -D warnings`. The test HTTP server binds 127.0.0.1 inside the tests only.

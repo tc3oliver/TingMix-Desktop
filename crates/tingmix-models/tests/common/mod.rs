@@ -53,7 +53,8 @@ pub fn manifest(id: &str, base_url: &str, tag: u8) -> Manifest {
         })
         .collect();
     Manifest {
-        schema_version: 1,
+        schema_version: 2,
+        serial: 1,
         id: id.into(),
         family: "tingmix-large".into(),
         revision: "0".repeat(40),
@@ -90,6 +91,7 @@ pub fn manifest(id: &str, base_url: &str, tag: u8) -> Manifest {
             rtf_x1000: Some(12),
             notes: String::new(),
         },
+        provenance: None,
         created: "2026-10-17".into(),
         min_app_version: "0.1.0".into(),
     }

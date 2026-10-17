@@ -7,6 +7,7 @@ pub mod fetch;
 pub mod import;
 pub mod keys;
 pub mod manifest;
+pub mod probe;
 pub mod select;
 pub mod store;
 

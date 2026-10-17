@@ -48,6 +48,9 @@ impl Downloader {
         cancel: &AtomicBool,
         mut progress: impl FnMut(Progress),
     ) -> Result<InstalledModel> {
+        if let Some(f) = m.manifest().files.iter().find(|f| f.url.is_empty()) {
+            return Err(Error::ImportOnly(f.path.clone()));
+        }
         let stage = reg.prepare(m)?;
         let total = m.manifest().download_size();
         let mut done = 0u64;

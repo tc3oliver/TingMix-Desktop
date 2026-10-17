@@ -9,7 +9,7 @@ use sha2::{Digest, Sha256};
 
 use crate::error::{Error, Result};
 
-pub const SCHEMA_VERSION: u32 = 1;
+pub const SCHEMA_VERSION: u32 = 2;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -74,10 +74,27 @@ pub struct Compat {
     pub notes: String,
 }
 
+/// How a derived (converted, merged, quantised) artifact was made. Derived artifacts are modifications of the upstream
+/// weights and must say so (Apache-2.0 section 4; docs/research/licensing-review.md section 4.5).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Provenance {
+    pub modified: bool,
+    /// Immutable upstream revisions the artifact was derived from.
+    pub sources: Vec<Source>,
+    /// Converter script path in this repository and the commit it was run from.
+    pub converter: String,
+    pub converter_commit: String,
+    /// What was changed (LoRA merge, layout transposes, dtype).
+    pub notes: String,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Manifest {
     pub schema_version: u32,
+    /// Anti-rollback counter, >= 1, strictly increasing across releases of one [`Manifest::lineage`].
+    pub serial: u64,
     /// Unique, filesystem-safe version id (`[a-z0-9._-]`, at most 96 chars).
     pub id: String,
     pub family: String,
@@ -95,6 +112,7 @@ pub struct Manifest {
     pub files: Vec<FileEntry>,
     pub licenses: Vec<LicenseTerms>,
     pub compat: Compat,
+    pub provenance: Option<Provenance>,
     pub created: String,
     pub min_app_version: String,
 }
@@ -188,6 +206,11 @@ impl Manifest {
         serde_json::to_vec(self).expect("manifest serialises")
     }
 
+    /// Releases that replace each other share a lineage; the serial only has to increase within one.
+    pub fn lineage(&self) -> String {
+        format!("{}.{}.{}", self.family, self.backend, self.precision)
+    }
+
     pub fn download_size(&self) -> u64 {
         self.files.iter().map(|f| f.size).sum()
     }
@@ -205,6 +228,9 @@ impl Manifest {
                 "unsupported schema_version {}",
                 self.schema_version
             ));
+        }
+        if self.serial == 0 {
+            return bad("serial must be >= 1".into());
         }
         if self.id.is_empty()
             || self.id.len() > 96
@@ -234,6 +260,9 @@ impl Manifest {
             }
             if !is_hex(&f.sha256, 64) {
                 return bad(format!("{}: sha256 must be 64 lowercase hex chars", f.path));
+            }
+            if f.url.is_empty() {
+                continue; // not published: installable by offline import only
             }
             let pinned = f.url.starts_with("https://")
                 && f.url.split('/').any(|s| is_hex(s, 40))

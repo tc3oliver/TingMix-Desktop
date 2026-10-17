@@ -1,5 +1,6 @@
 {
- "schema_version": 1,
+ "schema_version": 2,
+ "serial": 1,
  "id": "tingmix-large-source-r75071a1",
  "family": "tingmix-large",
  "revision": "75071a1260fb21874f150df6ebd53716ac423f13",
@@ -133,21 +134,21 @@
     "VoxPopuli audio (c) European Union - Source: European Parliament",
     "Common Voice: speakers must not be identified"
    ],
-   "notes": "Training data includes CC BY-NC 4.0 Taiwan Parliament speech and NTUML2021 train split without a stated licence (tingmix docs/licensing.md); commercial use is unresolved. Apache-2.0 for source code does not automatically cover the weights."
+   "notes": "docs/research/licensing-review.md E1-E3 are ESCALATE: Parliament data is CC BY-NC 4.0, NTUML2021 train split has no stated licence, ASCEND is CC BY-SA 4.0. Treat as non-commercial; do not redistribute or mirror these weights or the LM until a maintainer decision exists. Apache-2.0 for source code does not automatically cover the weights."
   },
   {
    "id": "google-embeddinggemma-2",
-   "name": "google/embeddinggemma-2 (Google DeepMind)",
+   "name": "google/embeddinggemma-2 (Apache-2.0) and Gemma Prohibited Use Policy acknowledgement",
    "spdx": "Apache-2.0",
-   "url": "https://huggingface.co/google/embeddinggemma-2/blob/914f7f89142e33e77833254d9c9b90c3cef7303b/README.md",
+   "url": "https://ai.google.dev/gemma/prohibited_use_policy",
    "applies_to": [
     "base"
    ],
    "acceptance_required": true,
    "attribution": [
-    "EmbeddingGemma 2, Google DeepMind"
+    "EmbeddingGemma 2, Google DeepMind, Apache-2.0 (https://huggingface.co/google/embeddinggemma-2)"
    ],
-   "notes": "Not redistributed by TingMix; downloaded from Google. On 2026-10-17 the Hugging Face API reported gated=false and licence tag apache-2.0, while the TingMix docs say users accept Google's terms and the Gemma prohibited-use policy. Acceptance is required here conservatively until the licence audit settles it."
+   "notes": "docs/research/licensing-review.md E4/E5 (2026-10-17): Hub API reports gated=false, licence apache-2.0; the README says deployments must adhere to the Gemma Prohibited Use Policy. Acceptance is required so the user is shown the policy and the Apache-2.0 notice before install (low cost, recommended by the review). Not redistributed by TingMix: fetch from Google's repo or import files you already hold. Derived or merged artifacts are modifications and must stay marked as modified."
   }
  ],
  "compat": {
@@ -155,6 +156,7 @@
   "rtf_x1000": null,
   "notes": "Source-format weights for converters and the PyTorch reference; no native backend consumes this version directly. Reader and adapter hashes equal tc3oliver/TingMix-Large SHA256SUMS at the pinned commit."
  },
+ "provenance": null,
  "created": "2026-10-17",
  "min_app_version": "0.1.0"
 }

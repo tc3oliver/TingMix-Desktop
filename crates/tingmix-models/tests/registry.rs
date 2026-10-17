@@ -378,11 +378,7 @@ fn import_zip_checks_hashes_and_refuses_extra_or_escaping_entries() {
 }
 
 fn install_dir(reg: &tingmix_models::Registry, root: &std::path::Path, id: &str, tag: u8) {
-    let m = signed(&manifest(id, "http://127.0.0.1:1", tag));
-    accept(reg, &m);
-    let b = root.join(format!("bundle-{id}"));
-    write_bundle(&b, &m, tag);
-    import_dir(reg, &b).unwrap();
+    install_serial(reg, root, id, tag as u64, tag).unwrap();
 }
 
 #[test]
@@ -549,4 +545,145 @@ fn shipped_fixture_is_signed_by_the_embedded_key_and_matches_hf_sha256sums() {
         .licenses
         .iter()
         .any(|l| l.id == "google-embeddinggemma-2" && l.acceptance_required));
+}
+
+fn install_serial(
+    reg: &tingmix_models::Registry,
+    root: &std::path::Path,
+    id: &str,
+    serial: u64,
+    tag: u8,
+) -> tingmix_models::Result<tingmix_models::InstalledModel> {
+    let mut m = manifest(id, "http://127.0.0.1:1", tag);
+    m.serial = serial;
+    let m = signed(&m);
+    accept(reg, &m);
+    let b = root.join(format!("bundle-{id}"));
+    write_bundle(&b, &m, tag);
+    import_dir(reg, &b)
+}
+
+#[test]
+fn replayed_older_release_is_rejected_even_after_removal() {
+    let dir = tempfile::tempdir().unwrap();
+    let reg = registry(&dir.path().join("reg"));
+    install_serial(&reg, dir.path(), "r1", 1, 1).unwrap();
+    install_serial(&reg, dir.path(), "r2", 2, 2).unwrap();
+    assert_eq!(
+        reg.high_water("tingmix-large.mlx.fp16").unwrap(),
+        (2, Some("r2".into()))
+    );
+
+    // A validly signed old manifest (serial 1, new id) is a replay.
+    let e = install_serial(&reg, dir.path(), "r1-again", 1, 1).unwrap_err();
+    assert!(
+        matches!(
+            e,
+            Error::Replay {
+                serial: 1,
+                high_water: 2,
+                ..
+            }
+        ),
+        "{e}"
+    );
+    // Same serial under a different id is ambiguous, also rejected.
+    assert!(matches!(
+        install_serial(&reg, dir.path(), "r2-fork", 2, 3),
+        Err(Error::Replay { .. })
+    ));
+    assert!(!dir.path().join("reg/versions/r1-again").exists());
+
+    // The mark survives removal of the newest version and a new Registry object (restart).
+    reg.activate("r1").unwrap();
+    reg.remove("r2").unwrap();
+    let reg = registry(&dir.path().join("reg"));
+    assert!(matches!(
+        install_serial(&reg, dir.path(), "r1-again", 1, 1),
+        Err(Error::Replay { .. })
+    ));
+    assert!(install_serial(&reg, dir.path(), "r3", 3, 4).is_ok());
+
+    // Explicit user rollback to a locally installed older version is not a replay.
+    reg.activate("r3").unwrap();
+    assert_eq!(reg.rollback().unwrap(), "r1");
+    assert_eq!(reg.open_active().unwrap().unwrap().manifest.serial, 1);
+}
+
+#[test]
+fn other_lineages_have_independent_serials() {
+    let dir = tempfile::tempdir().unwrap();
+    let reg = registry(&dir.path().join("reg"));
+    install_serial(&reg, dir.path(), "a", 5, 1).unwrap();
+    let mut m = manifest("b", "http://127.0.0.1:1", 2);
+    m.backend = "coreml".into();
+    m.serial = 1;
+    let m = signed(&m);
+    accept(&reg, &m);
+    write_bundle(&dir.path().join("bb"), &m, 2);
+    import_dir(&reg, &dir.path().join("bb")).unwrap();
+    let mut z = manifest("zero", "http://127.0.0.1:1", 1);
+    z.serial = 0;
+    assert!(z.validate(true).is_err());
+}
+
+#[test]
+fn import_only_files_cannot_be_downloaded_but_can_be_imported() {
+    let srv = serve(&[("v1", 1)]);
+    let dir = tempfile::tempdir().unwrap();
+    let reg = registry(&dir.path().join("reg"));
+    let mut m = manifest("v1", &srv.url, 1);
+    m.files[0].url = String::new(); // unpublished converted artifact
+    let m = signed(&m);
+    accept(&reg, &m);
+    let e = Downloader::new()
+        .install(&reg, &m, &no_cancel(), |_| {})
+        .unwrap_err();
+    assert!(
+        matches!(e, Error::ImportOnly(ref p) if p == "model.safetensors"),
+        "{e}"
+    );
+    assert!(srv.state.lock().unwrap().requests.is_empty());
+    write_bundle(&dir.path().join("b"), &m, 1);
+    import_dir(&reg, &dir.path().join("b")).unwrap();
+}
+
+#[test]
+fn shipped_mlx_manifest_has_provenance_and_licence_acceptance() {
+    let bytes = std::fs::read(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/fixtures/tingmix-large-mlx-fp32.signed.json"
+    ))
+    .unwrap();
+    let v = Verifier::embedded().parse(&bytes).unwrap();
+    let m = v.manifest();
+    m.validate(false).unwrap();
+    assert_eq!(
+        (
+            m.backend.as_str(),
+            m.precision.as_str(),
+            m.compat.status.as_str()
+        ),
+        ("mlx", "fp32", "EXPERIMENTAL")
+    );
+    let p = m.provenance.as_ref().unwrap();
+    assert!(
+        p.modified
+            && p.converter_commit.len() == 40
+            && p.sources
+                .iter()
+                .any(|s| s.revision == "914f7f89142e33e77833254d9c9b90c3cef7303b")
+    );
+    let model = m.files.iter().find(|f| f.component == "model").unwrap();
+    assert_eq!((model.size, model.url.as_str()), (1_308_067_132, ""));
+    assert_eq!(
+        model.sha256,
+        "9737153e4631bc773481ec458f34f242cc7800ccc6ae6ea1c509d895181fc7ec"
+    );
+    let g = m
+        .licenses
+        .iter()
+        .find(|l| l.id == "google-embeddinggemma-2")
+        .unwrap();
+    assert!(g.acceptance_required && g.notes.contains("licensing-review.md"));
 }

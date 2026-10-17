@@ -56,6 +56,7 @@ fn check(
     m: &Manifest,
     caps: &Capabilities,
     regs: &[BackendReg],
+    probe_of: &dyn Fn(&Manifest) -> Option<Probe>,
 ) -> std::result::Result<(u32, BackendReg), String> {
     if (m.os != "any" && m.os != caps.os) || (m.arch != "any" && m.arch != caps.arch) {
         return Err(format!(
@@ -113,8 +114,7 @@ fn check(
             caps.ram_bytes >> 30
         ));
     }
-    let probe = reg
-        .probe
+    let probe = probe_of(m)
         .ok_or_else(|| "no verified compatibility probe result for this backend".to_string())?;
     if !probe.passed {
         return Err("compatibility probe failed on this machine".into());
@@ -133,10 +133,26 @@ pub fn select(
     regs: &[BackendReg],
     known_good: Option<&KnownGood>,
 ) -> std::result::Result<Selection, Vec<(String, String)>> {
+    select_probed(installed, caps, regs, known_good, &|m| {
+        regs.iter()
+            .find(|r| r.backend == m.backend)
+            .and_then(|r| r.probe)
+    })
+}
+
+/// Like [`select`], but the probe result is looked up per manifest (probes are per backend *and* model, see
+/// [`crate::probe::fresh`]) instead of taken from `BackendReg::probe`.
+pub fn select_probed(
+    installed: &[Manifest],
+    caps: &Capabilities,
+    regs: &[BackendReg],
+    known_good: Option<&KnownGood>,
+    probe_of: &dyn Fn(&Manifest) -> Option<Probe>,
+) -> std::result::Result<Selection, Vec<(String, String)>> {
     let mut rejected = Vec::new();
     let mut ok: Vec<(u32, bool, &Manifest, BackendReg)> = Vec::new();
     for m in installed {
-        match check(m, caps, regs) {
+        match check(m, caps, regs, probe_of) {
             Ok((rtf, reg)) => ok.push((rtf, reg.is_cpu, m, reg)),
             Err(why) => rejected.push((m.id.clone(), why)),
         }

@@ -100,7 +100,7 @@ fn files_under(dir: &Path, base: &Path, out: &mut Vec<String>) -> Result<()> {
 impl Registry {
     pub fn open(root: impl Into<PathBuf>, verifier: Verifier) -> Result<Self> {
         let root = root.into();
-        for d in ["versions", "tmp", "acceptances"] {
+        for d in ["versions", "tmp", "acceptances", "serials", "probes"] {
             fs::create_dir_all(root.join(d)).map_err(io(root.join(d)))?;
         }
         // An interrupted pointer write leaves only a *.tmp next to the intact old pointer.
@@ -175,6 +175,19 @@ impl Registry {
         if self.version_dir(&m.manifest().id).exists() {
             return Err(Error::AlreadyInstalled(m.manifest().id.clone()));
         }
+        let man = m.manifest();
+        let high_water = self.high_water(&man.lineage())?;
+        if man.serial < high_water.0
+            || (man.serial == high_water.0
+                && high_water.1.as_deref().is_some_and(|id| id != man.id))
+        {
+            return Err(Error::Replay {
+                id: man.id.clone(),
+                lineage: man.lineage(),
+                serial: man.serial,
+                high_water: high_water.0,
+            });
+        }
         let d = self.root.join("tmp").join(&m.manifest().id);
         fs::create_dir_all(&d).map_err(io(&d))?;
         Ok(d)
@@ -194,10 +207,48 @@ impl Registry {
             return Err(Error::AlreadyInstalled(man.id.clone()));
         }
         fs::rename(&stage, &dest).map_err(io(&dest))?;
+        self.raise_high_water(man)?;
         Ok(InstalledModel {
             dir: dest,
             manifest: man.clone(),
         })
+    }
+
+    // ---- anti-rollback ------------------------------------------------------------------------------------------
+
+    fn serial_file(&self, lineage: &str) -> PathBuf {
+        self.root.join("serials").join(safe_name(lineage))
+    }
+
+    /// Highest serial ever installed for `lineage` and the id that carried it. It is the maximum of the persisted mark
+    /// (survives `remove`) and the versions currently on disk (covers a crash between the rename and the mark write).
+    /// Explicit rollback via [`Registry::rollback`] never consults it: it only moves between installed versions.
+    pub fn high_water(&self, lineage: &str) -> Result<(u64, Option<String>)> {
+        let mut best = (0u64, None);
+        if let Ok(s) = fs::read_to_string(self.serial_file(lineage)) {
+            let mut it = s.split_whitespace();
+            if let (Some(n), Some(id)) = (it.next().and_then(|n| n.parse().ok()), it.next()) {
+                best = (n, Some(id.to_string()));
+            }
+        }
+        for id in self.list()? {
+            if let Ok(m) = self.open_model(&id) {
+                if m.manifest.lineage() == lineage && m.manifest.serial > best.0 {
+                    best = (m.manifest.serial, Some(m.manifest.id));
+                }
+            }
+        }
+        Ok(best)
+    }
+
+    fn raise_high_water(&self, m: &Manifest) -> Result<()> {
+        if self.high_water(&m.lineage())?.0 > m.serial {
+            return Ok(());
+        }
+        write_atomic(
+            &self.serial_file(&m.lineage()),
+            format!("{} {}\n", m.serial, m.id).as_bytes(),
+        )
     }
 
     // ---- query --------------------------------------------------------------------------------------------------

@@ -41,6 +41,15 @@ pub enum Error {
     NoPrevious,
     #[error("download of {url} failed: {reason}")]
     Download { url: String, reason: String },
+    #[error("manifest {id:?} has serial {serial}, below the high-water mark {high_water} for lineage {lineage} (replay of an older release?)")]
+    Replay {
+        id: String,
+        lineage: String,
+        serial: u64,
+        high_water: u64,
+    },
+    #[error("{0}: no download URL in the manifest (import-only file)")]
+    ImportOnly(String),
     #[error("cancelled")]
     Cancelled,
     #[error("bad archive: {0}")]
