@@ -1,29 +1,32 @@
 import { useCallback, useEffect, useState } from "react";
-import { api, errorText, onModelOp } from "../../lib/api";
-import type { ModelOp, ModelsOverview, PendingInstall } from "../../types/protocol";
+import { api, errorText, onBackend, onModelOp } from "../../lib/api";
+import type { BackendState, ModelOp, ModelsOverview, PendingInstall } from "../../types/protocol";
+import { modelStatus, onboardStage } from "./onboard";
 
 const mb = (n: number) => (n >= 1 << 30 ? `${(n / (1 << 30)).toFixed(2)} GiB` : `${(n / (1 << 20)).toFixed(1)} MiB`);
 
-export function ModelsPanel() {
+export function ModelsPanel({ backend }: { backend: BackendState | null }) {
   const [o, setO] = useState<ModelsOverview | null>(null);
   const [op, setOp] = useState<ModelOp | null>(null);
   const [pending, setPending] = useState<PendingInstall | null>(null);
   const [accepted, setAccepted] = useState<string[]>([]);
+  const [enableExperimental, setEnableExperimental] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
 
-  const reload = useCallback(() => api.modelsOverview().then((v) => { setO(v); setOp(v.op); }).catch((e) => setError(errorText(e))), []);
+  const reload = useCallback(() => api.modelsOverview().then((v) => setO(v)).catch((e) => setError(errorText(e))), []);
   useEffect(() => {
     void reload();
     let alive = true;
-    let off: (() => void) | undefined;
-    onModelOp((v) => {
-      setOp(v);
-      if (v.state !== "running") void reload();
-    }).then((u) => (alive ? (off = u) : u()));
+    const offs: (() => void)[] = [];
+    const keep = (p: Promise<() => void>) => p.then((u) => (alive ? offs.push(u) : u()));
+    keep(onModelOp((v) => setOp(v)));
+    // activation, test results, rollback and settings all arrive as one backend event: the list follows it directly
+    keep(onBackend(() => void reload()));
+    void api.modelsOverview().then((v) => alive && setOp(v.op));
     return () => {
       alive = false;
-      off?.();
+      offs.forEach((f) => f());
     };
   }, [reload]);
 
@@ -43,16 +46,18 @@ export function ModelsPanel() {
     const p = await f();
     setPending(p);
     setAccepted(p ? p.licenses.filter((l) => l.accepted).map((l) => l.id) : []);
+    setEnableExperimental(false);
   });
   const confirmInstall = () => act(async () => {
     if (!pending) return;
-    await api.modelsInstall(pending.token, accepted);
+    await api.modelsInstall(pending.token, accepted, enableExperimental);
     setPending(null);
   });
 
   const running = op?.state === "running";
   const needed = pending?.licenses.filter((l) => l.acceptance_required && !l.accepted) ?? [];
   const canInstall = needed.every((l) => accepted.includes(l.id));
+  const stage = onboardStage(op, backend);
 
   return (
     <section>
@@ -76,7 +81,7 @@ export function ModelsPanel() {
         <article className="card" aria-label="Confirm install">
           <strong>{pending.id}</strong>
           <p className="muted small">
-            {pending.family} · {pending.backend} · {pending.precision} · {mb(pending.download_bytes)} to download · status {pending.compat_status}
+            {pending.family} · {pending.backend} · {pending.precision} · {mb(pending.download_bytes)} · status {pending.compat_status}
           </p>
           {pending.licenses.map((l) => (
             <label key={l.id} className="block">
@@ -90,6 +95,14 @@ export function ModelsPanel() {
               <div className="muted small">{l.url}{l.notes ? ` · ${l.notes}` : ""}</div>
             </label>
           ))}
+          {pending.experimental && (
+            <label className="block">
+              <input type="checkbox" checked={enableExperimental} onChange={(e) => setEnableExperimental(e.target.checked)} /> This model runs on an
+              experimental engine. Enable experimental engines so it can be used.
+              <div className="muted small">Its output has not been validated against the reference. You can turn this off later in Settings.</div>
+            </label>
+          )}
+          <p className="muted small">After installing, TingMix makes this the model in use (if none is) and tests it on this Mac.</p>
           <div className="row">
             <button className="primary" disabled={!canInstall || running} onClick={confirmInstall}>Accept licences and install</button>
             <button onClick={() => setPending(null)}>Cancel</button>
@@ -98,15 +111,13 @@ export function ModelsPanel() {
       )}
 
       {op && (
-        <article className="card" aria-live="polite">
+        <article className={`card stage ${stage?.phase ?? ""}`} aria-live="polite">
           <div className="row">
-            <strong>{op.kind === "download" ? "Download" : op.kind === "probe" ? "Probe" : "Import"}: {op.name}</strong>
-            <span className={`pill ${op.state === "running" ? "running" : op.state === "done" ? "done" : "failed"}`}>{op.state}</span>
+            <strong>{op.name}</strong>
             {running && <button onClick={() => act(api.modelsCancel)}>Cancel</button>}
           </div>
           {running && (op.bytes_total > 0 ? <progress max={op.bytes_total} value={op.bytes_done} /> : <progress />)}
-          {running && op.bytes_total > 0 && <span className="muted small">{mb(op.bytes_done)} of {mb(op.bytes_total)}</span>}
-          {op.message && <p className={op.state === "failed" ? "error" : "muted"}>{op.message}</p>}
+          {stage && <p className={stage.phase === "problem" ? "error" : stage.phase === "ready" ? "ok" : "muted"}>{stage.text}</p>}
         </article>
       )}
 
@@ -116,15 +127,16 @@ export function ModelsPanel() {
         <article key={m.id} className="card">
           <div className="row">
             <strong>{m.id}</strong>
-            {m.active && <span className="pill done">active</span>}
+            {m.active && <span className="pill done">selected</span>}
             {m.previous && <span className="pill">previous</span>}
             <span className="muted small">{m.family} · {m.backend} · {m.precision} · {mb(m.size_bytes)} · serial {m.serial} · rev {m.revision.slice(0, 8)}</span>
           </div>
+          <p className="muted small">{modelStatus(m, backend)}</p>
           <p className="muted small">Status: {m.compat_status}. {m.compat_notes}</p>
           {m.licenses.length > 0 && <p className="muted small">Licences: {m.licenses.join(", ")}</p>}
           <div className="row">
-            <button disabled={running} onClick={() => act(() => api.modelsProbe(m.id), `Compatibility probe of ${m.id} finished`)}>Run compatibility probe</button>
-            <button disabled={m.active || running} onClick={() => act(() => api.modelsActivate(m.id), `Activated ${m.id}`)}>Make active</button>
+            <button className={m.active ? "" : "primary"} disabled={m.active || running} onClick={() => act(() => api.modelsActivate(m.id))}>Use this model</button>
+            <button disabled={running} onClick={() => act(() => api.modelsProbe(m.id))}>Test on this Mac</button>
             <button disabled={running} onClick={() => act(() => api.modelsVerify(m.id), `${m.id}: every file matches its signed hash`)}>Verify files</button>
             <button disabled={m.active || m.previous || running} onClick={() => act(() => api.modelsRemove(m.id), `Removed ${m.id}`)}>Remove</button>
           </div>

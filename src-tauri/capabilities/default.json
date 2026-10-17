@@ -32,12 +32,11 @@
     "allow-models-remove",
     "allow-models-verify",
     "allow-models-probe",
-    "allow-backend-info",
+    "allow-backend-state",
     "allow-updater-check",
     "allow-updater-install",
     "allow-mic-permission-status",
     "allow-mic-permission-request",
-    "allow-mic-open-settings",
-    "allow-backend-load-state"
+    "allow-mic-open-settings"
   ]
 }

@@ -5,8 +5,8 @@ import { HistoryPanel } from "../features/history/HistoryPanel";
 import { LivePanel } from "../features/live/LivePanel";
 import { ModelsPanel } from "../features/models/ModelsPanel";
 import { SettingsPanel } from "../features/settings/SettingsPanel";
-import { api, errorText, onBackendLoad, onModelOp } from "../lib/api";
-import type { BackendInfo, LoadView, Settings } from "../types/protocol";
+import { api, errorText, onBackend } from "../lib/api";
+import type { BackendState, Settings } from "../types/protocol";
 
 const TABS = ["Live", "Files", "History", "Models", "Settings", "Diagnostics"] as const;
 type Tab = (typeof TABS)[number];
@@ -17,28 +17,18 @@ export function App() {
   const [tab, setTab] = useState<Tab>("Live");
   const [settings, setSettings] = useState<Settings>(DEFAULTS);
   const [error, setError] = useState<string | null>(null);
-  const [backend, setBackend] = useState<BackendInfo | null>(null);
-  const [load, setLoad] = useState<LoadView>({ loading: false, label: null, error: null });
+  const [bs, setBs] = useState<BackendState | null>(null);
+  const backend = bs?.info ?? null;
+  const load = bs?.load ?? { loading: false, label: null, error: null };
 
   useEffect(() => void api.settingsGet().then(setSettings).catch((e) => setError(errorText(e))), []);
-  // the banner follows the selection: it changes with the experimental switch and when a model operation finishes
-  useEffect(() => {
-    const load = () => api.backendInfo().then(setBackend).catch((e) => setError(errorText(e)));
-    void load();
-    let alive = true;
-    let off: (() => void) | undefined;
-    onModelOp((o) => o.state !== "running" && load()).then((u) => (alive ? (off = u) : u()));
-    return () => {
-      alive = false;
-      off?.();
-    };
-  }, [settings.experimental_backends]);
-  // the model is loaded in the background when it becomes the active one; Start waits for it if pressed early
+  // The host pushes the backend state on every change (activation, test result, settings, model loading), so the banner and
+  // the loading line never wait for a tab switch or a second click.
   useEffect(() => {
     let alive = true;
     let off: (() => void) | undefined;
-    void api.backendLoadState().then((v) => alive && setLoad(v)).catch(() => undefined);
-    onBackendLoad(setLoad).then((u) => (alive ? (off = u) : u()));
+    onBackend(setBs).then((u) => (alive ? (off = u) : u()));
+    void api.backendState().then((v) => alive && setBs(v)).catch((e) => setError(errorText(e)));
     return () => {
       alive = false;
       off?.();
@@ -75,7 +65,7 @@ export function App() {
         <div hidden={tab !== "Live"}><LivePanel settings={settings} onSettings={update} /></div>
         <div hidden={tab !== "Files"}><FilesPanel settings={settings} /></div>
         {tab === "History" && <HistoryPanel settings={settings} />}
-        {tab === "Models" && <ModelsPanel />}
+        {tab === "Models" && <ModelsPanel backend={bs} />}
         {tab === "Settings" && <SettingsPanel settings={settings} onSettings={update} />}
         {tab === "Diagnostics" && <DiagnosticsPanel />}
       </main>

@@ -171,7 +171,7 @@ pub async fn file_start(
     app: AppHandle,
     state: State<'_, AppState>,
     file_id: String,
-) -> Result<String, String> {
+) -> Result<JobStarted, String> {
     let path = state
         .files
         .lock()
@@ -185,11 +185,13 @@ pub async fn file_start(
     let resolved =
         backends::take(&app).inspect_err(|e| state.note_error(format!("backend: {e}")))?;
     let job_id = state.next_id("job");
+    let backend_label = resolved.label.clone();
     let cancel = Arc::new(std::sync::atomic::AtomicBool::new(false));
     state.jobs.lock().unwrap().push((
         job_id.clone(),
         Job {
             name: name.clone(),
+            backend: backend_label.clone(),
             cancel: cancel.clone(),
             reducer: Default::default(),
             state: JobState::Running,
@@ -202,7 +204,10 @@ pub async fn file_start(
         .name("tingmix-file".into())
         .spawn(move || run_job(app, jid, name, path, cancel, resolved))
         .map_err(|e| e.to_string())?;
-    Ok(job_id)
+    Ok(JobStarted {
+        job_id,
+        backend: backend_label,
+    })
 }
 
 fn run_job(
@@ -422,11 +427,23 @@ pub async fn diagnostics(state: State<'_, AppState>) -> Result<Diagnostics, Stri
 
 pub const MODELS_EVENT: &str = "tingmix://models";
 
+fn mark_experimental(state: &AppState, mut p: PendingInstall) -> PendingInstall {
+    p.experimental =
+        backends::is_experimental(&p.backend) && !state.store.settings().experimental_backends;
+    p
+}
+
 fn models_notify(app: &AppHandle) -> crate::models::Notify {
     let app = app.clone();
     Arc::new(move |v| {
         let finished = v.state != "running";
+        let onboard = v.state == "done" && matches!(v.kind.as_str(), "import" | "download");
+        let id = v.name.clone();
         let _ = app.emit(MODELS_EVENT, v);
+        if onboard {
+            // one step for the user: a freshly installed model becomes the active one (when none is) and is tested
+            backends::onboard(&app, &id, models_notify(&app));
+        }
         if finished {
             // a new, imported or probed model can change which backend the next session uses
             backends::preload(&app);
@@ -473,7 +490,7 @@ pub async fn models_import(
     state
         .models
         .begin_import(path, kind == "zip", state.next_id("install"))
-        .map(Some)
+        .map(|p| Some(mark_experimental(&state, p)))
         .inspect_err(|e| state.note_error(format!("model import: {e}")))
 }
 
@@ -494,7 +511,7 @@ pub async fn models_begin_install(
     state
         .models
         .begin_install(&bytes, state.next_id("install"))
-        .map(Some)
+        .map(|p| Some(mark_experimental(&state, p)))
 }
 
 #[tauri::command]
@@ -503,7 +520,15 @@ pub async fn models_install(
     state: State<'_, AppState>,
     token: String,
     accepted: Vec<String>,
+    enable_experimental: bool,
 ) -> Result<(), String> {
+    // consent given in the confirm card replaces a separate trip to Settings
+    if enable_experimental {
+        let mut s = state.store.settings();
+        s.experimental_backends = true;
+        state.store.save_settings(s)?;
+        backends::publish(&app);
+    }
     state.models.install(&token, &accepted, models_notify(&app))
 }
 
@@ -520,6 +545,19 @@ pub async fn models_activate(
     id: String,
 ) -> Result<(), String> {
     state.models.activate(&id)?;
+    // "Use this model" is one step: test it right away when no fresh test result exists
+    let exp = state.store.settings().experimental_backends;
+    let d = backends::decide(&state.models, exp, &state.runtimes);
+    if d.chosen.is_none() && d.reason.contains("hasn't been tested") {
+        if let Err(e) = backends::start_probe(
+            &state.models,
+            state.runtimes.clone(),
+            id,
+            models_notify(&app),
+        ) {
+            state.note_error(format!("test run: {e}"));
+        }
+    }
     backends::preload(&app);
     Ok(())
 }
@@ -532,8 +570,14 @@ pub async fn models_rollback(app: AppHandle, state: State<'_, AppState>) -> Resu
 }
 
 #[tauri::command]
-pub async fn models_remove(state: State<'_, AppState>, id: String) -> Result<(), String> {
-    state.models.remove(&id)
+pub async fn models_remove(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    id: String,
+) -> Result<(), String> {
+    state.models.remove(&id)?;
+    backends::publish(&app);
+    Ok(())
 }
 
 #[tauri::command]
@@ -542,12 +586,8 @@ pub async fn models_verify(state: State<'_, AppState>, id: String) -> Result<(),
 }
 
 #[tauri::command]
-pub async fn backend_info(state: State<'_, AppState>) -> Result<backends::BackendInfoDto, String> {
-    Ok(backends::info(
-        &state.models,
-        state.store.settings().experimental_backends,
-        &state.runtimes,
-    ))
+pub async fn backend_state(state: State<'_, AppState>) -> Result<backends::BackendState, String> {
+    Ok(backends::state_of(&state))
 }
 
 /// Compatibility probe of an installed version (loads it, decodes the shipped fixture, records RTF).
@@ -646,9 +686,4 @@ pub async fn mic_permission_request() -> Result<crate::mic::MicStatus, String> {
 #[tauri::command]
 pub async fn mic_open_settings() -> Result<(), String> {
     crate::mic::open_settings()
-}
-
-#[tauri::command]
-pub async fn backend_load_state(state: State<'_, AppState>) -> Result<backends::LoadView, String> {
-    Ok(state.warm.view())
 }

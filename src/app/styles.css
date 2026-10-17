@@ -48,3 +48,7 @@ progress { width: 100%; }
 .form label { display: block; margin: 12px 0; }
 [hidden] { display: none !important; }
 .block { display: block; margin: 8px 0; }
+.mock-note { margin: 0 0 8px; padding: 6px 10px; border: 1px solid var(--warn); border-radius: 6px; color: var(--warn); font-weight: 600; font-size: 12px; }
+.ok { color: var(--ok); font-weight: 600; }
+.card.stage.ready { border-color: var(--ok); }
+.card.stage.problem { border-color: var(--danger); }

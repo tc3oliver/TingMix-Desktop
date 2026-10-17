@@ -1,6 +1,6 @@
 //! Host-level end-to-end test of the MLX Large path, ignored unless `TINGMIX_E2E_MLX_PACKAGE` points at a package folder:
 //! signed manifest + the files it lists (see docs/architecture/app.md). Steps: offline import with licence acceptance ->
-//! activate -> selection refuses while experimental backends are off and before a probe -> probe -> selection picks `mlx`
+//! automatic activate + probe after the import -> selection refuses while experimental backends are off -> picks `mlx`
 //! -> file transcription equals the oracle text -> live session on replayed audio emits partial and final events.
 //!
 //! cargo test needs `--features mlx`, `MLX_PREFIX`, `TINGMIX_MLX_DEV_RPATH=1`, and `TINGMIX_MLX_WORKER=<tingmix-mlx-worker>`.
@@ -21,16 +21,18 @@ fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("..")
 }
 
-fn wait_op(models: &Models, what: &str) {
+/// Waits until the latest operation of `kind` is finished (a probe starts only after the import's callback ran).
+fn wait_op(models: &Models, kind: &str, what: &str) {
     let t = Instant::now();
     loop {
         let op = models.overview().op.expect("an operation was started");
-        match op.state.as_str() {
-            "running" if t.elapsed() < Duration::from_secs(600) => {
+        match (op.kind.as_str() == kind, op.state.as_str()) {
+            (true, "done") => return,
+            (_, "failed" | "cancelled") => panic!("{what}: {} {:?}", op.state, op.message),
+            _ if t.elapsed() < Duration::from_secs(600) => {
                 std::thread::sleep(Duration::from_millis(200))
             }
-            "done" => return,
-            other => panic!("{what}: {other} {:?}", op.message),
+            _ => panic!("{what}: timed out in {} ({})", op.kind, op.state),
         }
     }
 }
@@ -102,32 +104,32 @@ fn mlx_import_probe_select_transcribe_live() {
     assert_eq!(required.len(), 2, "{:?}", pending.licenses);
     let err = models.install("e2e", &[], notify.clone()).unwrap_err();
     assert!(err.contains("must be accepted"), "{err}");
+    // the host's notify callback does this when an import finishes: activate (nothing is active yet) and test
+    let (m2, rt2) = (models.clone(), rt.clone());
+    let on_op: Notify = Arc::new(move |v| {
+        if v.state == "done" && v.kind == "import" {
+            backends::onboard_core(&m2, &rt2, &v.name, Arc::new(|_| {})).expect("onboard");
+        }
+    });
     models
-        .install("e2e", &required, notify.clone())
+        .install("e2e", &required, on_op)
         .expect("start import");
-    wait_op(&models, "import");
+    // the import callback starts the probe before a poll could see the import as done, so only the probe is awaited
+    wait_op(&models, "probe", "automatic probe");
     let ov = models.overview();
     assert_eq!(ov.installed.len(), 1);
-    models.activate(&pending.id).unwrap();
+    assert!(
+        ov.installed[0].active,
+        "the first imported model becomes the active one"
+    );
 
-    // 2. selection: refused while experimental backends are off, and before any probe
+    // 2. selection: refused while experimental backends are off, picks mlx once they are on
     let off = backends::decide(&models, false, &rt);
     assert!(
-        off.chosen.is_none() && off.reason.contains("EXPERIMENTAL"),
+        off.chosen.is_none() && off.reason.contains("experimental engine"),
         "{}",
         off.reason
     );
-    let unprobed = backends::decide(&models, true, &rt);
-    assert!(
-        unprobed.chosen.is_none() && unprobed.reason.contains("probe"),
-        "{}",
-        unprobed.reason
-    );
-
-    // 3. probe (child process), then selection picks mlx
-    backends::start_probe(&models, rt.clone(), pending.id.clone(), notify.clone())
-        .expect("start probe");
-    wait_op(&models, "probe");
     let on = backends::decide(&models, true, &rt);
     assert_eq!(
         on.chosen.as_ref().map(|c| c.1.as_str()),

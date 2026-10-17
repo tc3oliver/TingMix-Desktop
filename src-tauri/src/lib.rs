@@ -172,13 +172,12 @@ pub fn run() {
             commands::models_remove,
             commands::models_verify,
             commands::models_probe,
-            commands::backend_info,
+            commands::backend_state,
             commands::updater_check,
             commands::updater_install,
             commands::mic_permission_status,
             commands::mic_permission_request,
             commands::mic_open_settings,
-            commands::backend_load_state,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");

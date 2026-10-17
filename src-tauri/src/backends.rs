@@ -28,6 +28,10 @@ pub const MLX: &str = "mlx";
 pub const ORT_VERSION: &str = "1.31.0";
 
 /// What each real backend honestly is. Change to `VALIDATED` only when its parity and probe evidence says so.
+pub fn is_experimental(backend: &str) -> bool {
+    status_word(backend) == "EXPERIMENTAL"
+}
+
 fn status_word(backend: &str) -> &'static str {
     match backend {
         ONNX | MLX => "EXPERIMENTAL",
@@ -308,6 +312,41 @@ pub struct Decision {
     pub rejected: Vec<(String, String)>,
 }
 
+/// Plain-language version of a `tingmix-models` rejection reason or a backend error.
+pub fn plain(why: &str, backend: &str) -> String {
+    let engine = match backend {
+        MLX => "MLX",
+        ONNX => "ONNX Runtime",
+        other => other,
+    };
+    let sentence = |s: &str| {
+        let mut c = s.trim().chars();
+        c.next().map_or_else(String::new, |f| {
+            f.to_uppercase().collect::<String>() + c.as_str()
+        })
+    };
+    if why.contains("not registered in this build") || why.contains("not available in this build") {
+        let hint = if backend == MLX {
+            " Use the MLX build of TingMix (tools/bundle-mlx.sh)."
+        } else {
+            ""
+        };
+        format!("This build of TingMix doesn't include the {engine} engine this model needs.{hint}")
+    } else if why.contains("EXPERIMENTAL") {
+        "This model uses an experimental engine. Turn on “Allow EXPERIMENTAL inference backends” in Settings, or tick the box when importing.".into()
+    } else if why.contains("no verified compatibility probe") {
+        "This model hasn't been tested on this Mac yet. Press “Test on this Mac”.".into()
+    } else if why.contains("compatibility probe failed") {
+        "The test run on this Mac failed, so the model is not used. See the Models tab for the details.".into()
+    } else if why.contains("is not available") && why.contains("runtime") {
+        format!("The {engine} runtime is not available on this Mac (its library is missing).")
+    } else if let Some(d) = why.strip_prefix("probe failed: ") {
+        format!("The test run on this Mac failed: {}", sentence(d))
+    } else {
+        sentence(why)
+    }
+}
+
 pub fn decide(models: &Models, experimental_ok: bool, rt: &Runtimes) -> Decision {
     let none = |reason: String, rejected| Decision {
         chosen: None,
@@ -352,14 +391,15 @@ pub fn decide(models: &Models, experimental_ok: bool, rt: &Runtimes) -> Decision
             }
         }
         Err(rejected) => {
+            let rejected: Vec<(String, String)> = rejected
+                .into_iter()
+                .map(|(id, why)| (id, plain(&why, &model.manifest.backend)))
+                .collect();
             let why = rejected.first().map(|r| r.1.clone()).unwrap_or_default();
-            let hint = if why.contains("EXPERIMENTAL") {
-                " Enable experimental backends in Settings to allow it."
-            } else {
-                ""
-            };
             none(
-                format!("Active model {active} cannot run: {why}.{hint} Using the mock backend."),
+                format!(
+                    "{active} can't be used yet. {why} The mock backend (not real ASR) is in use."
+                ),
                 rejected,
             )
         }
@@ -504,6 +544,33 @@ pub struct LoadView {
 
 pub const BACKEND_EVENT: &str = "tingmix://backend";
 
+/// Everything the UI shows about the backend, pushed on every change (activation, probe, settings, preload progress).
+#[derive(Debug, Clone, Serialize)]
+pub struct BackendState {
+    pub info: BackendInfoDto,
+    pub load: LoadView,
+}
+
+pub fn state_of(st: &crate::state::AppState) -> BackendState {
+    BackendState {
+        info: info(
+            &st.models,
+            st.store.settings().experimental_backends,
+            &st.runtimes,
+        ),
+        load: st.warm.view(),
+    }
+}
+
+/// Tell the UI the backend state changed.
+pub fn publish(app: &tauri::AppHandle) {
+    use tauri::{Emitter, Manager};
+    let _ = app.emit(
+        BACKEND_EVENT,
+        state_of(&app.state::<crate::state::AppState>()),
+    );
+}
+
 fn key_of(d: &Decision) -> Option<String> {
     d.chosen.as_ref().map(|(id, b)| format!("{id}|{b}"))
 }
@@ -533,14 +600,11 @@ impl Warm {
 /// Start loading the backend the next session would use, in the background. No-op for the mock or when it is already
 /// loading / loaded. Call after anything that can change the choice (start-up, activation, settings, probe, session end).
 pub fn preload(app: &tauri::AppHandle) {
-    use tauri::{Emitter, Manager};
+    use tauri::Manager;
     let st = app.state::<crate::state::AppState>();
     let exp = st.store.settings().experimental_backends;
     let d = decide(&st.models, exp, &st.runtimes);
-    let notify = |app: &tauri::AppHandle| {
-        let st = app.state::<crate::state::AppState>();
-        let _ = app.emit(BACKEND_EVENT, st.warm.view());
-    };
+    let notify = publish;
     let Some(key) = key_of(&d) else {
         *st.warm.slot.lock().unwrap() = WarmState::Empty;
         notify(app);
@@ -549,7 +613,11 @@ pub fn preload(app: &tauri::AppHandle) {
     {
         let mut slot = st.warm.slot.lock().unwrap();
         match &*slot {
-            WarmState::Loading(k) | WarmState::Ready(k, _) if *k == key => return,
+            WarmState::Loading(k) | WarmState::Ready(k, _) if *k == key => {
+                drop(slot);
+                publish(app); // the choice itself may have changed (for example a fresh probe)
+                return;
+            }
             _ => *slot = WarmState::Loading(key.clone()),
         }
     }
@@ -573,6 +641,34 @@ pub fn preload(app: &tauri::AppHandle) {
             }
             notify(&app);
         });
+}
+
+/// After a successful import or download: make the model active when none is, and test it on this Mac. Progress and the
+/// result reach the UI through the models operation events and `publish`.
+pub fn onboard(app: &tauri::AppHandle, id: &str, notify: Notify) {
+    use tauri::Manager;
+    let st = app.state::<crate::state::AppState>();
+    if let Err(e) = onboard_core(&st.models, &st.runtimes, id, notify) {
+        st.note_error(format!("onboarding {id}: {e}"));
+    }
+    publish(app);
+}
+
+/// The steps without the UI plumbing: activate when nothing is active, then start the compatibility test.
+pub fn onboard_core(
+    models: &Arc<Models>,
+    rt: &Runtimes,
+    id: &str,
+    notify: Notify,
+) -> Result<(), String> {
+    let reg = models.reg()?;
+    if reg.active().ok().flatten().is_none() {
+        reg.activate(id).map_err(|e| format!("activate: {e}"))?;
+    }
+    if reg.active().ok().flatten().as_deref() == Some(id) {
+        start_probe(models, rt.clone(), id.to_string(), notify)?;
+    }
+    Ok(())
 }
 
 /// The backend for a new session: the preloaded one if it matches the current choice (waiting for it while it loads),
@@ -736,32 +832,35 @@ pub fn start_probe(
     std::thread::Builder::new()
         .name("tingmix-probe".into())
         .spawn(move || {
-            let r = models.reg().and_then(|reg| {
-                let fx = ProbeFixture {
-                    name,
-                    wav: &wav,
-                    sample_rate: 16_000,
-                    expected_text: expected,
-                };
-                let rec = (if backend == MLX {
-                    probe_mlx(reg.root(), &model, &fx)
-                } else {
-                    None
-                })
-                .unwrap_or_else(|| {
-                    let mut t = AppProbe {
-                        backend,
-                        rt: &rt,
-                        loaded: None,
+            let r = models
+                .reg()
+                .and_then(|reg| {
+                    let fx = ProbeFixture {
+                        name,
+                        wav: &wav,
+                        sample_rate: 16_000,
+                        expected_text: expected,
                     };
-                    run_probe(reg.root(), &mut t, &model, &fx, 2).map_err(|e| e.to_string())
-                })?;
-                if rec.passed {
-                    Ok(())
-                } else {
-                    Err(format!("probe failed: {}", rec.detail))
-                }
-            });
+                    let rec = (if backend == MLX {
+                        probe_mlx(reg.root(), &model, &fx)
+                    } else {
+                        None
+                    })
+                    .unwrap_or_else(|| {
+                        let mut t = AppProbe {
+                            backend,
+                            rt: &rt,
+                            loaded: None,
+                        };
+                        run_probe(reg.root(), &mut t, &model, &fx, 2).map_err(|e| e.to_string())
+                    })?;
+                    if rec.passed {
+                        Ok(())
+                    } else {
+                        Err(format!("probe failed: {}", rec.detail))
+                    }
+                })
+                .map_err(|e| plain(&e, backend));
             models.finish_op(r, &notify);
         })
         .map_err(|e| e.to_string())?;
@@ -831,6 +930,37 @@ mod tests {
         assert_eq!(stream_text, "w1");
         let err = Dyn::spawn(|| Err("no such model".into())).err().unwrap();
         assert_eq!(err, "no such model");
+    }
+
+    #[test]
+    fn selection_reasons_are_plain_language() {
+        let mlx = plain("backend mlx is not registered in this build", MLX);
+        assert!(
+            mlx.contains("doesn't include the MLX engine") && mlx.contains("MLX build"),
+            "{mlx}"
+        );
+        let onnx = plain("backend onnx-cpu is not available in this build", ONNX);
+        assert!(
+            onnx.contains("ONNX Runtime") && !onnx.contains("MLX build"),
+            "{onnx}"
+        );
+        assert!(plain(
+            "backend mlx is EXPERIMENTAL; only VALIDATED backends are selected",
+            MLX
+        )
+        .contains("Allow EXPERIMENTAL"));
+        assert!(plain(
+            "no verified compatibility probe result for this backend",
+            MLX
+        )
+        .contains("hasn't been tested"));
+        assert!(plain("probe failed: load/first decode failed: boom", MLX)
+            .starts_with("The test run on this Mac failed: Load/first"));
+        assert_eq!(
+            plain("needs 16 GiB RAM, machine has 8 GiB", MLX),
+            "Needs 16 GiB RAM, machine has 8 GiB"
+        );
+        assert!(is_experimental(MLX) && is_experimental(ONNX) && !is_experimental("other"));
     }
 
     #[test]

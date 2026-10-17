@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ExportButtons } from "../../components/ExportButtons";
+import { Provenance } from "../../components/Provenance";
 import { TranscriptView } from "../../components/TranscriptView";
 import { onDrag } from "../../lib/api";
 import type { Settings } from "../../types/protocol";
@@ -43,8 +44,9 @@ export function FilesPanel({ settings }: { settings: Settings }) {
             </header>
             {j.state === "running" && <progress aria-label={`Transcribing ${j.name}`} />}
             {j.state === "failed" && <p className="error" role="alert">Could not transcribe this file: {j.message}</p>}
+            <Provenance label={j.backend} />
             <TranscriptView finals={finals} open={openOf(j.transcript)} size={Math.min(settings.caption_size, 20)} empty={j.state === "running" ? "Working…" : "No speech found."} />
-            <ExportButtons name={j.name.replace(/\.[^.]+$/, "")} segments={finals} />
+            <ExportButtons name={j.name.replace(/\.[^.]+$/, "")} segments={finals} backend={j.backend} />
           </article>
         );
       })}

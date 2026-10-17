@@ -1,4 +1,5 @@
 import { ExportButtons } from "../../components/ExportButtons";
+import { Provenance } from "../../components/Provenance";
 import { TranscriptView } from "../../components/TranscriptView";
 import type { Settings } from "../../types/protocol";
 import { finalsOf, openOf } from "./reducer";
@@ -58,9 +59,10 @@ export function LivePanel({ settings, onSettings }: { settings: Settings; onSett
       {devices.length === 0 && <p className="muted">No microphone found. Connect one, then press Start to try the system default.</p>}
       {error && <p className="error" role="alert">{error}</p>}
       {status.message && <p className="muted small">{status.message}</p>}
+      <Provenance label={status.backend} />
       <TranscriptView finals={finals} open={openOf(transcript)} size={settings.caption_size} empty="Press Start and speak. Captions appear here." />
       <div className="row footer">
-        <ExportButtons name="live-transcript" segments={finals} />
+        <ExportButtons name="live-transcript" segments={finals} backend={status.backend} />
         <span className="muted small">
           {status.device ? `${status.device} · ` : ""}backend: {status.backend || "Mock — not ASR"}
           {status.overflow_samples > 0 ? ` · ${status.overflow_samples} samples dropped` : ""}

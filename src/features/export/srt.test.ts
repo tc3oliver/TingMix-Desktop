@@ -45,6 +45,16 @@ describe("toSrt", () => {
   });
 });
 
+describe("export provenance note", () => {
+  it("writes the note as a bracketed first TXT line and a first SRT cue, and not for empty transcripts", () => {
+    const seg = [{ start: 0, end: 1, text: "a" }];
+    expect(toTxt(seg, "Mock")).toBe("[Mock]\na\n");
+    expect(toSrt(seg, "Mock").startsWith("0\n00:00:00,000 --> 00:00:00,001\nMock\n\n1\n")).toBe(true);
+    expect(toTxt([], "Mock")).toBe("");
+    expect(toSrt([], "Mock")).toBe("");
+  });
+});
+
 describe("toTxt", () => {
   it("writes one trimmed segment per line", () => {
     expect(toTxt([{ start: 0, end: 1, text: " a " }, { start: 1, end: 2, text: "" }, { start: 2, end: 3, text: "b" }])).toBe("a\nb\n");

@@ -89,6 +89,8 @@ pub struct PendingInstall {
     pub precision: String,
     pub download_bytes: u64,
     pub compat_status: String,
+    /// The engine is EXPERIMENTAL and experimental engines are still off: the confirm card asks whether to enable them.
+    pub experimental: bool,
     pub licenses: Vec<LicenseDto>,
 }
 
@@ -261,6 +263,7 @@ impl Models {
             precision: mf.precision.clone(),
             download_bytes: mf.download_size(),
             compat_status: mf.compat.status.clone(),
+            experimental: false,
             licenses: mf
                 .licenses
                 .iter()
@@ -427,7 +430,7 @@ impl Models {
     }
 
     pub(crate) fn finish_op(&self, r: Result<(), String>, notify: &Notify) {
-        if let Some(op) = self.op.lock().unwrap().as_mut() {
+        let view = self.op.lock().unwrap().as_mut().map(|op| {
             (op.view.state, op.view.message) = match r {
                 Ok(()) => ("done".into(), None),
                 Err(e) if e == "cancelled" => (
@@ -438,7 +441,11 @@ impl Models {
                 ),
                 Err(e) => ("failed".into(), Some(e)),
             };
-            notify(op.view.clone());
+            op.view.clone()
+        });
+        // outside the lock: the callback may start the next operation (import -> probe)
+        if let Some(v) = view {
+            notify(v);
         }
     }
 }

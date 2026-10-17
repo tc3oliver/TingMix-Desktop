@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { ExportButtons } from "../../components/ExportButtons";
+import { Provenance } from "../../components/Provenance";
 import { TranscriptView } from "../../components/TranscriptView";
+import { isMock } from "../../lib/provenance";
 import { api, errorText } from "../../lib/api";
 import type { HistoryEntry, HistorySummary, Settings } from "../../types/protocol";
 
@@ -32,7 +34,7 @@ export function HistoryPanel({ settings }: { settings: Settings }) {
           <li key={h.id} className="row">
             <button onClick={() => show(h.id)}>{h.name}</button>
             <span className="muted small">
-              {h.source} · {new Date(h.started_at * 1000).toLocaleString()} · {h.duration_s.toFixed(0)} s · {h.segments} segments · {h.backend}
+              {h.source} · {new Date(h.started_at * 1000).toLocaleString()} · {h.duration_s.toFixed(0)} s · {h.segments} segments · {isMock(h.backend) ? "MOCK — not real ASR" : h.backend}
             </span>
             <button onClick={() => remove(h.id)} aria-label={`Delete ${h.name}`}>Delete</button>
           </li>
@@ -40,8 +42,9 @@ export function HistoryPanel({ settings }: { settings: Settings }) {
       </ul>
       {open && (
         <article className="card">
+          <Provenance label={open.backend} />
           <TranscriptView finals={open.finals} size={Math.min(settings.caption_size, 20)} empty="Empty transcript." />
-          <ExportButtons name={open.name} segments={open.finals} />
+          <ExportButtons name={open.name} segments={open.finals} backend={open.backend} />
         </article>
       )}
     </section>

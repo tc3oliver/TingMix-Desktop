@@ -77,6 +77,7 @@ export type FileMsg = { job_id: string } & (
 export interface JobView {
   job_id: string;
   name: string;
+  backend: string;
   state: JobState;
   audio_s: number;
   snapshot: Snapshot;
@@ -169,6 +170,8 @@ export interface LicenseInfo {
 
 export interface PendingInstall {
   token: string;
+  /** Experimental engine while experimental engines are off: the confirm card asks to enable them. */
+  experimental: boolean;
   id: string;
   family: string;
   backend: string;
@@ -201,4 +204,15 @@ export interface LoadView {
   loading: boolean;
   label: string | null;
   error: string | null;
+}
+
+export interface JobStarted {
+  job_id: string;
+  backend: string;
+}
+
+/** Pushed by the host on `tingmix://backend` whenever the choice or the loading progress changes. */
+export interface BackendState {
+  info: BackendInfo;
+  load: LoadView;
 }

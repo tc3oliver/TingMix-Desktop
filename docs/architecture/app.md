@@ -106,6 +106,20 @@ install is refused while a live session runs. An update replaces the app bundle 
 directory (`models/`), are verified by their own signed manifests, and an app update never installs, switches or
 re-activates one.
 
+## Model onboarding and live state
+
+Importing or downloading a model is one flow: the confirm card lists the licences and, for an EXPERIMENTAL engine while
+experimental engines are off, asks right there whether to enable them (`models_install(..., enableExperimental)`). When the
+operation finishes the host (`backends::onboard_core`) activates the model if none is active and starts the compatibility test
+("Verifying and copying files…" -> "Testing on this Mac…" -> "Ready: <model>" or a plain-language problem). "Use this model"
+activates and tests when there is no fresh test result. The UI never polls: every change (activate, test result, rollback,
+remove, settings, preload progress) is pushed as one `tingmix://backend` event carrying the backend info and the loading
+state, which drives the banner, the loading line and the Models list. Rejection reasons are rewritten by `backends::plain`
+(for example "This build of TingMix doesn't include the MLX engine this model needs. Use the MLX build of TingMix").
+Provenance: file jobs, live sessions and history entries carry the label of the backend that produced them; mock results show
+"Mock — not real ASR" next to the transcript, in the history list, and in exports (TXT first line, SRT first cue, file name
+suffix `(MOCK)`). Frontend logic with tests: `features/models/onboard.ts`, `lib/provenance.ts`, `features/export/format.ts`.
+
 ## Data flow
 
 Host -> UI events: `tingmix://live` (`event` with `session_id`, or `status`), `tingmix://file` (`progress`, `event`, `done`,

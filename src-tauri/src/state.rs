@@ -13,6 +13,8 @@ use crate::store::Store;
 
 pub struct Job {
     pub name: String,
+    /// Label of the backend that produces (or produced) this transcript.
+    pub backend: String,
     pub cancel: Arc<AtomicBool>,
     pub reducer: Reducer,
     pub state: JobState,
@@ -25,6 +27,7 @@ impl Job {
         JobView {
             job_id: job_id.into(),
             name: self.name.clone(),
+            backend: self.backend.clone(),
             state: self.state.clone(),
             audio_s: self.audio_s,
             snapshot: self.reducer.snapshot(),

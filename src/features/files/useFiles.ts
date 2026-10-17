@@ -6,6 +6,8 @@ import { applyEvent, applySnapshot, emptyTranscript, type TranscriptState } from
 export interface Job {
   id: string;
   name: string;
+  /** Which backend produces this transcript ("Mock — not ASR" for placeholder output). */
+  backend: string;
   state: JobState;
   audioS: number;
   message: string | null;
@@ -18,9 +20,9 @@ export function useFiles() {
 
   const begin = useCallback(async (ref: FileRef) => {
     try {
-      const id = await api.fileStart(ref.id);
+      const { job_id: id, backend } = await api.fileStart(ref.id);
       // an event can beat this setState; keep what the listener already created and only fix its name
-      setJobs((js) => (js.some((j) => j.id === id) ? js.map((j) => (j.id === id ? { ...j, name: ref.name } : j)) : [{ id, name: ref.name, state: "running", audioS: 0, message: null, transcript: emptyTranscript() }, ...js]));
+      setJobs((js) => (js.some((j) => j.id === id) ? js.map((j) => (j.id === id ? { ...j, name: ref.name, backend } : j)) : [{ id, name: ref.name, backend, state: "running", audioS: 0, message: null, transcript: emptyTranscript() }, ...js]));
     } catch (e) {
       setError(errorText(e));
     }
@@ -33,7 +35,7 @@ export function useFiles() {
     keep(onFile((m) => {
       setJobs((js) => {
         const known = js.some((j) => j.id === m.job_id);
-        const base = known ? js : [{ id: m.job_id, name: "audio file", state: "running" as const, audioS: 0, message: null, transcript: emptyTranscript() }, ...js];
+        const base = known ? js : [{ id: m.job_id, name: "audio file", backend: "", state: "running" as const, audioS: 0, message: null, transcript: emptyTranscript() }, ...js];
         return base.map((j) => {
           if (j.id !== m.job_id) return j;
           switch (m.kind) {
@@ -52,7 +54,7 @@ export function useFiles() {
       setJobs((cur) => {
         const byId = new Map(cur.map((j) => [j.id, j]));
         return views.map((v) => ({
-          id: v.job_id, name: v.name, state: v.state, audioS: v.audio_s, message: v.message,
+          id: v.job_id, name: v.name, backend: v.backend, state: v.state, audioS: v.audio_s, message: v.message,
           transcript: applySnapshot(byId.get(v.job_id)?.transcript ?? emptyTranscript(), v.snapshot),
         })).reverse();
       });

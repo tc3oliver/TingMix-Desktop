@@ -16,7 +16,7 @@ export function srtTime(seconds: number): string {
 }
 
 /** Cues are numbered from 1, empty segments are dropped, and a cue never ends before it starts. */
-export function toSrt(segments: Segment[]): string {
+export function toSrt(segments: Segment[], note?: string): string {
   const cues = segments
     .map((s) => ({ ...s, text: s.text.trim() }))
     .filter((s) => s.text !== "")
@@ -24,11 +24,13 @@ export function toSrt(segments: Segment[]): string {
       const end = Math.max(s.end, s.start + 0.001);
       return `${i + 1}\n${srtTime(s.start)} --> ${srtTime(end)}\n${s.text}\n`;
     });
+  // provenance as a first cue so the marker survives in players and editors
+  if (note && cues.length) cues.unshift(`0\n00:00:00,000 --> 00:00:00,001\n${note}\n`);
   return cues.join("\n");
 }
 
 /** One segment per line. */
-export function toTxt(segments: Segment[]): string {
+export function toTxt(segments: Segment[], note?: string): string {
   const lines = segments.map((s) => s.text.trim()).filter((t) => t !== "");
-  return lines.length ? lines.join("\n") + "\n" : "";
+  return lines.length ? (note ? `[${note}]\n` : "") + lines.join("\n") + "\n" : "";
 }

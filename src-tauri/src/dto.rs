@@ -90,10 +90,18 @@ pub enum FileBody {
     Failed { message: String },
 }
 
+/// Returned by `file_start`: the job and the backend that will transcribe it.
+#[derive(Debug, Clone, Serialize)]
+pub struct JobStarted {
+    pub job_id: String,
+    pub backend: String,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct JobView {
     pub job_id: String,
     pub name: String,
+    pub backend: String,
     pub state: JobState,
     pub audio_s: f64,
     pub snapshot: Snapshot,

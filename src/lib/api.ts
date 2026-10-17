@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type {
-  BackendInfo,
+  BackendState,
   Device,
   Diagnostics,
   FileMsg,
@@ -10,7 +10,7 @@ import type {
   HistorySummary,
   JobView,
   LiveMsg,
-  LoadView,
+  JobStarted,
   LiveSnapshot,
   LiveStatus,
   MicStatus,
@@ -28,7 +28,7 @@ export const api = {
   liveStop: () => invoke<LiveStatus>("live_stop"),
   liveSnapshot: () => invoke<LiveSnapshot>("live_snapshot"),
   filePick: () => invoke<FileRef | null>("file_pick"),
-  fileStart: (fileId: string) => invoke<string>("file_start", { fileId }),
+  fileStart: (fileId: string) => invoke<JobStarted>("file_start", { fileId }),
   fileCancel: (jobId: string) => invoke<void>("file_cancel", { jobId }),
   fileJobs: () => invoke<JobView[]>("file_jobs"),
   exportText: (suggestedName: string, extension: "txt" | "srt", content: string) =>
@@ -42,14 +42,14 @@ export const api = {
   modelsOverview: () => invoke<ModelsOverview>("models_overview"),
   modelsBeginImport: (kind: "folder" | "zip") => invoke<PendingInstall | null>("models_import", { kind }),
   modelsBeginInstall: () => invoke<PendingInstall | null>("models_begin_install"),
-  modelsInstall: (token: string, accepted: string[]) => invoke<void>("models_install", { token, accepted }),
+  modelsInstall: (token: string, accepted: string[], enableExperimental: boolean) =>
+    invoke<void>("models_install", { token, accepted, enableExperimental }),
   modelsCancel: () => invoke<void>("models_cancel"),
   modelsActivate: (id: string) => invoke<void>("models_activate", { id }),
   modelsRollback: () => invoke<string>("models_rollback"),
   modelsRemove: (id: string) => invoke<void>("models_remove", { id }),
   modelsProbe: (id: string) => invoke<void>("models_probe", { id }),
-  backendLoadState: () => invoke<LoadView>("backend_load_state"),
-  backendInfo: () => invoke<BackendInfo>("backend_info"),
+  backendState: () => invoke<BackendState>("backend_state"),
   updaterCheck: () => invoke<UpdateInfo>("updater_check"),
   micStatus: () => invoke<MicStatus>("mic_permission_status"),
   micRequest: () => invoke<MicStatus>("mic_permission_request"),
@@ -66,4 +66,4 @@ export const onFilesDropped = (f: (r: FileRef[]) => void): Promise<UnlistenFn> =
 export const onDrag = (f: (over: boolean) => void): Promise<UnlistenFn> => listen<boolean>("tingmix://drag", (e) => f(e.payload));
 
 export const errorText = (e: unknown): string => (typeof e === "string" ? e : e instanceof Error ? e.message : JSON.stringify(e));
-export const onBackendLoad = (f: (v: LoadView) => void): Promise<UnlistenFn> => listen<LoadView>("tingmix://backend", (e) => f(e.payload));
+export const onBackend = (f: (v: BackendState) => void): Promise<UnlistenFn> => listen<BackendState>("tingmix://backend", (e) => f(e.payload));
