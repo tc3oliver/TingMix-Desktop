@@ -807,6 +807,19 @@ fn probe_mlx(
     None
 }
 
+/// A probe result describes a backend on this machine; a build that does not contain the backend (or cannot load its
+/// runtime) has nothing to measure. It must report that and must not write a record: `run_probe` persists failures too, and
+/// would replace a good record written by a build that has the engine (the registry is shared between builds).
+pub fn probe_precheck(backend: &str, rt: &Runtimes) -> Result<(), String> {
+    if version_of(backend, rt).is_some() {
+        return Ok(());
+    }
+    Err(plain(
+        &format!("backend {backend} is not available in this build"),
+        backend,
+    ))
+}
+
 /// Run the compatibility probe of an installed version in the background (progress via the models op).
 pub fn start_probe(
     models: &Arc<Models>,
@@ -821,6 +834,12 @@ pub fn start_probe(
         MLX => MLX,
         other => return Err(format!("backend {other} has no probe in this build")),
     };
+    if let Err(e) = probe_precheck(backend, &rt) {
+        // shown as a failed operation in the UI; nothing is measured, so nothing is written
+        models.start_op("probe", &id, notify.clone())?;
+        models.finish_op(Err(e), &notify);
+        return Ok(());
+    }
     let (name, wav, expected) = probe_fixture(&model.manifest.family).ok_or_else(|| {
         format!(
             "no probe fixture ships for family {}",
@@ -930,6 +949,23 @@ mod tests {
         assert_eq!(stream_text, "w1");
         let err = Dyn::spawn(|| Err("no such model".into())).err().unwrap();
         assert_eq!(err, "no such model");
+    }
+
+    #[test]
+    fn a_build_without_the_engine_reports_it_and_never_probes_or_persists() {
+        // the stub MLX crate (no MLX_PREFIX) and a missing ONNX Runtime library both have no runtime version
+        let rt = Runtimes::default();
+        if mlx_runtime().is_none() {
+            let e = probe_precheck(MLX, &rt).unwrap_err();
+            assert!(e.contains("doesn't include the MLX engine"), "{e}");
+        }
+        assert!(probe_precheck(ONNX, &rt)
+            .unwrap_err()
+            .contains("ONNX Runtime"));
+        let here = Runtimes {
+            ort_library: Some(std::env::current_exe().unwrap()),
+        };
+        assert!(probe_precheck(ONNX, &here).is_ok());
     }
 
     #[test]
