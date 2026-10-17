@@ -1,0 +1,22 @@
+[project]
+name = "tingmix-mlx-experiment"
+version = "0.0.0"
+description = "Experiment B: TingMix-Large audio tower + reader on MLX (parity research, not shipped)"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "mlx==0.32.4",
+    "mlx-vlm @ git+https://github.com/Blaizzy/mlx-vlm.git@73d366ecf9233b3fc6549531a7f2386726d09ff6",
+    "embed2asr @ git+https://github.com/tc3oliver/embed2asr.git@b58275785501c084610b1570f1a446a31da5f933",
+    "tingmix @ git+https://github.com/tc3oliver/tingmix.git@f44cbdbd2cd99598c99cf8d60da6cb41bb15d1db",
+    "torch>=2.1",
+    "transformers==5.19.0",
+    "safetensors",
+    "sentencepiece",
+    "soundfile",
+    "scipy",
+    "numpy",
+    "psutil",
+]
+
+[tool.uv]
+package = false
