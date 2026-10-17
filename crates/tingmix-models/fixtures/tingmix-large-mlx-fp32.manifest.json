@@ -118,8 +118,8 @@
  ],
  "compat": {
   "status": "EXPERIMENTAL",
-  "rtf_x1000": null,
-  "notes": "Parity vs PyTorch CPU fp32 on 8 synthetic fixtures and MPS/MLX timings: docs/research/mlx-cpp-ffi.md, benchmarks/apple/mlx/. Becomes VALIDATED only after task 12 (native Rust+MLX end-to-end parity) passes; only measured on an M4 Max. The model file is not published anywhere: install by offline import of a locally converted file."
+  "rtf_x1000": 15,
+  "notes": "EXPERIMENTAL: parity and timings on 8 synthetic TTS clips only, one machine (M4 Max), libmlx from the PyPI wheel 0.32.4 (no source build), single 29.5 s window, batch 1; install by offline import. Probe (tingmix-runtime-mlx, commit 946a03d): en_02s 'good morning everyone' passed in a child process, fp32 with beam+LM, rtf_x1000 15 on a 1.4 s clip including pipe transfer, first run 2.4 s (child start, model and LM load), warm decode 64 ms for 7.5 s, worker peak footprint 2.22 GiB; 8/8 clips match the reference oracle texts (task 12). Not promoted to VALIDATED."
  },
  "provenance": {
   "modified": true,
