@@ -35,7 +35,7 @@ export function useFiles() {
     keep(onFile((m) => {
       setJobs((js) => {
         const known = js.some((j) => j.id === m.job_id);
-        const base = known ? js : [{ id: m.job_id, name: "audio file", backend: "", state: "running" as const, audioS: 0, message: null, transcript: emptyTranscript() }, ...js];
+        const base = known ? js : [{ id: m.job_id, name: "…", backend: "", state: "running" as const, audioS: 0, message: null, transcript: emptyTranscript() }, ...js];
         return base.map((j) => {
           if (j.id !== m.job_id) return j;
           switch (m.kind) {

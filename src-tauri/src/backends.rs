@@ -325,23 +325,51 @@ pub fn plain(why: &str, backend: &str) -> String {
             f.to_uppercase().collect::<String>() + c.as_str()
         })
     };
+    use crate::coded::coded;
+    use serde_json::json;
     if why.contains("not registered in this build") || why.contains("not available in this build") {
         let hint = if backend == MLX {
             " Use the MLX build of TingMix (tools/bundle-mlx.sh)."
         } else {
             ""
         };
-        format!("This build of TingMix doesn't include the {engine} engine this model needs.{hint}")
+        coded(
+            "backend.missing_engine",
+            json!({ "engine": engine, "mlx": backend == MLX }),
+            format!(
+                "This build of TingMix doesn't include the {engine} engine this model needs.{hint}"
+            ),
+        )
     } else if why.contains("EXPERIMENTAL") {
-        "This model uses an experimental engine. Turn on “Allow EXPERIMENTAL inference backends” in Settings, or tick the box when importing.".into()
+        coded(
+            "backend.experimental",
+            json!({}),
+            "This model uses an experimental engine. Turn on “Allow EXPERIMENTAL inference backends” in Settings, or tick the box when importing.",
+        )
     } else if why.contains("no verified compatibility probe") {
-        "This model hasn't been tested on this Mac yet. Press “Test on this Mac”.".into()
+        coded(
+            "backend.untested",
+            json!({}),
+            "This model hasn't been tested on this Mac yet. Press “Test on this Mac”.",
+        )
     } else if why.contains("compatibility probe failed") {
-        "The test run on this Mac failed, so the model is not used. See the Models tab for the details.".into()
+        coded(
+            "backend.test_failed",
+            json!({}),
+            "The test run on this Mac failed, so the model is not used. See the Models tab for the details.",
+        )
     } else if why.contains("is not available") && why.contains("runtime") {
-        format!("The {engine} runtime is not available on this Mac (its library is missing).")
+        coded(
+            "backend.runtime_missing",
+            json!({ "engine": engine }),
+            format!("The {engine} runtime is not available on this Mac (its library is missing)."),
+        )
     } else if let Some(d) = why.strip_prefix("probe failed: ") {
-        format!("The test run on this Mac failed: {}", sentence(d))
+        coded(
+            "backend.test_failed_detail",
+            json!({ "detail": sentence(d) }),
+            format!("The test run on this Mac failed: {}", sentence(d)),
+        )
     } else {
         sentence(why)
     }
@@ -358,13 +386,26 @@ pub fn decide(models: &Models, experimental_ok: bool, rt: &Runtimes) -> Decision
         Err(e) => return none(format!("{e}; using the mock backend."), vec![]),
     };
     let Some(active) = reg.active().ok().flatten() else {
-        return none("No model is active; using the mock backend.".into(), vec![]);
+        return none(
+            crate::coded::coded(
+                "backend.no_model",
+                serde_json::json!({}),
+                "No model is active; using the mock backend.",
+            ),
+            vec![],
+        );
     };
     let model = match reg.open_model(&active) {
         Ok(m) => m,
         Err(e) => {
             return none(
-                format!("Active model {active} cannot be opened ({e}); using the mock backend."),
+                crate::coded::coded(
+                    "backend.unreadable",
+                    serde_json::json!({ "model": active, "detail": e.to_string() }),
+                    format!(
+                        "Active model {active} cannot be opened ({e}); using the mock backend."
+                    ),
+                ),
                 vec![],
             )
         }
@@ -397,8 +438,13 @@ pub fn decide(models: &Models, experimental_ok: bool, rt: &Runtimes) -> Decision
                 .collect();
             let why = rejected.first().map(|r| r.1.clone()).unwrap_or_default();
             none(
-                format!(
-                    "{active} can't be used yet. {why} The mock backend (not real ASR) is in use."
+                crate::coded::coded(
+                    "backend.cant_use",
+                    serde_json::json!({ "model": active, "why": why }),
+                    format!(
+                        "{active} can't be used yet. {} The mock backend (not real ASR) is in use.",
+                        crate::coded::english(&why)
+                    ),
                 ),
                 rejected,
             )
@@ -990,8 +1036,12 @@ mod tests {
             MLX
         )
         .contains("hasn't been tested"));
-        assert!(plain("probe failed: load/first decode failed: boom", MLX)
-            .starts_with("The test run on this Mac failed: Load/first"));
+        assert!(
+            crate::coded::english(&plain("probe failed: load/first decode failed: boom", MLX))
+                .starts_with("The test run on this Mac failed: Load/first")
+        );
+        assert!(plain("backend mlx is not registered in this build", MLX)
+            .contains("\"backend.missing_engine\""));
         assert_eq!(
             plain("needs 16 GiB RAM, machine has 8 GiB", MLX),
             "Needs 16 GiB RAM, machine has 8 GiB"
@@ -1005,7 +1055,7 @@ mod tests {
         let i = info(&m, false, &Runtimes::default());
         assert!(i.mock && !i.experimental);
         assert_eq!(i.label, BACKEND_LABEL);
-        assert!(i.reason.contains("No model is active"));
+        assert!(i.reason.contains("No model is active") && i.reason.contains("backend.no_model"));
         assert_eq!(
             resolve(&m, true, &Runtimes::default()).unwrap().label,
             BACKEND_LABEL

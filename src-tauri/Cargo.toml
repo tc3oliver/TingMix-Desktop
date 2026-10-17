@@ -32,6 +32,7 @@ tingmix-decoder = { path = "../crates/tingmix-decoder" }
 tingmix-runtime-onnx = { path = "../crates/tingmix-runtime-onnx", default-features = false, features = ["load-dynamic"] }
 tingmix-runtime-mlx = { path = "../crates/tingmix-runtime-mlx", optional = true }
 tauri-plugin-updater = "=2.14.0"
+sys-locale = "=0.3.2"
 zip = { version = "7.3.0", default-features = false, features = ["deflate"] }
 
 [dev-dependencies]

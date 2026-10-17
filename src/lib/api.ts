@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { hostText } from "../i18n/host";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type {
   BackendState,
@@ -65,5 +66,6 @@ export const onFilesDropped = (f: (r: FileRef[]) => void): Promise<UnlistenFn> =
   listen<FileRef[]>("tingmix://files-dropped", (e) => f(e.payload));
 export const onDrag = (f: (over: boolean) => void): Promise<UnlistenFn> => listen<boolean>("tingmix://drag", (e) => f(e.payload));
 
-export const errorText = (e: unknown): string => (typeof e === "string" ? e : e instanceof Error ? e.message : JSON.stringify(e));
+/** Error from a command as text in the current language: coded host messages are translated, anything else is shown as is. */
+export const errorText = (e: unknown): string => hostText(typeof e === "string" ? e : e instanceof Error ? e.message : JSON.stringify(e));
 export const onBackend = (f: (v: BackendState) => void): Promise<UnlistenFn> => listen<BackendState>("tingmix://backend", (e) => f(e.payload));

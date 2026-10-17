@@ -2,6 +2,13 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+  <key>CFBundleDevelopmentRegion</key>
+  <string>en</string>
+  <key>CFBundleLocalizations</key>
+  <array>
+    <string>en</string>
+    <string>zh-Hant</string>
+  </array>
   <key>NSMicrophoneUsageDescription</key>
   <string>TingMix listens to your microphone to turn speech into text. Audio is processed on this computer and never leaves it.</string>
 </dict>

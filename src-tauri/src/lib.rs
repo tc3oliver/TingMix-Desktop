@@ -1,12 +1,14 @@
 //! Tauri host: owns the audio/streaming pipeline and exposes typed commands and events to the React UI.
 
 mod backends;
+mod coded;
 mod commands;
 mod dto;
 #[cfg(test)]
 mod e2e;
 mod files;
 mod live;
+mod locale;
 mod mic;
 mod models;
 mod state;
@@ -28,6 +30,17 @@ const ORT_RESOURCE: Option<&str> = if cfg!(target_os = "macos") {
 } else {
     None
 };
+
+/// The tray menu is built once; when the language setting changes its two items are renamed.
+pub(crate) fn update_tray_language(app: &tauri::AppHandle) {
+    let st = app.state::<AppState>();
+    let lang = locale::Lang::current(&st.store.settings());
+    let items = st.tray_items.lock().unwrap();
+    if let Some((show, quit)) = items.as_ref() {
+        let _ = show.set_text(locale::tr(lang, locale::Text::TrayShow));
+        let _ = quit.set_text(locale::tr(lang, locale::Text::TrayQuit));
+    }
+}
 
 fn show_main(app: &tauri::AppHandle) {
     if let Some(w) = app.get_webview_window("main") {
@@ -81,13 +94,23 @@ pub fn run() {
             ));
             backends::preload(app.handle());
 
-            let menu = Menu::with_items(
+            let lang = locale::Lang::current(&app.state::<AppState>().store.settings());
+            let show = MenuItem::with_id(
                 app,
-                &[
-                    &MenuItem::with_id(app, "show", "Show TingMix", true, None::<&str>)?,
-                    &MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?,
-                ],
+                "show",
+                locale::tr(lang, locale::Text::TrayShow),
+                true,
+                None::<&str>,
             )?;
+            let quit = MenuItem::with_id(
+                app,
+                "quit",
+                locale::tr(lang, locale::Text::TrayQuit),
+                true,
+                None::<&str>,
+            )?;
+            let menu = Menu::with_items(app, &[&show, &quit])?;
+            *app.state::<AppState>().tray_items.lock().unwrap() = Some((show, quit));
             let mut tray = TrayIconBuilder::new()
                 .menu(&menu)
                 .show_menu_on_left_click(false)

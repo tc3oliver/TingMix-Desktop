@@ -7,14 +7,21 @@ use tauri::{AppHandle, Emitter, Manager, State};
 use tauri_plugin_dialog::DialogExt;
 
 use crate::backends;
+use crate::coded::coded;
 use crate::dto::*;
 use crate::files;
 use crate::live::{Live, Persist, Sink};
+use crate::locale::{tr, Lang, Text};
 use crate::models::{ModelsOverview, PendingInstall};
 use crate::state::{AppState, Job};
+use serde_json::json;
 
 pub const LIVE_EVENT: &str = "tingmix://live";
 pub const FILE_EVENT: &str = "tingmix://file";
+
+fn lang(state: &AppState) -> Lang {
+    Lang::current(&state.store.settings())
+}
 
 fn now_s() -> u64 {
     SystemTime::now()
@@ -49,7 +56,11 @@ pub async fn live_start(
     crate::mic::ensure_access().inspect_err(|e| state.note_error(e.clone()))?;
     let mut slot = state.live.lock().unwrap();
     if slot.as_ref().is_some_and(Live::is_running) {
-        return Err("a live session is already running".into());
+        return Err(coded(
+            "live.busy",
+            json!({}),
+            "a live session is already running",
+        ));
     }
     let id = state.next_id("live");
     let resolved = backends::take(&app).map_err(|e| {
@@ -152,9 +163,9 @@ pub async fn file_pick(
     let picked = app
         .dialog()
         .file()
-        .set_title("Choose an audio file")
+        .set_title(tr(lang(&state), Text::PickAudio))
         .add_filter(
-            "Audio",
+            tr(lang(&state), Text::FilterAudio),
             &[
                 "wav", "mp3", "flac", "ogg", "oga", "m4a", "aac", "mp4", "caf", "aiff", "aif",
             ],
@@ -178,7 +189,7 @@ pub async fn file_start(
         .unwrap()
         .get(&file_id)
         .cloned()
-        .ok_or("unknown file id")?;
+        .ok_or_else(|| coded("files.unknown", json!({}), "unknown file id"))?;
     let name = path
         .file_name()
         .map_or_else(|| "audio".into(), |n| n.to_string_lossy().into_owned());
@@ -301,7 +312,7 @@ pub async fn file_cancel(state: State<'_, AppState>, job_id: String) -> Result<(
     let (_, j) = jobs
         .iter()
         .find(|(i, _)| *i == job_id)
-        .ok_or("unknown job")?;
+        .ok_or_else(|| coded("files.unknown", json!({}), "unknown job"))?;
     j.cancel.store(true, Ordering::SeqCst);
     Ok(())
 }
@@ -321,15 +332,20 @@ pub async fn file_jobs(state: State<'_, AppState>) -> Result<Vec<JobView>, Strin
 #[tauri::command]
 pub async fn export_text(
     app: AppHandle,
+    state: State<'_, AppState>,
     suggested_name: String,
     extension: String,
     content: String,
 ) -> Result<Option<String>, String> {
     if !matches!(extension.as_str(), "txt" | "srt") {
-        return Err(format!("unsupported export format {extension:?}"));
+        return Err(coded(
+            "export.format",
+            json!({ "ext": extension }),
+            format!("unsupported export format {extension:?}"),
+        ));
     }
     if content.len() > 64 << 20 {
-        return Err("export too large".into());
+        return Err(coded("export.too_large", json!({}), "export too large"));
     }
     let stem: String = suggested_name
         .chars()
@@ -339,7 +355,7 @@ pub async fn export_text(
     let picked = app
         .dialog()
         .file()
-        .set_title("Export transcript")
+        .set_title(tr(lang(&state), Text::ExportTitle))
         .set_file_name(format!(
             "{}.{extension}",
             if stem.is_empty() { "transcript" } else { &stem }
@@ -364,6 +380,7 @@ pub async fn settings_set(
     settings: Settings,
 ) -> Result<Settings, String> {
     let saved = state.store.save_settings(settings)?;
+    crate::update_tray_language(&app);
     backends::preload(&app);
     Ok(saved)
 }
@@ -477,11 +494,14 @@ pub async fn models_import(
     state: State<'_, AppState>,
     kind: String,
 ) -> Result<Option<PendingInstall>, String> {
-    let dialog = app.dialog().file().set_title("Choose a model package");
+    let dialog = app
+        .dialog()
+        .file()
+        .set_title(tr(lang(&state), Text::PickModelPackage));
     let picked = match kind.as_str() {
         "folder" => dialog.blocking_pick_folder(),
         "zip" => dialog
-            .add_filter("Model archive", &["zip"])
+            .add_filter(tr(lang(&state), Text::FilterModelArchive), &["zip"])
             .blocking_pick_file(),
         other => return Err(format!("unknown import kind {other:?}")),
     };
@@ -503,8 +523,8 @@ pub async fn models_begin_install(
     let picked = app
         .dialog()
         .file()
-        .set_title("Choose a signed model manifest")
-        .add_filter("Signed manifest", &["json"])
+        .set_title(tr(lang(&state), Text::PickManifest))
+        .add_filter(tr(lang(&state), Text::FilterManifest), &["json"])
         .blocking_pick_file();
     let Some(p) = picked else { return Ok(None) };
     let bytes = crate::models::read_manifest_file(&p.into_path().map_err(|e| e.to_string())?)?;
@@ -605,7 +625,13 @@ pub async fn models_probe(
     )
 }
 
-const NO_UPDATER: &str = "Updates are disabled: this build has no update signing key configured (see docs/release/signing-checklist.md).";
+fn no_updater() -> String {
+    coded(
+        "update.disabled",
+        json!({}),
+        "Updates are disabled: this build has no update signing key configured (see docs/release/signing-checklist.md).",
+    )
+}
 
 #[tauri::command]
 pub async fn updater_check(
@@ -617,7 +643,7 @@ pub async fn updater_check(
             enabled: false,
             available: false,
             version: None,
-            notes: Some(NO_UPDATER.into()),
+            notes: Some(no_updater()),
         });
     }
     use tauri_plugin_updater::UpdaterExt;
@@ -647,7 +673,7 @@ pub async fn updater_check(
 #[tauri::command]
 pub async fn updater_install(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
     if !state.updater {
-        return Err(NO_UPDATER.into());
+        return Err(no_updater());
     }
     if state
         .live
@@ -656,7 +682,11 @@ pub async fn updater_install(app: AppHandle, state: State<'_, AppState>) -> Resu
         .as_ref()
         .is_some_and(Live::is_running)
     {
-        return Err("Stop the live session before updating.".into());
+        return Err(coded(
+            "update.stop_live",
+            json!({}),
+            "Stop the live session before updating.",
+        ));
     }
     use tauri_plugin_updater::UpdaterExt;
     let update = app
@@ -665,7 +695,7 @@ pub async fn updater_install(app: AppHandle, state: State<'_, AppState>) -> Resu
         .check()
         .await
         .map_err(|e| e.to_string())?
-        .ok_or("already up to date")?;
+        .ok_or_else(|| coded("update.current", json!({}), "already up to date"))?;
     update
         .download_and_install(|_, _| {}, || {})
         .await

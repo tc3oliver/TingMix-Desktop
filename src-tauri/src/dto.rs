@@ -120,6 +120,13 @@ pub struct Settings {
     /// Allow EXPERIMENTAL inference backends (ONNX Small, MLX Large) to be selected. Off by default.
     #[serde(default)]
     pub experimental_backends: bool,
+    /// `auto` (follow the OS), or a language id the UI offers: `en`, `zh-TW`.
+    #[serde(default = "default_language")]
+    pub language: String,
+}
+
+fn default_language() -> String {
+    "auto".into()
 }
 
 impl Default for Settings {
@@ -130,6 +137,7 @@ impl Default for Settings {
             caption_size: 28,
             save_history: true,
             experimental_backends: false,
+            language: default_language(),
         }
     }
 }
@@ -141,6 +149,14 @@ impl Settings {
             self.theme = "system".into();
         }
         self.caption_size = self.caption_size.clamp(12, 96);
+        let ok = self.language.len() <= 12
+            && self
+                .language
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '-');
+        if !ok || self.language.is_empty() {
+            self.language = default_language();
+        }
         self
     }
 }

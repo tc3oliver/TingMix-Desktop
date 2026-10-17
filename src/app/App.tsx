@@ -6,34 +6,55 @@ import { LivePanel } from "../features/live/LivePanel";
 import { useLive } from "../features/live/useLive";
 import { ModelsPanel } from "../features/models/ModelsPanel";
 import { SettingsPanel } from "../features/settings/SettingsPanel";
+import { I18nProvider, resolveLocale, useT } from "../i18n";
+import { hostText } from "../i18n/host";
 import { api, errorText, onBackend, onDrag, onFilesDropped } from "../lib/api";
 import { demoBanner, engineChip } from "../lib/engine";
 import { isMac, label, shortcutFor } from "../lib/shortcuts";
 import type { BackendState, Settings } from "../types/protocol";
 
-const TABS = [
-  { id: "live", label: "Live" },
-  { id: "files", label: "Files" },
-  { id: "history", label: "History" },
-  { id: "models", label: "Models" },
-  { id: "settings", label: "Settings" },
-] as const;
-type Tab = (typeof TABS)[number]["id"];
+const TABS = ["live", "files", "history", "models", "settings"] as const;
+type Tab = (typeof TABS)[number];
 
-const DEFAULTS: Settings = { device_id: null, theme: "system", caption_size: 28, save_history: true, experimental_backends: false };
+const DEFAULTS: Settings = { device_id: null, theme: "system", caption_size: 28, save_history: true, experimental_backends: false, language: "auto" };
 const MAC = isMac(navigator.platform);
 
+/** Owns the saved settings and the language; everything visible lives in `Main`, inside the translation context. */
 export function App() {
-  const [tab, setTab] = useState<Tab>("live");
   const [settings, setSettings] = useState<Settings>(DEFAULTS);
   const [error, setError] = useState<string | null>(null);
+  const seq = useRef(0);
+
+  useEffect(() => void api.settingsGet().then(setSettings).catch((e) => setError(errorText(e))), []);
+  // only the newest save may update the screen: replies to earlier saves arrive late and would move a slider back
+  const update = useCallback((s: Settings) => {
+    setSettings(s);
+    const mine = ++seq.current;
+    api.settingsSet(s).then((saved) => mine === seq.current && setSettings(saved)).catch((e) => setError(errorText(e)));
+  }, []);
+
+  return (
+    <I18nProvider locale={resolveLocale(settings.language, navigator.languages)}>
+      <Main settings={settings} update={update} error={error} setError={setError} />
+    </I18nProvider>
+  );
+}
+
+interface MainProps {
+  settings: Settings;
+  update: (s: Settings) => void;
+  error: string | null;
+  setError: (e: string | null) => void;
+}
+
+function Main({ settings, update, error, setError }: MainProps) {
+  const t = useT();
+  const [tab, setTab] = useState<Tab>("live");
   const [bs, setBs] = useState<BackendState | null>(null);
   const [dragging, setDragging] = useState(false);
   const live = useLive();
   const files = useFiles();
-  const seq = useRef(0);
 
-  useEffect(() => void api.settingsGet().then(setSettings).catch((e) => setError(errorText(e))), []);
   // The host pushes the backend state on every change (activation, test result, settings, model loading), so the chip and
   // the banner never wait for a tab switch or a second click.
   useEffect(() => {
@@ -48,18 +69,11 @@ export function App() {
       alive = false;
       offs.forEach((f) => f());
     };
-  }, []);
+  }, [setError]);
   useEffect(() => {
     if (settings.theme === "system") delete document.documentElement.dataset.theme;
     else document.documentElement.dataset.theme = settings.theme;
   }, [settings.theme]);
-
-  // only the newest save may update the screen: replies to earlier saves arrive late and would move a slider back
-  const update = useCallback((s: Settings) => {
-    setSettings(s);
-    const mine = ++seq.current;
-    api.settingsSet(s).then((saved) => mine === seq.current && setSettings(saved)).catch((e) => setError(errorText(e)));
-  }, []);
 
   const selectedDevice = (live.devices ?? []).some((d) => d.id === settings.device_id) ? settings.device_id : null;
   const toggleLive = useCallback(() => {
@@ -70,13 +84,13 @@ export function App() {
 
   useEffect(() => {
     const onKey = (e: globalThis.KeyboardEvent) => {
-      const t = e.target as HTMLElement | null;
-      if (t && (t.tagName === "TEXTAREA" || (t.tagName === "INPUT" && /text|number|search/.test((t as HTMLInputElement).type)))) return;
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === "TEXTAREA" || (target.tagName === "INPUT" && /text|number|search/.test((target as HTMLInputElement).type)))) return;
       if (e.key === "Escape") return void setError(null);
       const a = shortcutFor(e, MAC, TABS.length);
       if (!a) return;
       e.preventDefault();
-      if (a.type === "tab") setTab(TABS[a.index]!.id);
+      if (a.type === "tab") setTab(TABS[a.index]!);
       else if (a.type === "toggle-live") toggleLive();
       else if (a.type === "choose-file") {
         setTab("files");
@@ -85,20 +99,20 @@ export function App() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [toggleLive, files, settings, update]);
+  }, [toggleLive, files, settings, update, setError]);
 
   // ARIA tabs: arrows, Home and End move and activate
   const onTabKey = (e: KeyboardEvent) => {
-    const i = TABS.findIndex((t) => t.id === tab);
+    const i = TABS.indexOf(tab);
     const next = e.key === "ArrowRight" ? (i + 1) % TABS.length : e.key === "ArrowLeft" ? (i + TABS.length - 1) % TABS.length : e.key === "Home" ? 0 : e.key === "End" ? TABS.length - 1 : -1;
     if (next < 0) return;
     e.preventDefault();
-    setTab(TABS[next]!.id);
-    document.getElementById(`tab-${TABS[next]!.id}`)?.focus();
+    setTab(TABS[next]!);
+    document.getElementById(`tab-${TABS[next]!}`)?.focus();
   };
 
-  const chip = engineChip(bs);
-  const banner = demoBanner(bs);
+  const chip = engineChip(bs, t);
+  const banner = demoBanner(bs, t);
   const openModels = () => setTab("models");
   const toggleKey = label(MAC, "Enter");
 
@@ -106,38 +120,38 @@ export function App() {
     <div className="app">
       {banner.show && (
         <div className="banner" role="note">
-          <span>Demo mode: TingMix isn't recognising speech yet — output is placeholder words (w1 w2 …). {banner.detail}</span>
+          <span>{t("banner.text")} {banner.detail}</span>
           <button onClick={openModels}>{banner.openModelsLabel}</button>
         </div>
       )}
       <div className="top">
-        <nav role="tablist" aria-label="Sections" onKeyDown={onTabKey}>
-          {TABS.map((t, i) => (
+        <nav role="tablist" aria-label={t("tab.list")} onKeyDown={onTabKey}>
+          {TABS.map((id, i) => (
             <button
-              key={t.id}
-              id={`tab-${t.id}`}
+              key={id}
+              id={`tab-${id}`}
               role="tab"
-              aria-selected={t.id === tab}
-              aria-controls={`panel-${t.id}`}
+              aria-selected={id === tab}
+              aria-controls={`panel-${id}`}
               aria-keyshortcuts={label(MAC, String(i + 1))}
-              tabIndex={t.id === tab ? 0 : -1}
-              className={t.id === tab ? "active" : ""}
-              title={`${t.label} (${label(MAC, String(i + 1))})`}
-              onClick={() => setTab(t.id)}
+              tabIndex={id === tab ? 0 : -1}
+              className={id === tab ? "active" : ""}
+              title={`${t(`tab.${id}`)} (${label(MAC, String(i + 1))})`}
+              onClick={() => setTab(id)}
             >
-              {t.label}
+              {t(`tab.${id}`)}
             </button>
           ))}
         </nav>
-        <button className={`engine ${chip.tone}`} onClick={openModels} title={chip.title} aria-label={`Speech engine: ${chip.text}. Open Models`}>
+        <button className={`engine ${chip.tone}`} onClick={openModels} title={chip.title} aria-label={t("engine.aria", { text: chip.text })}>
           <span className="ellipsis">{chip.text}</span>
         </button>
       </div>
-      {bs?.load.error && <p className="error" role="alert">The selected model could not be loaded: {bs.load.error}</p>}
+      {bs?.load.error && <p className="error" role="alert">{t("app.load_error", { detail: hostText(bs.load.error, t) })}</p>}
       {error && (
         <p className="error row" role="alert">
           <span>{error}</span>
-          <button className="link" onClick={() => setError(null)} aria-label="Dismiss error">×</button>
+          <button className="link" onClick={() => setError(null)} aria-label={t("app.dismiss")}>×</button>
         </p>
       )}
       <main>
@@ -152,7 +166,7 @@ export function App() {
         {tab === "models" && <div role="tabpanel" id="panel-models" aria-labelledby="tab-models" className="panel"><ModelsPanel backend={bs} settings={settings} onSettings={update} /></div>}
         {tab === "settings" && <div role="tabpanel" id="panel-settings" aria-labelledby="tab-settings" className="panel"><SettingsPanel settings={settings} onSettings={update} onOpenModels={openModels} mac={MAC} /></div>}
       </main>
-      {dragging && <div className="drop-overlay" aria-hidden="true"><p>Drop audio files to transcribe</p></div>}
+      {dragging && <div className="drop-overlay" aria-hidden="true"><p>{t("app.drop_overlay")}</p></div>}
     </div>
   );
 }

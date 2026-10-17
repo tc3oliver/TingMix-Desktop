@@ -54,6 +54,10 @@
       "nsis": {
         "installMode": "currentUser"
       }
+    },
+    "resources": {
+      "locales/en.lproj/InfoPlist.strings": "en.lproj/InfoPlist.strings",
+      "locales/zh-Hant.lproj/InfoPlist.strings": "zh-Hant.lproj/InfoPlist.strings"
     }
   }
 }

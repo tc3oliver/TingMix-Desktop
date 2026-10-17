@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useT } from "../i18n";
 import { clock } from "../lib/format";
 import type { FinalEvent, PartialEvent } from "../types/protocol";
 
@@ -21,6 +22,7 @@ interface Props {
 const NEAR_BOTTOM_PX = 48;
 
 export function TranscriptView({ finals, open = [], size, empty, label, follow = false, live = false, resetKey = null }: Props) {
+  const t = useT();
   const box = useRef<HTMLDivElement>(null);
   const atBottom = useRef(true);
   const [away, setAway] = useState(false);
@@ -80,7 +82,7 @@ export function TranscriptView({ finals, open = [], size, empty, label, follow =
       </div>
       {away && (
         <button className="jump" onClick={jump}>
-          Jump to latest
+          {t("transcript.jump")}
         </button>
       )}
     </div>

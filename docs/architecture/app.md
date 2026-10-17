@@ -135,6 +135,26 @@ settles and only the newest save may update the screen. Copy is still English so
 still builds some English prose: `status.message`, operation messages, selection reasons, tray items).
 Not verified: layout and contrast were not looked at on a screen; Tauri's default macOS menu may swallow some shortcuts.
 
+## Languages (task 25)
+
+English and Traditional Chinese (`src/i18n/en.ts`, `zh-TW.ts`; the Chinese dictionary is typed against the English keys, so a
+missing key does not compile, and a test also checks parameters, plural pairs and empty strings). No i18n library: a typed
+dictionary, `{name}` parameters, `Intl.PluralRules` plurals (`_one` / `_other` keys), `Intl.DateTimeFormat` for dates, and a
+React context that also sets `<html lang>` (`zh-Hant` for CJK glyph selection and the screen-reader voice). The language is
+`auto` (the first-ranked OS language: zh-TW, zh-HK, zh-MO and zh-Hant* give Traditional Chinese, everything else English) or an
+explicit choice in Settings, persisted as `Settings.language`. **Adding a language**: one dictionary file, one entry in
+`LOCALES` (`src/i18n/index.ts`), one column in `src-tauri/src/locale.rs`. A test scans the components for hard-coded text and
+literal `title`/`aria-label` attributes.
+
+Host messages: user-facing host text travels as `{"code","params","text"}` strings (`src-tauri/src/coded.rs`); the UI
+translates `host.<code>` (nested reasons such as "<model> can't be used yet. <why>" are translated recursively) and falls
+back to the English `text`. Technical details (OS errors, paths, `tingmix-models` error text) stay English, as do the export
+contents (TXT/SRT, including the mock note) and the diagnostics error list. Native pieces the webview cannot translate are in
+`locale.rs`: file dialog titles and filter names and the two tray items (renamed live when the language changes). The microphone
+prompt text is localised through `InfoPlist.strings` bundled as resources (`locales/en.lproj`, `locales/zh-Hant.lproj`,
+`CFBundleLocalizations` in `Info.plist`). Not verified: the localised microphone prompt itself (it needs a signed bundle and a
+Chinese-language session), and the Chinese copy was written by me, not reviewed by a native speaker.
+
 ## Data flow
 
 Host -> UI events: `tingmix://live` (`event` with `session_id`, or `status`), `tingmix://file` (`progress`, `event`, `done`,

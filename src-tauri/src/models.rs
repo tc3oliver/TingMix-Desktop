@@ -149,7 +149,11 @@ impl Models {
             Err(e) => {
                 return ModelsOverview {
                     registry_available: false,
-                    note: format!("The model registry could not be opened: {e}"),
+                    note: crate::coded::coded(
+                        "models.registry_error",
+                        serde_json::json!({ "detail": e }),
+                        format!("The model registry could not be opened: {e}"),
+                    ),
                     root: self.root.display().to_string(),
                     capabilities: Some(caps),
                     installed: vec![],
@@ -185,7 +189,11 @@ impl Models {
         }
         ModelsOverview {
             registry_available: true,
-            note: "Installed models are stored and verified here; whether one can run is decided by runtime selection below.".into(),
+            note: crate::coded::coded(
+                "models.note",
+                serde_json::json!({}),
+                "Installed models are stored and verified here; whether one can run is decided by runtime selection below.",
+            ),
             root: self.root.display().to_string(),
             capabilities: Some(caps),
             installed,
@@ -203,9 +211,10 @@ impl Models {
             .parse(bytes)
             .map_err(|e| e.to_string())?;
         if let Some(f) = m.manifest().files.iter().find(|f| f.url.is_empty()) {
-            return Err(format!(
-                "{} has no download URL: this version can only be imported from a folder or zip",
-                f.path
+            return Err(crate::coded::coded(
+                "models.import_only",
+                serde_json::json!({ "file": f.path }),
+                format!("{} has no download URL: this version can only be imported from a folder or zip", f.path),
             ));
         }
         self.pending_for(m, token, None)
@@ -295,11 +304,21 @@ impl Models {
             .unwrap()
             .get(token)
             .cloned()
-            .ok_or("this install request has expired")?;
+            .ok_or_else(|| {
+                crate::coded::coded(
+                    "models.expired",
+                    serde_json::json!({}),
+                    "this install request has expired",
+                )
+            })?;
         let reg = self.reg()?;
         let missing = reg.missing_acceptances(m.manifest());
         if let Some(l) = missing.iter().find(|l| !accepted.contains(l)) {
-            return Err(format!("licence {l:?} must be accepted before installing"));
+            return Err(crate::coded::coded(
+                "models.licence",
+                serde_json::json!({ "licence": l }),
+                format!("licence {l:?} must be accepted before installing"),
+            ));
         }
         let kind = if source.is_some() {
             "import"
@@ -403,7 +422,11 @@ impl Models {
     ) -> Result<Arc<AtomicBool>, String> {
         let mut slot = self.op.lock().unwrap();
         if slot.as_ref().is_some_and(|o| o.view.state == "running") {
-            return Err("another model operation is still running".into());
+            return Err(crate::coded::coded(
+                "models.busy",
+                serde_json::json!({}),
+                "another model operation is still running",
+            ));
         }
         let cancel = Arc::new(AtomicBool::new(false));
         let view = OpView {
@@ -435,9 +458,11 @@ impl Models {
                 Ok(()) => ("done".into(), None),
                 Err(e) if e == "cancelled" => (
                     "cancelled".into(),
-                    Some(
-                        "Cancelled. Downloaded bytes are kept so the next install resumes.".into(),
-                    ),
+                    Some(crate::coded::coded(
+                        "models.cancelled",
+                        serde_json::json!({}),
+                        "Cancelled. Downloaded bytes are kept so the next install resumes.",
+                    )),
                 ),
                 Err(e) => ("failed".into(), Some(e)),
             };

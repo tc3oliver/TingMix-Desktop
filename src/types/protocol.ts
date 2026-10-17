@@ -90,6 +90,8 @@ export interface Settings {
   caption_size: number;
   save_history: boolean;
   experimental_backends: boolean;
+  /** `auto` or a language id (`en`, `zh-TW`). */
+  language: string;
 }
 
 export interface HistorySummary {

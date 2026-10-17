@@ -97,11 +97,25 @@ pub use imp::{open_settings, request, status};
 
 /// Err with a user-facing message when capture must not start; asks first when the user has not decided yet.
 pub fn ensure_access() -> Result<(), String> {
+    use crate::coded::coded;
+    use serde_json::json;
     match request() {
         MicStatus::Authorized | MicStatus::Unsupported => Ok(()),
-        MicStatus::Denied => Err("Microphone access is denied. Allow TingMix in System Settings > Privacy & Security > Microphone, then press Start again.".into()),
-        MicStatus::Restricted => Err("Microphone access is restricted by a profile or parental controls on this Mac.".into()),
-        MicStatus::NotDetermined => Err("The microphone permission prompt was not answered. Press Start again and choose Allow.".into()),
+        MicStatus::Denied => Err(coded(
+            "mic.denied",
+            json!({}),
+            "Microphone access is denied. Allow TingMix in System Settings > Privacy & Security > Microphone, then press Start again.",
+        )),
+        MicStatus::Restricted => Err(coded(
+            "mic.restricted",
+            json!({}),
+            "Microphone access is restricted by a profile or parental controls on this Mac.",
+        )),
+        MicStatus::NotDetermined => Err(coded(
+            "mic.unanswered",
+            json!({}),
+            "The microphone permission prompt was not answered. Press Start again and choose Allow.",
+        )),
     }
 }
 

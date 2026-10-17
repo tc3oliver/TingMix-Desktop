@@ -43,6 +43,13 @@ pub struct AppState {
     pub warm: Warm,
     /// The updater plugin is registered only when the build carries an update signing key.
     pub updater: bool,
+    /// Tray menu items (show, quit), kept to rename them when the language changes.
+    pub tray_items: Mutex<
+        Option<(
+            tauri::menu::MenuItem<tauri::Wry>,
+            tauri::menu::MenuItem<tauri::Wry>,
+        )>,
+    >,
     pub live: Mutex<Option<Live>>,
     /// The latest session, kept after stop so the transcript is preserved and a reloaded window can recover it.
     pub last: Mutex<Option<Arc<Shared>>>,
@@ -61,6 +68,7 @@ impl AppState {
             runtimes,
             warm: Warm::default(),
             updater,
+            tray_items: Mutex::new(None),
             live: Mutex::default(),
             last: Mutex::default(),
             jobs: Mutex::default(),
@@ -92,6 +100,6 @@ impl AppState {
         if e.len() >= 50 {
             e.pop_front();
         }
-        e.push_back(msg.into());
+        e.push_back(crate::coded::english(&msg.into()));
     }
 }

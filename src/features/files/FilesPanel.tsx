@@ -1,6 +1,8 @@
 import { ExportButtons } from "../../components/ExportButtons";
 import { Provenance } from "../../components/Provenance";
 import { TranscriptView } from "../../components/TranscriptView";
+import { useT, type Translate } from "../../i18n";
+import { hostText } from "../../i18n/host";
 import { clock } from "../../lib/format";
 import type { BackendState, Settings } from "../../types/protocol";
 import { finalsOf, openOf } from "../live/reducer";
@@ -8,13 +10,11 @@ import type { Job, useFiles } from "./useFiles";
 
 type Files = ReturnType<typeof useFiles>;
 
-const STATE_LABEL: Record<Job["state"], string> = { running: "Transcribing…", done: "Done", cancelled: "Cancelled", failed: "Failed" };
-
-function emptyText(j: Job): string | null {
+function emptyText(j: Job, t: Translate): string | null {
   switch (j.state) {
-    case "running": return "Transcribing — text appears as it's recognised.";
-    case "done": return "No speech found in this file.";
-    case "cancelled": return "Cancelled before any speech was found.";
+    case "running": return t("files.empty_running");
+    case "done": return t("files.empty_done");
+    case "cancelled": return t("files.empty_cancelled");
     case "failed": return null; // the error line says it
   }
 }
@@ -28,45 +28,45 @@ interface Props {
 }
 
 export function FilesPanel({ files, settings, backend, onOpenModels, shortcut }: Props) {
+  const t = useT();
   const { jobs, error, pick, cancel, dismiss } = files;
   const mock = !backend || backend.info.mock;
   return (
     <section>
       <div className={`drop ${jobs.length === 0 ? "big" : ""}`}>
-        <span>Drop audio files here or </span>
-        <button className="primary" onClick={pick} title={`Choose file (${shortcut})`} aria-keyshortcuts={shortcut}>Choose file…</button>
-        <div className="muted small">WAV, MP3, FLAC, OGG, M4A, AAC · processed on this computer, never uploaded</div>
+        <span>{t("files.drop")} </span>
+        <button className="primary" onClick={pick} title={t("files.choose_title", { shortcut })} aria-keyshortcuts={shortcut}>{t("files.choose")}</button>
+        <div className="muted small">{t("files.formats")}</div>
       </div>
       {mock && (
         <p className="muted small">
-          Demo mode: results will be placeholder words. <button className="link" onClick={onOpenModels}>Set up a speech model</button>
+          {t("files.demo_hint")} <button className="link" onClick={onOpenModels}>{t("banner.setup")}</button>
         </p>
       )}
       {error && <p className="error" role="alert">{error}</p>}
-      {jobs.length === 0 && <p className="muted">Nothing transcribed yet.</p>}
+      {jobs.length === 0 && <p className="muted">{t("files.empty")}</p>}
       {jobs.map((j) => {
         const finals = finalsOf(j.transcript);
-        const empty = emptyText(j);
         return (
           <article key={j.id} className="card">
             <header className="row between">
               <strong className="ellipsis" title={j.name}>{j.name}</strong>
-              <span className={`pill ${j.state}`}>{STATE_LABEL[j.state]}</span>
-              <span className="muted small">{clock(j.audioS)} of audio transcribed</span>
+              <span className={`pill ${j.state}`}>{t(`files.state.${j.state}`)}</span>
+              <span className="muted small">{t("files.audio_done", { time: clock(j.audioS) })}</span>
               <span className="spacer" />
               {j.state === "running" ? (
-                <button onClick={() => cancel(j.id)}>Cancel</button>
+                <button onClick={() => cancel(j.id)}>{t("common.cancel")}</button>
               ) : (
-                <button onClick={() => dismiss(j.id)}>Remove from list</button>
+                <button onClick={() => dismiss(j.id)}>{t("files.remove")}</button>
               )}
             </header>
-            {j.state === "running" && <progress aria-label={`Transcribing ${j.name}`} />}
-            {j.state === "failed" && <p className="error" role="alert">Could not transcribe this file: {j.message}</p>}
+            {j.state === "running" && <progress aria-label={t("files.progress", { name: j.name })} />}
+            {j.state === "failed" && <p className="error" role="alert">{t("files.failed", { detail: hostText(j.message, t) })}</p>}
             <Provenance label={j.backend} />
-            <TranscriptView label={`Transcript of ${j.name}`} finals={finals} open={openOf(j.transcript)} size={Math.min(settings.caption_size, 20)} follow={j.state === "running"} empty={empty} resetKey={j.id} />
+            <TranscriptView label={t("files.transcript", { name: j.name })} finals={finals} open={openOf(j.transcript)} size={Math.min(settings.caption_size, 20)} follow={j.state === "running"} empty={emptyText(j, t)} resetKey={j.id} />
             <div className="row">
               <ExportButtons name={j.name.replace(/\.[^.]+$/, "")} segments={finals} backend={j.backend} />
-              {j.state === "done" && settings.save_history && finals.length > 0 && <span className="muted small">Saved in History</span>}
+              {j.state === "done" && settings.save_history && finals.length > 0 && <span className="muted small">{t("files.saved_history")}</span>}
             </div>
           </article>
         );

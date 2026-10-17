@@ -62,10 +62,22 @@ impl PcmSource for MicSource {
         for e in self.reader.poll_events() {
             match e {
                 CaptureEvent::Disconnected(m) => {
-                    return Err(format!("microphone disconnected: {m}"))
+                    return Err(crate::coded::coded(
+                        "live.disconnected",
+                        serde_json::json!({ "detail": m }),
+                        format!("microphone disconnected: {m}"),
+                    ))
                 }
-                CaptureEvent::Rerouted => notes.push("input rerouted to another device".into()),
-                CaptureEvent::Xrun => notes.push("audio glitch (xrun)".into()),
+                CaptureEvent::Rerouted => notes.push(crate::coded::coded(
+                    "live.rerouted",
+                    serde_json::json!({}),
+                    "input rerouted to another device",
+                )),
+                CaptureEvent::Xrun => notes.push(crate::coded::coded(
+                    "live.xrun",
+                    serde_json::json!({}),
+                    "audio glitch (xrun)",
+                )),
                 CaptureEvent::Error(m) => notes.push(m),
             }
         }
