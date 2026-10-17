@@ -53,7 +53,7 @@ Current state (`crates/tingmix-models/src/keys.rs`, `docs/architecture/model-man
 |---|---|
 | Generate the release key offline | `manifest-sign keygen <file>` on an offline machine or hardware-backed signer; the private key never touches CI or a laptop that browses |
 | Embed the public key as a new id (for example `tingmix-release-1`) in `TRUSTED` and ship it in an app release; keep the dev key out of release builds | a build with `tingmix-dev-1` trusted must be refused by the release workflow (add a check) |
-| Sign manifests only after the licence decisions E1-E5 (`docs/research/licensing-review.md`) and the anti-rollback serial (registry hardening task) | |
+| Sign manifests only after the licence decisions E4-E5 (`docs/research/licensing-review.md`; E1-E3 are not pursued by owner decision) and the anti-rollback serial (registry hardening task) | |
 | Rotation and compromise | add the new key, ship, drop the old one later; there is no online revocation list (`model-management.md`) |
 | Backup | two offline copies, tested restore |
 

@@ -55,7 +55,7 @@ Severity: H = blocks or endangers the Desktop, M = needs a decision, L = note.
 | L5 | M | The release recommends alpha 0.35 / beta 1.5 / beam 16 only in a free-text `note`; library defaults are 0.25 / 1.5 / 16. | `TML:tingmix.json`, `E2A:pipeline.py:153-155` | Decoder parameters must live in our signed manifest. Request R3. |
 | L6 | M | `SHA256SUMS` omits the 113.9 MB LM file and is unsigned. | `model-artifact-inventory.md` section 1; `TM:tools/export_release.py:40` | Our manifest hashes all artifacts and is Ed25519-signed (task #8). |
 | L7 | M | The LM is 698 MB of JSON (22.6M n-grams); parsing it in Python peaks at about 6 GB. | `results/lm_stats.json` | Needs a compact binary format built offline; the Rust decoder already streams the JSON (`tingmix-decoder`, flate2 + zlib-rs), but memory on user machines must be measured. Request R4. |
-| L8 | M | Licensing of weights and LM is unresolved and internally contradictory. | `licensing-review.md` | E1-E3 escalated; default is "download from the original repos, non-commercial". |
+| L8 | M | Licensing of weights and LM is unresolved and internally contradictory. | `licensing-review.md` | Commercial-use question not pursued (owner decision 2026-10-18); default is "download from the original repos", no mirrors. |
 | L9 | L | Two code paths unpickle research checkpoints (`torch.load(..., weights_only=False)`): `export_release.py:27`, `large/model.py:61`. The released safetensors files contain no pickle. | `TM:tools/export_release.py:27`, `TM:large/model.py:51,61` | Never port these; the Desktop reads safetensors only (BRIEF section 11). |
 | L10 | L | `LargeModel.DEFAULT_REPO` still points at the older `tc3oliver/Embed2ASR-v1` (9.66M Reader). | `TM:large/model.py:9` | Do not use the default; always pass the pinned TingMix-Large path. |
 | L11 | L | The Reader uses `pack_padded_sequence`, so the backward GRU starts at each clip's true end. | `E2A:reader.py:46-55` | Run each clip at its own length (batch size 1); any padded-batch port must replicate packing. |
@@ -102,7 +102,7 @@ only the network config (`training/small/train.py:212` writes `net.cfg`): the fr
 | U1 | No TingMix-Small checkpoint | training session (R1) | BLOCKED |
 | U2 | No golden activations produced on the training side | training session (R2) | requested; the CPU fp32 oracle in `experiments/macos/reference` is the only reference |
 | U3 | Decoder parameters not machine-readable; LM not hashed; LM too large for direct use | training session (R3, R4) | requested |
-| U4 | Licence status of Parliament, NTUML2021, ASCEND-derived weights and LM | project owner | ESCALATED (`licensing-review.md` E1-E3) |
+| U4 | Licence status of Parliament, NTUML2021, ASCEND-derived weights and LM | project owner | Not pursued (owner decision 2026-10-18; facts in `licensing-review.md`) |
 | U5 | Gemma Prohibited Use Policy: binding or not | project owner | ESCALATED (E4) |
 | U6 | Small export interface (streaming ONNX), front-end parameters in `small.json` | training session (R6, R7) | requested |
 | U7 | Rust dependency licence scan, Windows ML terms | CI task | open |

@@ -9,17 +9,21 @@ before the corresponding distribution step; the Desktop must not ship or downloa
 
 | # | Question | Finding | Status |
 |---|---|---|---|
-| E1 | May TingMix-Large weights and the LM be used in a **commercial** or redistributed product? | The Hub card says Apache-2.0, but the maintainer's own review says the Parliament data is CC BY-NC 4.0 and that weights and LM are "likely non-commercial", and that the review is "to complete before any weight release". The weights were released on the Hub anyway. No completed review exists in the repositories. | **ESCALATE** |
-| E2 | NTUML2021 training split: licence? | Not stated by the source. Two repo documents disagree on whether it was used for training (model card: "evaluation-only"; benchmark/licensing/Hub card: train split used). The released weights and LM include it. | **ESCALATE** |
-| E3 | ASCEND (CC BY-SA 4.0) ShareAlike effect on weights/LM labelled Apache-2.0 | Maintainer's "conservative reading" is that ShareAlike may apply to derived weights/LM. Unresolved. | **ESCALATE** |
+| E1 | May TingMix-Large weights and the LM be used in a **commercial** or redistributed product? | The Hub card says Apache-2.0, but the maintainer's own review says the Parliament data is CC BY-NC 4.0 and that weights and LM are "likely non-commercial", and that the review is "to complete before any weight release". The weights were released on the Hub anyway. No completed review exists in the repositories. | Owner decision (2026-10-18): commercial-use aspect not pursued; facts kept |
+| E2 | NTUML2021 training split: licence? | Not stated by the source. Two repo documents disagree on whether it was used for training (model card: "evaluation-only"; benchmark/licensing/Hub card: train split used). The released weights and LM include it. | Owner decision (2026-10-18): not pursued; facts kept |
+| E3 | ASCEND (CC BY-SA 4.0) ShareAlike effect on weights/LM labelled Apache-2.0 | Maintainer's "conservative reading" is that ShareAlike may apply to derived weights/LM. Unresolved. | Owner decision (2026-10-18): not pursued; facts kept |
 | E4 | Does the Gemma Prohibited Use Policy bind Desktop users? | Base model is Apache-2.0 and ungated on the Hub, but its README says "Deployments must adhere to the Gemma Prohibited Use Policy". Whether that is a licence condition is unclear. | **ESCALATE** (low cost: show the policy and require acknowledgement) |
 | E5 | May we re-host or re-pack Google weights (tower-only file) or ship an offline bundle? | Apache-2.0 allows redistribution with notices (section 4 of the licence), subject to E4. No `LICENSE`/`NOTICE` file exists in the Hub repo, so the attribution text must come from the card. Not needed if the Desktop downloads from Google's repo directly. | Open, avoidable |
 | E6 | People's Speech licence class of the subset used | TingMix lists "People's Speech clean (CC BY)", but the dataset card lists CC-BY and CC-BY-SA variants. Which configuration was used is not documented. | Open (low) |
 | E7 | TingMix-Small | No checkpoint, no card, no licence (Hub API 401). | **BLOCKED** |
 
-Recommended default until E1-E3 are answered: the Desktop is distributed **without model weights**; models are fetched by the
+Owner decision (2026-10-18): whether TingMix-Large may be used commercially or must stay non-commercial is out of scope for this project and is
+not pursued or escalated. E1-E3 stay in this document only as recorded source facts and attribution requirements (sections 2-3); nothing below
+depends on an answer to them. The app's licence display, attribution and the no-mirror default are unchanged.
+
+Recommended default: the Desktop is distributed **without model weights**; models are fetched by the
 user from the original Hub repositories at pinned revisions after a licence screen (no mirrors, no offline bundles distributed
-by us); the product is positioned as non-commercial. The offline-import path (BRIEF section 2) stays, importing files the user
+by us). The offline-import path (BRIEF section 2) stays, importing files the user
 obtained themselves.
 
 ## 2. Component table
@@ -29,10 +33,10 @@ obtained themselves.
 | `google/embeddinggemma-2 @ 914f7f8` weights | Apache-2.0, `gated: false` | Hub API `https://huggingface.co/api/models/google/embeddinggemma-2` (cardData.license `apache-2.0`, gated false), 2026-10-17; `EG2:README.md:2,32` | Apache section 4: give recipients the licence, keep notices, mark changes if modified (conversion, LoRA merge, quantisation count as changes) | Clear for use; see E4/E5 |
 | EmbeddingGemma 2 licence link | README links `https://ai.google.dev/gemma/docs/gemma_4_license`; that URL serves the page titled "Apache License 2.0" (full Apache text) with a banner "This documentation is deprecated. Please visit the new documentation at gemma.ai" | fetched 2026-10-17 | Pin the licence text we show to the Apache text; re-check the new location before release | Open (stale link) |
 | Gemma Prohibited Use Policy | Use restrictions (illegal/harmful content, deception, etc.); page "Last modified: February 21, 2024" | `https://ai.google.dev/gemma/prohibited_use_policy`, fetched 2026-10-17; `EG2:README.md:282` "Deployments must adhere to the Gemma Prohibited Use Policy" | Display it and require acknowledgement at install; no technical impact | E4 |
-| `tc3oliver/TingMix-Large @ 75071a1` (Reader + LoRA delta + units + LM) | Hub metadata `license: apache-2.0`, `gated: false`; card: "Apache-2.0 (model card)" | `TML:README.md:2`; `TM:docs/licensing.md:9` ("Proposed terms ... Apache-2.0", status "published") | See E1-E3; weights are "trained on" the datasets below | **ESCALATE** |
+| `tc3oliver/TingMix-Large @ 75071a1` (Reader + LoRA delta + units + LM) | Hub metadata `license: apache-2.0`, `gated: false`; card: "Apache-2.0 (model card)" | `TML:README.md:2`; `TM:docs/licensing.md:9` ("Proposed terms ... Apache-2.0", status "published") | Attribution per section 3; commercial-use question not pursued (owner decision) | Recorded |
 | TingMix source (`tingmix`), Embed2ASR source | Apache-2.0 | `TM:pyproject.toml:11`, `E2A:pyproject.toml:10`, `E2A:NOTICE.md` | Not shipped (Python); algorithms re-implemented in Rust, so cite and attribute | OK |
 | `tc3oliver/Embed2ASR-v1` | Apache-2.0 | Hub API cardData.license, 2026-10-17 | Not used | n/a |
-| Character 5-gram LM `lmCN_cv_parl_ascend_ntuml` | "shipped with the model" | `TM:docs/licensing.md:10`: built from CV + Parliament + ASCEND + NTUML-train transcripts | Count tables are derived from CC BY-NC and CC BY-SA transcripts (E1-E3); a CC0-only LM (`LM-O`, Common Voice zh-TW) is "built" but **not published** (`licensing.md:11`) | **ESCALATE**; request R5 |
+| Character 5-gram LM `lmCN_cv_parl_ascend_ntuml` | "shipped with the model" | `TM:docs/licensing.md:10`: built from CV + Parliament + ASCEND + NTUML-train transcripts | Count tables are derived from CC BY-NC and CC BY-SA transcripts; a CC0-only LM (`LM-O`, Common Voice zh-TW) is "built" but **not published** (`licensing.md:11`) | Recorded (request R5 withdrawn) |
 
 ## 3. Training-data licences (what the weights and LM were built from)
 
@@ -66,14 +70,14 @@ Internal contradictions that a maintainer must reconcile (all VERIFIED by readin
 
 1. **No model weights in git or in installers** (already a repo hard rule). Installers carry only licence notices and the manifest public key.
 2. **Licence screen before download**, showing for each artifact: name, revision, size, licence id, link, and the Prohibited Use Policy; the user must
-   accept; the acceptance and artifact hashes are recorded locally. For TingMix-Large the screen must show the unresolved data terms (NonCommercial
-   note) until E1-E3 are closed.
+   accept; the acceptance and artifact hashes are recorded locally. For TingMix-Large the screen shows the data-source terms recorded in section 3
+   (including the NonCommercial note on Parliament speech).
 3. **Never bypass access restrictions**: today both repos are public and ungated. If either becomes gated (HTTP 401/403), the downloader must stop and tell the
    user to accept terms on the Hub and import the file offline; it must not embed or ship credentials.
 4. **Offline import** takes only files the user already has; the importer verifies hashes against the signed manifest and does not redistribute.
-   An offline bundle produced by us is a redistribution and depends on E1-E5.
+   An offline bundle produced by us is a redistribution and depends on E4-E5.
 5. **Derived artifacts** (MLX/Core ML/ONNX conversions, merged LoRA, quantised copies) are modifications of Apache-2.0 Google weights and of TingMix weights. They must carry
-   the upstream notices and a "modified" marker in the manifest, and are not published until E1-E5 are decided.
+   the upstream notices and a "modified" marker in the manifest, and are not published until E4-E5 are decided.
 6. **Attribution screen** (in-app "About / Licences"): Google EmbeddingGemma 2 (Apache-2.0), TingMix and Embed2ASR (Apache-2.0 source, data terms as above), dataset attributions in section 3,
    and the third-party code below (use `cargo-about`/`cargo-deny` output at release time).
 
@@ -102,14 +106,12 @@ huggingface_hub 2.2.0 Apache-2.0, scipy 1.18.1 BSD, embed2asr 0.1.0 and tingmix 
 Open: no Rust licence scan has been run over the lockfile (no `cargo-deny` configuration exists yet); that belongs to the CI/packaging task and must cover transitive
 dependencies before the first release. Windows ML / DirectML redistribution terms were not audited here.
 
-## 6. Escalation list (for the project owner)
+## 6. Open decisions (for the project owner)
+
+E1-E3 (commercial-use aspects) are closed by the owner decision above and are not listed.
 
 | ID | Decision needed | Blocks |
 |---|---|---|
-| E1 | Is the Parliament CC BY-NC 4.0 restriction inherited by weights and LM? Is the product non-commercial? | Any commercial use; mirrors; offline bundles |
-| E2 | Was NTUML2021 train split lawfully usable, and is the Hub card correct? | Any distribution of TingMix-Large |
-| E3 | ShareAlike (ASCEND) vs Apache-2.0 label | Re-labelling or redistribution of derived weights/LM |
 | E4 | Is the Gemma Prohibited Use Policy a binding condition? | Wording of the licence screen |
 | E5 | Re-hosting / re-packing Google weights | Offline bundles, tower-only artifact |
 | E6 | People's Speech subset | Attribution text |
-| R5 | Publish the CC0-only LM (`LM-O`) as a clean alternative | Commercially safe Large variant of the decoder |
