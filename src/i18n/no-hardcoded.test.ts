@@ -1,15 +1,7 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const root = join(__dirname, "..");
-
-function files(dir: string): string[] {
-  return readdirSync(dir).flatMap((f) => {
-    const p = join(dir, f);
-    return statSync(p).isDirectory() ? files(p) : p.endsWith(".tsx") ? [p] : [];
-  });
-}
+// every component source, as raw text (Vite's glob import, so no Node typings are needed)
+const sources = import.meta.glob("../**/*.tsx", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
 
 const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
 
@@ -42,7 +34,8 @@ describe("the scanner itself", () => {
 });
 
 describe("components contain no hard-coded user-visible text", () => {
-  for (const file of files(root)) {
-    it(file.slice(root.length + 1), () => expect(scan(readFileSync(file, "utf8"))).toEqual([]));
+  it("finds the component sources", () => expect(Object.keys(sources).length).toBeGreaterThan(8));
+  for (const [file, source] of Object.entries(sources)) {
+    it(file.replace("../", ""), () => expect(scan(source)).toEqual([]));
   }
 });
