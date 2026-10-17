@@ -1,0 +1,471 @@
+{
+ "stage": "stage2_subsample",
+ "hardware": {
+  "chip": "Apple M4 Max",
+  "mem_gb": 64,
+  "macos": "27.0",
+  "coremltools": "9.0",
+  "torch": "2.9.1"
+ },
+ "fixture": "mix_29s",
+ "input_shape": [
+  1,
+  2999,
+  128
+ ],
+ "results": {
+  "torch_wrapper_vs_oracle": {
+   "max_abs": 5.340576171875e-05
+  },
+  "trace_fp32": {
+   "convert": {
+    "ok": true,
+    "path": "<repo>/experiments/macos/coreml/out/s2_subsample_F2999.trace.fp32.mlpackage",
+    "seconds": 0.2,
+    "size_mb": 4.2
+   },
+   "run": {
+    "CPU_ONLY": {
+     "ok": true,
+     "load_s": 0.04,
+     "median_ms": 12.85,
+     "min_ms": 10.54,
+     "max_ms": 13.63,
+     "n": 10,
+     "parity": {
+      "var_97": {
+       "max_abs": 0.00012969970703125,
+       "mean_abs": 1.17821210638643e-06,
+       "rel_l2": 4.165092056741532e-07
+      }
+     }
+    },
+    "CPU_AND_GPU": {
+     "ok": true,
+     "load_s": 0.04,
+     "median_ms": 1.29,
+     "min_ms": 1.22,
+     "max_ms": 1.35,
+     "n": 10,
+     "parity": {
+      "var_97": {
+       "max_abs": 5.340576171875e-05,
+       "mean_abs": 1.5469520292003361e-06,
+       "rel_l2": 3.895210391766811e-07
+      }
+     }
+    },
+    "CPU_AND_NE": {
+     "ok": true,
+     "load_s": 0.05,
+     "median_ms": 12.7,
+     "min_ms": 12.1,
+     "max_ms": 14.07,
+     "n": 10,
+     "parity": {
+      "var_97": {
+       "max_abs": 0.00012969970703125,
+       "mean_abs": 1.17821210638643e-06,
+       "rel_l2": 4.165092056741532e-07
+      }
+     }
+    },
+    "ALL": {
+     "ok": true,
+     "load_s": 0.05,
+     "median_ms": 1.29,
+     "min_ms": 1.23,
+     "max_ms": 1.67,
+     "n": 10,
+     "parity": {
+      "var_97": {
+       "max_abs": 5.340576171875e-05,
+       "mean_abs": 1.5469520292003361e-06,
+       "rel_l2": 3.895210391766811e-07
+      }
+     }
+    }
+   },
+   "placement": {
+    "ALL": {
+     "ops": 12,
+     "preferred": {
+      "GPU": 12
+     },
+     "ne_supported_ops": 0,
+     "not_ne_supported_by_type": {
+      "ios18.transpose": 3,
+      "ios18.conv": 2,
+      "ios18.layer_norm": 2,
+      "ios18.clip": 2,
+      "ios18.expand_dims": 1,
+      "ios18.reshape": 1,
+      "ios18.linear": 1
+     }
+    },
+    "CPU_AND_NE": {
+     "ops": 12,
+     "preferred": {
+      "CPU": 12
+     },
+     "ne_supported_ops": 0,
+     "not_ne_supported_by_type": {
+      "ios18.transpose": 3,
+      "ios18.conv": 2,
+      "ios18.layer_norm": 2,
+      "ios18.clip": 2,
+      "ios18.expand_dims": 1,
+      "ios18.reshape": 1,
+      "ios18.linear": 1
+     }
+    },
+    "CPU_AND_GPU": {
+     "ops": 12,
+     "preferred": {
+      "GPU": 12
+     },
+     "ne_supported_ops": 0,
+     "not_ne_supported_by_type": {
+      "ios18.transpose": 3,
+      "ios18.conv": 2,
+      "ios18.layer_norm": 2,
+      "ios18.clip": 2,
+      "ios18.expand_dims": 1,
+      "ios18.reshape": 1,
+      "ios18.linear": 1
+     }
+    }
+   }
+  },
+  "trace_fp16": {
+   "convert": {
+    "ok": true,
+    "path": "<repo>/experiments/macos/coreml/out/s2_subsample_F2999.trace.fp16.mlpackage",
+    "seconds": 0.3,
+    "size_mb": 2.1
+   },
+   "run": {
+    "CPU_ONLY": {
+     "ok": true,
+     "load_s": 0.05,
+     "median_ms": 7.84,
+     "min_ms": 7.33,
+     "max_ms": 8.58,
+     "n": 10,
+     "parity": {
+      "var_97": {
+       "max_abs": 0.5882797241210938,
+       "mean_abs": 0.010171586225617433,
+       "rel_l2": 0.002740620451452387
+      }
+     }
+    },
+    "CPU_AND_GPU": {
+     "ok": true,
+     "load_s": 0.04,
+     "median_ms": 2.04,
+     "min_ms": 1.87,
+     "max_ms": 2.47,
+     "n": 10,
+     "parity": {
+      "var_97": {
+       "max_abs": 0.0521240234375,
+       "mean_abs": 0.0020064659824451307,
+       "rel_l2": 0.000497442021593357
+      }
+     }
+    },
+    "CPU_AND_NE": {
+     "ok": true,
+     "load_s": 0.11,
+     "median_ms": 4.0,
+     "min_ms": 3.94,
+     "max_ms": 4.12,
+     "n": 10,
+     "parity": {
+      "var_97": {
+       "max_abs": 0.12397003173828125,
+       "mean_abs": 0.004935251298053364,
+       "rel_l2": 0.001254073756012443
+      }
+     }
+    },
+    "ALL": {
+     "ok": true,
+     "load_s": 0.08,
+     "median_ms": 2.63,
+     "min_ms": 2.58,
+     "max_ms": 3.01,
+     "n": 10,
+     "parity": {
+      "var_97": {
+       "max_abs": 0.0521240234375,
+       "mean_abs": 0.0020045381762141498,
+       "rel_l2": 0.0004965750345591177
+      }
+     }
+    }
+   },
+   "placement": {
+    "ALL": {
+     "ops": 12,
+     "preferred": {
+      "NeuralEngine": 2,
+      "GPU": 10
+     },
+     "ne_supported_ops": 12,
+     "not_ne_supported_by_type": {}
+    },
+    "CPU_AND_NE": {
+     "ops": 12,
+     "preferred": {
+      "NeuralEngine": 12
+     },
+     "ne_supported_ops": 12,
+     "not_ne_supported_by_type": {}
+    },
+    "CPU_AND_GPU": {
+     "ops": 12,
+     "preferred": {
+      "GPU": 12
+     },
+     "ne_supported_ops": 0,
+     "not_ne_supported_by_type": {
+      "ios18.transpose": 3,
+      "ios18.conv": 2,
+      "ios18.layer_norm": 2,
+      "ios18.clip": 2,
+      "ios18.expand_dims": 1,
+      "ios18.reshape": 1,
+      "ios18.linear": 1
+     }
+    }
+   }
+  },
+  "export_fp32": {
+   "convert": {
+    "ok": true,
+    "path": "<repo>/experiments/macos/coreml/out/s2_subsample_F2999.export.fp32.mlpackage",
+    "seconds": 0.4,
+    "size_mb": 4.2
+   },
+   "run": {
+    "CPU_ONLY": {
+     "ok": true,
+     "load_s": 0.03,
+     "median_ms": 12.47,
+     "min_ms": 12.3,
+     "max_ms": 12.67,
+     "n": 10,
+     "parity": {
+      "linear": {
+       "max_abs": 0.00012969970703125,
+       "mean_abs": 1.17821210638643e-06,
+       "rel_l2": 4.165092056741532e-07
+      }
+     }
+    },
+    "CPU_AND_GPU": {
+     "ok": true,
+     "load_s": 0.04,
+     "median_ms": 1.38,
+     "min_ms": 1.32,
+     "max_ms": 1.7,
+     "n": 10,
+     "parity": {
+      "linear": {
+       "max_abs": 5.340576171875e-05,
+       "mean_abs": 1.5469520292003361e-06,
+       "rel_l2": 3.895210391766811e-07
+      }
+     }
+    },
+    "CPU_AND_NE": {
+     "ok": true,
+     "load_s": 0.04,
+     "median_ms": 13.1,
+     "min_ms": 12.41,
+     "max_ms": 13.94,
+     "n": 10,
+     "parity": {
+      "linear": {
+       "max_abs": 0.00012969970703125,
+       "mean_abs": 1.17821210638643e-06,
+       "rel_l2": 4.165092056741532e-07
+      }
+     }
+    },
+    "ALL": {
+     "ok": true,
+     "load_s": 0.05,
+     "median_ms": 1.39,
+     "min_ms": 1.28,
+     "max_ms": 1.89,
+     "n": 10,
+     "parity": {
+      "linear": {
+       "max_abs": 5.340576171875e-05,
+       "mean_abs": 1.5469520292003361e-06,
+       "rel_l2": 3.895210391766811e-07
+      }
+     }
+    }
+   },
+   "placement": {
+    "ALL": {
+     "ops": 12,
+     "preferred": {
+      "GPU": 12
+     },
+     "ne_supported_ops": 0,
+     "not_ne_supported_by_type": {
+      "ios18.transpose": 3,
+      "ios18.conv": 2,
+      "ios18.layer_norm": 2,
+      "ios18.clip": 2,
+      "ios18.expand_dims": 1,
+      "ios18.reshape": 1,
+      "ios18.linear": 1
+     }
+    },
+    "CPU_AND_NE": {
+     "ops": 12,
+     "preferred": {
+      "CPU": 12
+     },
+     "ne_supported_ops": 0,
+     "not_ne_supported_by_type": {
+      "ios18.transpose": 3,
+      "ios18.conv": 2,
+      "ios18.layer_norm": 2,
+      "ios18.clip": 2,
+      "ios18.expand_dims": 1,
+      "ios18.reshape": 1,
+      "ios18.linear": 1
+     }
+    },
+    "CPU_AND_GPU": {
+     "ops": 12,
+     "preferred": {
+      "GPU": 12
+     },
+     "ne_supported_ops": 0,
+     "not_ne_supported_by_type": {
+      "ios18.transpose": 3,
+      "ios18.conv": 2,
+      "ios18.layer_norm": 2,
+      "ios18.clip": 2,
+      "ios18.expand_dims": 1,
+      "ios18.reshape": 1,
+      "ios18.linear": 1
+     }
+    }
+   }
+  },
+  "export_fp16": {
+   "convert": {
+    "ok": true,
+    "path": "<repo>/experiments/macos/coreml/out/s2_subsample_F2999.export.fp16.mlpackage",
+    "seconds": 0.3,
+    "size_mb": 2.1
+   },
+   "run": {
+    "CPU_ONLY": {
+     "ok": true,
+     "load_s": 0.04,
+     "median_ms": 7.65,
+     "min_ms": 7.15,
+     "max_ms": 8.01,
+     "n": 10,
+     "parity": {
+      "linear": {
+       "max_abs": 0.5882797241210938,
+       "mean_abs": 0.010171586225617433,
+       "rel_l2": 0.002740620451452387
+      }
+     }
+    },
+    "CPU_AND_GPU": {
+     "ok": true,
+     "load_s": 0.04,
+     "median_ms": 1.91,
+     "min_ms": 1.82,
+     "max_ms": 2.44,
+     "n": 10,
+     "parity": {
+      "linear": {
+       "max_abs": 0.0521240234375,
+       "mean_abs": 0.0020064659824451307,
+       "rel_l2": 0.000497442021593357
+      }
+     }
+    },
+    "CPU_AND_NE": {
+     "ok": true,
+     "load_s": 0.11,
+     "median_ms": 4.59,
+     "min_ms": 4.19,
+     "max_ms": 5.13,
+     "n": 10,
+     "parity": {
+      "linear": {
+       "max_abs": 0.12397003173828125,
+       "mean_abs": 0.004935251298053364,
+       "rel_l2": 0.001254073756012443
+      }
+     }
+    },
+    "ALL": {
+     "ok": true,
+     "load_s": 0.07,
+     "median_ms": 1.98,
+     "min_ms": 1.94,
+     "max_ms": 2.14,
+     "n": 10,
+     "parity": {
+      "linear": {
+       "max_abs": 0.0521240234375,
+       "mean_abs": 0.0020045381762141498,
+       "rel_l2": 0.0004965750345591177
+      }
+     }
+    }
+   },
+   "placement": {
+    "ALL": {
+     "ops": 12,
+     "preferred": {
+      "NeuralEngine": 2,
+      "GPU": 10
+     },
+     "ne_supported_ops": 12,
+     "not_ne_supported_by_type": {}
+    },
+    "CPU_AND_NE": {
+     "ops": 12,
+     "preferred": {
+      "NeuralEngine": 12
+     },
+     "ne_supported_ops": 12,
+     "not_ne_supported_by_type": {}
+    },
+    "CPU_AND_GPU": {
+     "ops": 12,
+     "preferred": {
+      "GPU": 12
+     },
+     "ne_supported_ops": 0,
+     "not_ne_supported_by_type": {
+      "ios18.transpose": 3,
+      "ios18.conv": 2,
+      "ios18.layer_norm": 2,
+      "ios18.clip": 2,
+      "ios18.expand_dims": 1,
+      "ios18.reshape": 1,
+      "ios18.linear": 1
+     }
+    }
+   }
+  }
+ }
+}
