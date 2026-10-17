@@ -30,6 +30,18 @@ pub fn greedy_ids(lp: &[f32], vocab_size: usize) -> Vec<u32> {
     collapse_ctc(&argmax, BLANK)
 }
 
+/// Row-wise `log_softmax` in f32 for raw reader logits `[T, vocab_size]` (the reference does
+/// `logits.float().log_softmax(-1)`; summation order differs from torch, so values may differ in the last ulp).
+pub fn log_softmax_rows(logits: &[f32], vocab_size: usize) -> Vec<f32> {
+    let mut out = Vec::with_capacity(logits.len());
+    for row in logits.chunks_exact(vocab_size) {
+        let max = row.iter().copied().fold(f32::NEG_INFINITY, f32::max);
+        let lse = max + row.iter().map(|&x| (x - max).exp()).sum::<f32>().ln();
+        out.extend(row.iter().map(|&x| x - lse));
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

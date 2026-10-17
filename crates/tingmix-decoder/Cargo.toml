@@ -12,3 +12,7 @@ flate2 = { version = "=1.1.10", default-features = false, features = ["zlib-rs"]
 serde = { version = "=1.0.229", features = ["derive"] }
 # float_roundtrip: the default parser is off by an ulp for some f64, which breaks exact fixture comparison
 serde_json = { version = "=1.0.154", features = ["float_roundtrip"] }
+
+[dev-dependencies]
+# reads the stored (uncompressed) .npz oracle dumps; same spec as tingmix-models
+zip = { version = "7.3.0", default-features = false, features = ["deflate"] }

@@ -9,7 +9,7 @@ mod lm;
 mod vocab;
 
 pub use beam::{beam_decode, BeamConfig, BeamOutput};
-pub use ctc::{collapse_ctc, greedy_ids};
+pub use ctc::{collapse_ctc, greedy_ids, log_softmax_rows};
 pub use lm::CharLm;
 pub use vocab::Vocab;
 

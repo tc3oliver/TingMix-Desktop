@@ -8,8 +8,8 @@ Release files: `tc3oliver/TingMix-Large@75071a1260fb21874f150df6ebd53716ac423f13
 ## Status
 
 - Parity with the Python reference: **VERIFIED** on synthetic log-prob matrices (real 5025-unit vocabulary, real release LM).
-- Parity on log-probs produced by the real TingMix model: **not yet measured** (needs the PyTorch reference fixtures of task #2).
-  The synthetic matrices are peaked, with confusers, repeats, blanks and flat frames; they exercise every branch of the
+- Real model output: **VERIFIED** on the CPU fp32 oracle logits of TingMix-Large (see "Real-logit check" below).
+- The synthetic matrices are peaked, with confusers, repeats, blanks and flat frames; they exercise every branch of the
   decoder but are not real acoustic output.
 
 ## What is compared (`cargo test -p tingmix-decoder`)
@@ -33,6 +33,20 @@ from 24 sentences written for this test) lets CI run the full beam comparison wi
 
 Regenerate fixtures: `cd tools/golden-decoder && uv sync && uv run gen.py --release <dir with units.json + tokenizer_bpe.model> [--large-lm <file>]`.
 The fixture matrices store float32 bit patterns (sparse rows: `floor` + overrides) so Rust decodes the exact array the reference decoded.
+
+## Real-logit check (`tests/oracle.rs`)
+
+Input: raw reader logits of the 8 synthetic-TTS clips from `experiments/macos/reference` (CPU fp32 oracle, `mix_29s` has
+two chunks, joined with `""` or `" "` like `Embed2ASR.transcribe`). Rust applies its own f32 `log_softmax_rows`, then greedy
+(argmax of the raw logits, as `pipeline.greedy`) and beam+LM (0.35 / 1.5 / 16, release LM), and compares the text to
+`tests/fixtures/large/expected_texts.json`.
+
+Result: 8 of 8 clips identical for greedy and for beam+LM (`TINGMIX_ORACLE_DIR=experiments/macos/reference/out`
+`TINGMIX_LM_PATH=<lm> cargo test -p tingmix-decoder --release --test oracle`). Without the env vars only the two committed
+clips (`zh_02s`, `en_02s`) run, greedy only. This includes the clips where beam+LM differs from greedy (`zh_16s`, `mix_29s`).
+
+Divergence 8: Rust's `log_softmax` sums in a different order than torch, so log-probs may differ from the reference in
+the last f32 ulp. Not observed to change any output here.
 
 ## LM load cost (Mac Studio M4 Max, release build)
 
