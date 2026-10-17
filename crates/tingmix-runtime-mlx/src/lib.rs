@@ -1,7 +1,11 @@
 //! EXPERIMENTAL MLX backend for TingMix-Large: audio tower + GRU-CTC reader, batch 1, on the MLX default device (GPU).
 //!
 //! Input is the 128-bin Gemma4 log-mel (computed elsewhere); output is reader logits `[frames, vocab]` ready for CTC
-//! decoding. There is no Rust mel front end or `AsrBackend` impl yet, so this is not a runnable backend on its own.
+//! decoding. [`MlxLargeBackend`] adds the Rust mel front end, 29.5 s chunking and CTC decoding behind `AsrBackend`.
+
+mod backend;
+
+pub use backend::{Decode, MlxLargeBackend};
 
 #[cfg(mlx_native)]
 mod ffi {
@@ -142,6 +146,14 @@ pub struct MlxLarge;
 #[cfg(not(mlx_native))]
 impl MlxLarge {
     pub fn load(_: &std::path::Path, _: Dtype) -> Result<Self, MlxError> {
+        Err(MlxError::NotBuilt)
+    }
+
+    pub fn vocab(&self) -> usize {
+        0
+    }
+
+    pub fn logits(&mut self, _: &[f32], _: usize) -> Result<Vec<f32>, MlxError> {
         Err(MlxError::NotBuilt)
     }
 }

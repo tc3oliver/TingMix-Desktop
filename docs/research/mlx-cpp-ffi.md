@@ -1,8 +1,9 @@
 # MLX for TingMix-Large: Python parity, C++ port, Rust FFI
 
 Status: **EXPERIMENTAL**. The graph is implemented in MLX (Python and C++) and matches a PyTorch CPU fp32 run on 8 synthetic
-fixtures. It is not **VERIFIED**: no real-speech accuracy set was run (fixtures are synthetic TTS), and there is no Rust mel
-front end or `AsrBackend` impl yet.
+fixtures; a Rust-only path (Rust log-mel, MLX C++ tower+reader, Rust CTC/LM decoder behind `AsrBackend`) reproduces the oracle
+texts on all 8 clips. It is not **VERIFIED**: no real-speech accuracy set was run (fixtures are synthetic TTS), and the shipped
+build question (Metal toolchain, bundling) is open.
 
 Pins: TingMix-Large `75071a1`, google/embeddinggemma-2 `914f7f8`, mlx-vlm `73d366e` (gemma4 `audio.py`), mlx 0.32.4,
 torch 2.14.1 / transformers 5.19.0 / embed2asr `b582757` / tingmix `f44cbdb` for the oracle. Raw numbers:
@@ -82,8 +83,7 @@ builds and tests on other platforms and in CI.
 
 ### Gaps before this is a shippable backend (so it is **not** declared native-ready)
 
-1. No Rust log-mel front end (128-bin Gemma4 USM spec; the mlx-vlm numpy port is the reference, 1 to 7 ms) and no `AsrBackend`
-   impl; CTC greedy/beam+LM belong to `tingmix-decoder`. The crate returns logits only.
+1. (closed in the section below) Rust log-mel front end and `AsrBackend` impl exist; they are not yet wired into the app's runtime selection.
 2. Distribution. The prebuilt libmlx comes from the PyPI wheel: `libmlx.dylib` 21 MB, `libjaccl.dylib` 2 MB, `mlx.metallib`
    216 MB, which must sit next to the library or executable. A reproducible shipped build needs MLX built from source (MIT) in
    CI, pinned to a tag, and that needs the Xcode Metal toolchain. It is **missing on this machine** (`xcrun metal` fails:
@@ -96,3 +96,53 @@ builds and tests on other platforms and in CI.
 6. Sandbox/notarization of a Metal-linked dylib inside a Tauri bundle, and behavior under App Sandbox, were not tested.
 7. All numbers were taken on a loaded machine and on synthetic TTS fixtures; re-run on an idle machine and on real speech
    before using them as release gates.
+
+## Native Rust path: wav to text (task #12)
+
+Crates: `tingmix-frontend-gemma` (log-mel), `tingmix-runtime-mlx` (`MlxLargeBackend: AsrBackend`, `Decode::{Greedy, BeamLm}`),
+decoding by `tingmix-decoder`. Chunking follows `embed2asr` `transcribe`: 29.5 s windows (472 000 samples), tails under
+1 600 samples dropped, joined with `""` for CJK-only output and `" "` otherwise, each chunk encoded alone (batch 1).
+
+**Mel parity** (`tingmix-frontend-gemma/tests/oracle.rs`, `TINGMIX_ORACLE_DIR=experiments/macos/reference/out`): all 9 chunks of
+the 8 fixtures, frame count and valid-frame count equal the dump's `c{k}_mel` / `c{k}_mel_mask`, max-abs difference 4.8e-7 on
+log-mel (gate 1e-5). The port mirrors transformers 5.19.0 `Gemma4AudioFeatureExtractor`: 160-sample left pad, right pad to a
+multiple of 128, 321-sample unfold with the last sample dropped (no preemphasis), periodic Hann(320), FFT 512, magnitude, HTK
+filters in Hz space (`mel_filter_bank`, no norm), `ln(mel + 1e-3)`, padded frames zeroed. FFT and mel run in f64 (numpy: f32).
+
+**End to end** (`tingmix-runtime-mlx/tests/e2e.rs`): from the wav bytes through Rust only, greedy and beam+LM (0.35/1.5/16) text
+equals `tests/fixtures/large/expected_texts.json` on 8/8 clips, 16/16 comparisons, fp32. Logits through the same Rust path were
+already within 1.3e-4 of the dumps (`tests/parity.rs`, my own dumps) and the MLX fp32 Python graph within 2.1e-4 of the
+reference task's dumps (`experiments/macos/mlx/cross_check.py`).
+
+**Rust-side timings** (`cargo run --release -p tingmix-runtime-mlx --example bench`, raw `benchmarks/apple/mlx/rust-bench.json`),
+fp32, M4 Max, 30 runs after 3 warmups, loadavg 10 to 16 from other agents (a first run at loadavg 7 to 17 gave up to 2x higher
+and noisier values, which is why contention must be assumed in every number here):
+
+| audio s | mel P50 ms | greedy e2e P50 / P95 / P99 ms | beam+LM e2e P50 / P95 / P99 ms | RTF P50 greedy / beam |
+|---|---|---|---|---|
+| 2 | 0 | 20 / 21 / 22 | 24 / 25 / 27 | 0.010 / 0.012 |
+| 4 | 1 | 30 / 55 / 120 | 40 / 48 / 84 | 0.008 / 0.010 |
+| 8 | 2 | 51 / 125 / 137 | 71 / 165 / 206 | 0.006 / 0.009 |
+| 16 | 3 | 92 / 135 / 174 | 135 / 146 / 149 | 0.006 / 0.009 |
+| 29 | 6 | 162 / 168 / 168 | 249 / 256 / 259 | 0.006 / 0.009 |
+
+Rust adds nothing visible over the Python bench (154 ms at 29 s): mel is 6 ms and the beam+LM decode about 90 ms at 29 s.
+Model load 0.07 to 0.14 s, character LM load 2.4 s (about 0.55 GiB). Peak RSS: 1.27 GiB after model load, 1.84 GiB with LM,
+3.3 GiB in the bench process because it holds two backends (greedy and beam, two copies of the weights); one backend with LM
+and a 29 s decode is the figure to budget (about 1.9 to 2 GiB).
+
+**Buffered streaming** through `SessionWorker` (default `SessionConfig`: 480 ms hop, 600 ms endpoint silence, max load 0.5),
+fixtures replayed in 100 ms chunks at real time followed by 1.5 s of silence, then flush; every decode re-runs the whole open
+segment. Clips: zh_02s, en_08s, mix_08s, zh_16s (1.7, 5.1, 7.5, 20.4 s of audio):
+- First partial arrived 0.50 to 0.51 s after the stream start for 7 of 8 runs (0.61 s once), i.e. the 480 ms scheduling hop plus
+  one decode of 24 to 70 ms, not model latency.
+- Partial staleness (arrival minus the partial's audio end): P50 6 to 10 ms, max 63 to 204 ms, except two beam+LM runs with
+  P50 105 ms (decode landing between chunks).
+- Per-update decode cost grows with the segment: P50 24 / 36 / 38 / 72 ms and P95 62 / 43 / 51 / 132 ms for greedy on the four
+  clips (beam+LM up to 136 ms P50, 194 ms P95 at 20 s). No partial was coalesced; decode RTF stayed far below the 0.5 budget.
+- Final arrived 0.68 to 0.91 s after the segment's audio end; that is the 600 ms endpoint silence plus a decode, so the
+  model-side final latency is roughly 70 to 300 ms.
+Not done: a 60-minute soak (task #14), power, and streaming of segments near the 25 s cap.
+
+Remaining gaps are unchanged from the list above (Metal toolchain / source build and bundling, single window, batch 1,
+no `mx.compile`, host-launched GRU), plus: no runtime-selection wiring and no Windows/other-platform equivalent.

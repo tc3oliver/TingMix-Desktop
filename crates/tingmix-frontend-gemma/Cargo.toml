@@ -1,0 +1,13 @@
+[package]
+name = "tingmix-frontend-gemma"
+description = "Gemma4 audio feature extractor (128-bin log-mel) matching transformers 5.19.0 Gemma4AudioFeatureExtractor"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+rustfft = "6.4.1"
+
+[dev-dependencies]
+zip = { version = "7.3.0", default-features = false, features = ["deflate"] }

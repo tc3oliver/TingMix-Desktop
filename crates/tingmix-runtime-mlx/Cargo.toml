@@ -8,6 +8,16 @@ rust-version.workspace = true
 
 [dependencies]
 thiserror = "2.0.21"
+tingmix-core = { path = "../tingmix-core" }
+tingmix-decoder = { path = "../tingmix-decoder" }
+tingmix-frontend-gemma = { path = "../tingmix-frontend-gemma" }
+
+[dev-dependencies]
+tingmix-streaming = { path = "../tingmix-streaming" }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+zip = { version = "7.3.0", default-features = false, features = ["deflate"] }
+libc = "0.2.178"
 
 [build-dependencies]
 cc = "1.2.40"
