@@ -194,3 +194,5 @@ export interface UpdateInfo {
   version: string | null;
   notes: string | null;
 }
+
+export type MicStatus = "not_determined" | "authorized" | "denied" | "restricted" | "unsupported";

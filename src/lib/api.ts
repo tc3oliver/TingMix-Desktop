@@ -12,6 +12,7 @@ import type {
   LiveMsg,
   LiveSnapshot,
   LiveStatus,
+  MicStatus,
   ModelOp,
   ModelsOverview,
   PendingInstall,
@@ -48,6 +49,9 @@ export const api = {
   modelsProbe: (id: string) => invoke<void>("models_probe", { id }),
   backendInfo: () => invoke<BackendInfo>("backend_info"),
   updaterCheck: () => invoke<UpdateInfo>("updater_check"),
+  micStatus: () => invoke<MicStatus>("mic_permission_status"),
+  micRequest: () => invoke<MicStatus>("mic_permission_request"),
+  micOpenSettings: () => invoke<void>("mic_open_settings"),
   updaterInstall: () => invoke<void>("updater_install"),
   modelsVerify: (id: string) => invoke<void>("models_verify", { id }),
 };

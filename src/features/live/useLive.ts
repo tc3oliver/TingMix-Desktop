@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { api, errorText, onLive } from "../../lib/api";
-import type { Device, LiveStatus } from "../../types/protocol";
+import type { Device, LiveStatus, MicStatus } from "../../types/protocol";
 import { applySessionEvent, applySnapshot, emptyTranscript, type TranscriptState } from "./reducer";
 
 const IDLE: LiveStatus = {
@@ -13,6 +13,7 @@ export function useLive() {
   const [transcript, setTranscript] = useState<TranscriptState>(emptyTranscript());
   const [devices, setDevices] = useState<Device[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [mic, setMic] = useState<MicStatus | null>(null);
 
   useEffect(() => {
     let off: (() => void) | undefined;
@@ -31,9 +32,14 @@ export function useLive() {
       setTranscript((t) => applySnapshot(t.sessionId === s.status.session_id ? t : emptyTranscript(s.status.session_id), s.snapshot));
     }).catch((e) => setError(errorText(e)));
     api.listInputDevices().then((d) => alive && setDevices(d)).catch((e) => setError(errorText(e)));
+    // the user may change the permission in System Settings and come back
+    const refreshMic = () => api.micStatus().then((m) => alive && setMic(m)).catch(() => undefined);
+    void refreshMic();
+    window.addEventListener("focus", refreshMic);
     return () => {
       alive = false;
       off?.();
+      window.removeEventListener("focus", refreshMic);
     };
   }, []);
 
@@ -46,8 +52,21 @@ export function useLive() {
       setStatus(await api.liveStart(deviceId));
     } catch (e) {
       setError(errorText(e));
+    } finally {
+      // the first Start shows the system prompt, so the status has usually changed by now
+      api.micStatus().then(setMic).catch(() => undefined);
     }
   }, []);
+
+  const requestMic = useCallback(async () => {
+    try {
+      setMic(await api.micRequest());
+    } catch (e) {
+      setError(errorText(e));
+    }
+  }, []);
+
+  const openMicSettings = useCallback(() => api.micOpenSettings().catch((e) => setError(errorText(e))), []);
 
   const stop = useCallback(async () => {
     try {
@@ -57,5 +76,5 @@ export function useLive() {
     }
   }, []);
 
-  return { status, transcript, devices, error, start, stop, refreshDevices };
+  return { status, transcript, devices, error, mic, start, stop, refreshDevices, requestMic, openMicSettings };
 }

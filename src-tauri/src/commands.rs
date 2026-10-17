@@ -45,6 +45,8 @@ pub async fn live_start(
     state: State<'_, AppState>,
     device_id: Option<String>,
 ) -> Result<LiveStatus, String> {
+    // never start capture silently without access: ask first, refuse when denied
+    crate::mic::ensure_access().inspect_err(|e| state.note_error(e.clone()))?;
     let mut slot = state.live.lock().unwrap();
     if slot.as_ref().is_some_and(Live::is_running) {
         return Err("a live session is already running".into());
@@ -617,4 +619,20 @@ pub async fn updater_install(app: AppHandle, state: State<'_, AppState>) -> Resu
         .download_and_install(|_, _| {}, || {})
         .await
         .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn mic_permission_status() -> Result<crate::mic::MicStatus, String> {
+    Ok(crate::mic::status())
+}
+
+/// Shows the system prompt if the user has not decided yet; returns the resulting status.
+#[tauri::command]
+pub async fn mic_permission_request() -> Result<crate::mic::MicStatus, String> {
+    Ok(crate::mic::request())
+}
+
+#[tauri::command]
+pub async fn mic_open_settings() -> Result<(), String> {
+    crate::mic::open_settings()
 }

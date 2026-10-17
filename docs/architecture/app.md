@@ -112,6 +112,16 @@ in memory and, with "save history" on, on disk after every final).
   `export_text`), dropped files are registered by the host and referred to by opaque id, history ids are validated
   (`[A-Za-z0-9_-]`, no separators). `export_text` only accepts `txt` or `srt` and content up to 64 MiB.
 - CSP: `default-src 'self'`; the page loads nothing remote.
+- Microphone permission (`src-tauri/src/mic.rs`, AVFoundation through `objc2-av-foundation`): `mic_permission_status` /
+  `mic_permission_request` / `mic_open_settings`. A bundled macOS app only gets the system prompt when it asks; `live_start`
+  now asks first when the status is undetermined and refuses to start capture when it is denied or restricted, with a message
+  shown in the Live tab (plus an "Allow microphone access" button and, when denied, "Open System Settings" which opens
+  `x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone` from the host). The status is re-read when the
+  window regains focus. Windows has no per-app API (status `unsupported`; the OS privacy switch applies).
+- Bundle signing: `bundle.macOS.signingIdentity` is `-` (ad hoc) with `hardenedRuntime` false, so the whole `.app` is sealed:
+  `codesign -dv` shows `Identifier=app.tingmix.desktop`, `Info.plist entries=16`, entitlement `device.audio-input`. Hardened
+  runtime must be turned on for Developer ID / notarization; then the bundled ONNX Runtime and MLX libraries (other teams'
+  signatures) need re-signing with our identity or the library-validation entitlement (signing checklist).
 - macOS: `Info.plist` has `NSMicrophoneUsageDescription`; `Entitlements.plist` has `com.apple.security.device.audio-input` for
   hardened-runtime builds. Windows needs no manifest entry; the OS microphone privacy switch applies and a denied device
   surfaces as the host error shown under the Start button.

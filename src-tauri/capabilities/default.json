@@ -34,6 +34,9 @@
     "allow-models-probe",
     "allow-backend-info",
     "allow-updater-check",
-    "allow-updater-install"
+    "allow-updater-install",
+    "allow-mic-permission-status",
+    "allow-mic-permission-request",
+    "allow-mic-open-settings"
   ]
 }

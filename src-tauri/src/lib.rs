@@ -7,6 +7,7 @@ mod dto;
 mod e2e;
 mod files;
 mod live;
+mod mic;
 mod models;
 mod state;
 mod store;
@@ -173,6 +174,9 @@ pub fn run() {
             commands::backend_info,
             commands::updater_check,
             commands::updater_install,
+            commands::mic_permission_status,
+            commands::mic_permission_request,
+            commands::mic_open_settings,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");

@@ -7,7 +7,7 @@ import { useLive } from "./useLive";
 const clock = (s: number) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
 export function LivePanel({ settings, onSettings }: { settings: Settings; onSettings: (s: Settings) => void }) {
-  const { status, transcript, devices, error, start, stop, refreshDevices } = useLive();
+  const { status, transcript, devices, error, mic, start, stop, refreshDevices, requestMic, openMicSettings } = useLive();
   const busy = status.state === "recording" || status.state === "starting" || status.state === "stopping";
   const finals = finalsOf(transcript);
   const meter = Math.max(0, Math.min(100, ((status.level_db + 80) / 80) * 100));
@@ -39,6 +39,22 @@ export function LivePanel({ settings, onSettings }: { settings: Settings; onSett
         <span className="mono" title="elapsed">{clock(status.elapsed_s)}</span>
         <span className="meter" title={`${status.level_db.toFixed(0)} dBFS`}><i style={{ width: `${meter}%` }} /></span>
       </div>
+      {mic === "not_determined" && (
+        <p className="row">
+          <span className="muted">TingMix has not asked for microphone access yet.</span>
+          <button onClick={requestMic}>Allow microphone access</button>
+        </p>
+      )}
+      {(mic === "denied" || mic === "restricted") && (
+        <p className="row error" role="alert">
+          <span>
+            {mic === "denied"
+              ? "Microphone access is denied for TingMix, so nothing can be recorded."
+              : "Microphone access is restricted on this Mac (profile or parental controls)."}
+          </span>
+          {mic === "denied" && <button onClick={openMicSettings}>Open System Settings</button>}
+        </p>
+      )}
       {devices.length === 0 && <p className="muted">No microphone found. Connect one, then press Start to try the system default.</p>}
       {error && <p className="error" role="alert">{error}</p>}
       {status.message && <p className="muted small">{status.message}</p>}
