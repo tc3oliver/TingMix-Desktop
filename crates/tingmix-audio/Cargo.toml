@@ -1,0 +1,16 @@
+[package]
+name = "tingmix-audio"
+description = "Microphone capture into a lock-free ring, 16 kHz mono resampling, and file decoding"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+cpal = "0.18.2"
+ringbuf = "0.5.3"
+symphonia = { version = "0.6.1", features = ["all"] }
+thiserror = "2.0.21"
+
+[dev-dependencies]
+hound = "3.5.1"
