@@ -1,0 +1,46 @@
+# Packaging results and procedure
+
+Measured 2026-10-18 on the Mac Studio (Apple M4 Max, macOS 27.0), from a clean `git worktree` of commit `4f708c1` (tree without the
+uncommitted work of other tasks), Homebrew Rust 1.99.0, pnpm 10.34.7. **The bundle is unsigned and not notarized.** No Windows build was made here.
+
+## Procedure (macOS arm64)
+
+    tools/ort-fetch/fetch.sh macos-arm64        # sha256-verified Microsoft ONNX Runtime 1.31.0 into vendor/ (git-ignored)
+    pnpm install --frozen-lockfile
+    pnpm bundle:macos                           # = tauri build --bundles app,dmg --config src-tauri/tauri.ort-macos.conf.json
+
+Outputs: `target/release/bundle/macos/TingMix.app`, `target/release/bundle/dmg/TingMix_0.1.0_aarch64.dmg`. Cold build including all crates: 7 min 08 s
+(`pnpm bundle:macos`, 285 s user CPU). The CI `package` job (tags and manual runs only) does the same on `macos-latest` and `windows-latest`.
+
+## Results (commit 4f708c1)
+
+| Item | Result |
+|---|---|
+| `TingMix.app` | 64,820 KiB on disk (63.29 MiB by Tauri); `Contents/MacOS/tingmix-app` 21,151,584 bytes; `Resources/onnxruntime/libonnxruntime.1.31.0.dylib` 44,830,288 bytes; ORT `LICENSE` 1,073 and `ThirdPartyNotices.txt` 338,088 bytes; `icon.icns`; `Info.plist` |
+| DMG | `TingMix_0.1.0_aarch64.dmg` 19,514,768 bytes, sha256 `c8df5435fbbd2f6b83c416e194e531c67bd478185d39781e43863f710f67df51` (this build only; the bundle is not reproducible bit-for-bit across builds); `hdiutil verify`: checksum valid; mounts; contains `TingMix.app` and an `Applications` link; binary and ORT dylib identical to the ones in the `.app` |
+| Bundled ORT | sha256 `2a50a63e...51b70` equals the fetched file; still carries Microsoft's signature (TeamIdentifier `UBF8T346G9`) |
+| `otool -L tingmix-app` | 17 libraries, all `/System/Library/Frameworks/*` or `/usr/lib/*` (AppKit, WebKit, CoreAudio, AudioToolbox, Security, SystemConfiguration, OSAKit, IOKit, CoreServices, libSystem, libobjc, libiconv, ...). No `/opt/homebrew`, `/usr/local`, venv, `/Users` or Python path, no `LC_RPATH`. ONNX Runtime is **not** linked (load-dynamic) |
+| `otool -L libonnxruntime.1.31.0.dylib` | system frameworks (CoreML, Cocoa, Metal, IOSurface, CFNetwork, Network, ...), `/usr/lib/libc++`, `libz`, `libsqlite3`, and its own `@rpath/libonnxruntime.1.dylib` id with `@loader_path` rpath; no other paths |
+| Launch with no Python | `env -i PATH=/bin HOME=<empty dir>`: `which python python3` finds nothing; the app stayed running, RSS about 111 MB after 7 s, one 960 x 700 on-screen window (`CGWindowListCopyWindowInfo`); `osascript -e 'tell application id "app.tingmix.desktop" to quit'` made it exit within 3 s. An earlier build of the same app without ORT (`target/release` of the main checkout, 16.85 MiB `.app`, 5.34 MiB DMG) behaved the same |
+| Signature state | ad hoc, linker-signed only; no entitlements embedded (`codesign -d --entitlements` empty); `codesign --verify --deep --strict` fails ("code has no resources but signature indicates they must be present") because resources were added after the linker signature; Gatekeeper would reject it. This is expected for an unsigned development bundle and is exactly what the signing step has to fix |
+
+## Not verified
+
+- Inference from the installed `.app`: this smoke test only covers start, window and quit. Importing a model, probing, selecting a backend and transcribing from the packaged app is task #20.
+- Microphone permission prompt and live capture from the `.app` (needs a human at the machine; task #16).
+- Running from `/Applications` after copying out of the DMG, Gatekeeper/quarantine behaviour, notarization, stapling, hardened-runtime entitlements (library validation versus the Microsoft-signed ORT dylib is discussed in `onnxruntime.md`).
+- Anything on a clean Mac without developer tools (this Mac has Xcode, Homebrew and mise; PATH was stripped but the file system was not).
+- Windows: the NSIS installer, DLL loading, WebView2 and VC++ runtime handling, MSI. The `windows-latest` CI job is untested because the repository has no remote; the `unzip` fallback in the `package` job (7z) is a guess about the runner image.
+- The DMG layout (background, icon positions) was not inspected visually.
+
+## Windows installer configuration (for the owner of `src-tauri`)
+
+Existing: `src-tauri/tauri.ort-windows.conf.json` and `pnpm bundle:windows` (`--bundles nsis`). `tauri.conf.json` has `"targets": "all"`, which would
+also request MSI on Windows; MSI needs WiX. Suggested changes, to be checked against `https://v2.tauri.app/reference/config/` for the pinned Tauri version before use
+(none of them was built here):
+
+1. Keep `bundle:windows` on `nsis` only until an MSI is required; make `targets` explicit (`["app", "dmg", "nsis"]`) so a bare `tauri build` does not depend on WiX.
+2. Decide `bundle.windows.webviewInstallMode` explicitly (default downloads the WebView2 bootstrapper; offline machines need `embedBootstrapper` or `offlineInstaller`, which grows the installer).
+3. Decide `bundle.windows.nsis.installMode` (`currentUser` avoids elevation, which suits a per-user model cache).
+4. Do not put signing settings in the committed config (`certificateThumbprint`, `signCommand`); see `signing-checklist.md`.
+5. After the first Windows build verify on a clean VM that `onnxruntime.dll` is loaded by absolute path from the install directory and not from System32.
