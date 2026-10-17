@@ -1,0 +1,249 @@
+{
+  "artifact_sha256": "9737153e4631bc773481ec458f34f242cc7800ccc6ae6ea1c509d895181fc7ec",
+  "clips": [
+    {
+      "audio_s": 1.4083125,
+      "clip": "en_02s",
+      "off_equals_oracle": true,
+      "on_equals_off": true,
+      "on_equals_oracle": true,
+      "oracle_beam_lm": "good morning everyone",
+      "oracle_greedy": "good morning everyone",
+      "tail_off": {
+        "coalesced_partials": 0,
+        "final_latency_s": [
+          0.040436291000000235
+        ],
+        "finals": 1,
+        "partials": 3,
+        "text": "good morning everyone"
+      },
+      "tail_on": {
+        "coalesced_partials": 0,
+        "final_latency_s": [
+          0.024512624999999844
+        ],
+        "finals": 1,
+        "partials": 3,
+        "text": "good morning everyone"
+      }
+    },
+    {
+      "audio_s": 5.1436875,
+      "clip": "en_08s",
+      "off_equals_oracle": true,
+      "on_equals_off": true,
+      "on_equals_oracle": true,
+      "oracle_beam_lm": "the quick brown fox jumps over the lazy dog while the weather stays comm and clear all afternoon",
+      "oracle_greedy": "the quick brown fox jumps over the lazy dog while the weather stays comm and clear all afternoon",
+      "tail_off": {
+        "coalesced_partials": 0,
+        "final_latency_s": [
+          0.10572841600000071
+        ],
+        "finals": 1,
+        "partials": 11,
+        "text": "the quick brown fox jumps over the lazy dog while the weather stays comm and clear all afternoon"
+      },
+      "tail_on": {
+        "coalesced_partials": 0,
+        "final_latency_s": [
+          0.02581837500000006
+        ],
+        "finals": 1,
+        "partials": 11,
+        "text": "the quick brown fox jumps over the lazy dog while the weather stays comm and clear all afternoon"
+      }
+    },
+    {
+      "audio_s": 3.5496875,
+      "clip": "mix_04s",
+      "off_equals_oracle": false,
+      "on_equals_off": true,
+      "on_equals_oracle": false,
+      "oracle_beam_lm": "今天我們來review這個ai的設計",
+      "oracle_greedy": "今天我們來review這個ai的設計",
+      "tail_off": {
+        "coalesced_partials": 0,
+        "final_latency_s": [
+          0.08055820800000024
+        ],
+        "finals": 1,
+        "partials": 8,
+        "text": "今天我們來review這個api的設計"
+      },
+      "tail_on": {
+        "coalesced_partials": 0,
+        "final_latency_s": [
+          0.0236477500000003
+        ],
+        "finals": 1,
+        "partials": 8,
+        "text": "今天我們來review這個api的設計"
+      }
+    },
+    {
+      "audio_s": 7.5191875,
+      "clip": "mix_08s",
+      "off_equals_oracle": true,
+      "on_equals_off": true,
+      "on_equals_oracle": true,
+      "oracle_beam_lm": "我覺得這個deadline有點太趕了我們要不要先跟pn討論一下sc再決定",
+      "oracle_greedy": "我覺得這個deadline有點太趕了我們要不要先跟pn討論一下sc再決定",
+      "tail_off": {
+        "coalesced_partials": 0,
+        "final_latency_s": [
+          0.1284176660000007
+        ],
+        "finals": 1,
+        "partials": 16,
+        "text": "我覺得這個deadline有點太趕了我們要不要先跟pn討論一下sc再決定"
+      },
+      "tail_on": {
+        "coalesced_partials": 0,
+        "final_latency_s": [
+          0.021629542000001223
+        ],
+        "finals": 1,
+        "partials": 17,
+        "text": "我覺得這個deadline有點太趕了我們要不要先跟pn討論一下sc再決定"
+      }
+    },
+    {
+      "audio_s": 34.630375,
+      "clip": "mix_29s",
+      "off_equals_oracle": false,
+      "on_equals_off": true,
+      "on_equals_oracle": false,
+      "oracle_beam_lm": "大家好今天的meeting主要有三個chpic第一個是上週的releas狀況qa回報了幾個b其中兩個已經fixed了第二個是新的feature規劃我們希望下個sprint可以完成prototype第三個是performance的問題目前在windows上面的latternc還是太高需要再做一些proadfiling跟optimization然後請大家記得更新自己的k狀態謝謝大家",
+      "oracle_greedy": "大家好今天的meeting主要有三個chpic第一個是上週的releas狀況qa回報了幾個b其中兩個已經fixed了第二個是新的feature規劃我們希望下個sprint可以完成prototype第三個是performance的問題目前在windows上面的latternc還是太高需要再做一些proadfiling跟optimization最後請大家記得更新自己的k狀態謝謝大家",
+      "tail_off": {
+        "coalesced_partials": 0,
+        "final_latency_s": [
+          -0.1949556250000022,
+          0.12988037499999905
+        ],
+        "finals": 2,
+        "partials": 66,
+        "text": "大家好今天的meeting主要有三個chpic第一個是上週的releas狀況qa回報了幾個b其中兩個已經fixed了第二個是新的feature規劃我們希望下個sprint可以完成prototype第三個是performance的問題目前在windows上面的latternc還是太高需要再做一些profiling跟optimization最後請大家記得更新自己的k狀態謝謝大家"
+      },
+      "tail_on": {
+        "coalesced_partials": 0,
+        "final_latency_s": [
+          -0.23963754200000054,
+          0.026326457999999775
+        ],
+        "finals": 2,
+        "partials": 74,
+        "text": "大家好今天的meeting主要有三個chpic第一個是上週的releas狀況qa回報了幾個b其中兩個已經fixed了第二個是新的feature規劃我們希望下個sprint可以完成prototype第三個是performance的問題目前在windows上面的latternc還是太高需要再做一些profiling跟optimization最後請大家記得更新自己的k狀態謝謝大家"
+      }
+    },
+    {
+      "audio_s": 1.7036875,
+      "clip": "zh_02s",
+      "off_equals_oracle": true,
+      "on_equals_off": true,
+      "on_equals_oracle": true,
+      "oracle_beam_lm": "今天天氣很好",
+      "oracle_greedy": "今天天氣很好",
+      "tail_off": {
+        "coalesced_partials": 0,
+        "final_latency_s": [
+          0.06679158400000018
+        ],
+        "finals": 1,
+        "partials": 4,
+        "text": "今天天氣很好"
+      },
+      "tail_on": {
+        "coalesced_partials": 0,
+        "final_latency_s": [
+          0.021791499999999964
+        ],
+        "finals": 1,
+        "partials": 4,
+        "text": "今天天氣很好"
+      }
+    },
+    {
+      "audio_s": 8.5995,
+      "clip": "zh_08s",
+      "off_equals_oracle": true,
+      "on_equals_off": true,
+      "on_equals_oracle": true,
+      "oracle_beam_lm": "立法院今天下午召開會議討論明年度的中央政府總預算案以及多項重要的民生法案",
+      "oracle_greedy": "立法院今天下午召開會議討論明年度的中央政府總預算案以及多項重要的民生法案",
+      "tail_off": {
+        "coalesced_partials": 0,
+        "final_latency_s": [
+          0.18582699999999974
+        ],
+        "finals": 1,
+        "partials": 19,
+        "text": "立法院今天下午召開會議討論明年度的中央政府總預算案以及多項重要的民生法案"
+      },
+      "tail_on": {
+        "coalesced_partials": 0,
+        "final_latency_s": [
+          0.025545666000001077
+        ],
+        "finals": 1,
+        "partials": 19,
+        "text": "立法院今天下午召開會議討論明年度的中央政府總預算案以及多項重要的民生法案"
+      }
+    },
+    {
+      "audio_s": 20.4168125,
+      "clip": "zh_16s",
+      "off_equals_oracle": true,
+      "on_equals_off": true,
+      "on_equals_oracle": true,
+      "oracle_beam_lm": "語音辨識系統需要處理不同的口音被警噪音以及說話速度為了讓模型在桌面電腦上即時運作我們必須仔細設計串流架構確保每一段音訊只處理一次並且在使用者停止說話之後儘快輸出最終結果",
+      "oracle_greedy": "語音辨識系統需要處理不同的口音被警噪音以及說話速度為了讓模型在桌面電腦上即時運作我們必須仔細設計串流架構卻保每一段因訊只處理一次並且在使用著停止說話之後儘快輸出最終結果",
+      "tail_off": {
+        "coalesced_partials": 0,
+        "final_latency_s": [
+          0.2450701670000015
+        ],
+        "finals": 1,
+        "partials": 43,
+        "text": "語音辨識系統需要處理不同的口音被警噪音以及說話速度為了讓模型在桌面電腦上即時運作我們必須仔細設計串流架構確保每一段音訊只處理一次並且在使用者停止說話之後儘快輸出最終結果"
+      },
+      "tail_on": {
+        "coalesced_partials": 0,
+        "final_latency_s": [
+          0.021838709000000733
+        ],
+        "finals": 1,
+        "partials": 45,
+        "text": "語音辨識系統需要處理不同的口音被警噪音以及說話速度為了讓模型在桌面電腦上即時運作我們必須仔細設計串流架構確保每一段音訊只處理一次並且在使用者停止說話之後儘快輸出最終結果"
+      }
+    }
+  ],
+  "clips_where_only_tail_on_differs_from_oracle": [],
+  "clips_where_tail_on_differs_from_tail_off": [],
+  "command": "./target/release/examples/tail_partial_accuracy experiments/macos/mlx/out/tingmix-large-mlx-fp32.safetensors $MODEL_CACHE/tingmix-large-75071a1 benchmarks/streaming/tail-partial-accuracy-mlx.json",
+  "final_latency_after_endpoint_s": {
+    "tail_off": {
+      "max": 0.2450701670000015,
+      "n": 9,
+      "p50": 0.10572841600000071,
+      "p95": 0.2450701670000015
+    },
+    "tail_on": {
+      "max": 0.026326457999999775,
+      "n": 9,
+      "p50": 0.0236477500000003,
+      "p95": 0.026326457999999775
+    }
+  },
+  "git_sha": "8de4c9aff3642bfb4aaf663260f19f3fa7773367",
+  "hardware": {
+    "cpu": "Apple M4 Max",
+    "os": "27.0",
+    "uptime_at_end": "1:25  up 18 days, 23:54, 7 users, load averages: 13.11 13.21 11.09",
+    "uptime_at_start": "1:21  up 18 days, 23:50, 7 users, load averages: 24.43 15.05 11.01"
+  },
+  "session_config": "SessionConfig { hop_ms: 480.0, silence_ms: 600.0, max_segment_s: 25.0, preroll_ms: 800.0, tail_pad_ms: 0.0, stability_k: 2, max_load: 0.5, vad_threshold_db: -50.0, tail_partial: false }",
+  "what": "SessionWorker replay at real time (20 ms chunks + 1.5 s trailing silence), MlxLargeBackend fp32 + beam+LM, one fresh backend per run; synthetic TTS fixtures"
+}
