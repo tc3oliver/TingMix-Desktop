@@ -1,0 +1,1086 @@
+{
+ "stage": "stage4_tower",
+ "hardware": {
+  "chip": "Apple M4 Max",
+  "mem_gb": 64,
+  "macos": "27.0",
+  "coremltools": "9.0",
+  "torch": "2.9.1"
+ },
+ "input_fixtures": [
+  "mix_08s",
+  "mix_29s"
+ ],
+ "results": {
+  "mix_08s": {
+   "torch_wrapper_vs_oracle": {
+    "max_abs": 0.000278472900390625
+   },
+   "trace_fp32": {
+    "convert": {
+     "ok": true,
+     "path": "<repo>/experiments/macos/coreml/out/s4_tower_F751.trace.fp32.mlpackage",
+     "seconds": 11.1,
+     "size_mb": 1116.0
+    },
+    "run": {
+     "CPU_ONLY": {
+      "ok": true,
+      "load_s": 2.0,
+      "median_ms": 76.18,
+      "min_ms": 75.03,
+      "max_ms": 77.74,
+      "n": 5,
+      "parity": {
+       "var_4345": {
+        "max_abs": 0.00031280517578125,
+        "mean_abs": 5.740217332736461e-06,
+        "rel_l2": 1.6960541288547843e-06
+       }
+      },
+      "reader_greedy_id_agree": 1.0
+     },
+     "CPU_AND_GPU": {
+      "ok": true,
+      "load_s": 2.25,
+      "median_ms": 15.98,
+      "min_ms": 15.85,
+      "max_ms": 16.61,
+      "n": 5,
+      "parity": {
+       "var_4345": {
+        "max_abs": 7.43865966796875e-05,
+        "mean_abs": 4.744027059604936e-06,
+        "rel_l2": 1.2040531728058127e-06
+       }
+      },
+      "reader_greedy_id_agree": 1.0
+     },
+     "CPU_AND_NE": {
+      "ok": true,
+      "load_s": 2.5,
+      "median_ms": 76.74,
+      "min_ms": 75.3,
+      "max_ms": 77.39,
+      "n": 5,
+      "parity": {
+       "var_4345": {
+        "max_abs": 0.00031280517578125,
+        "mean_abs": 5.740217332736461e-06,
+        "rel_l2": 1.6960541288547843e-06
+       }
+      },
+      "reader_greedy_id_agree": 1.0
+     },
+     "ALL": {
+      "ok": true,
+      "load_s": 2.95,
+      "median_ms": 15.79,
+      "min_ms": 15.45,
+      "max_ms": 16.21,
+      "n": 5,
+      "parity": {
+       "var_4345": {
+        "max_abs": 7.43865966796875e-05,
+        "mean_abs": 4.744027059604936e-06,
+        "rel_l2": 1.2040531728058127e-06
+       }
+      },
+      "reader_greedy_id_agree": 1.0
+     }
+    },
+    "placement": {
+     "ALL": {
+      "ops": 1861,
+      "preferred": {
+       "GPU": 1861
+      },
+      "ne_supported_ops": 0,
+      "not_ne_supported_by_type": {
+       "ios18.mul": 420,
+       "ios18.clip": 314,
+       "ios18.pow": 216,
+       "ios18.add": 168,
+       "ios18.reshape": 133,
+       "ios18.linear": 122,
+       "ios16.reduce_mean": 108,
+       "ios18.transpose": 75,
+       "ios18.slice_by_index": 72,
+       "pad": 60,
+       "ios18.silu": 36,
+       "ios18.matmul": 36
+      }
+     },
+     "CPU_AND_NE": {
+      "ops": 1861,
+      "preferred": {
+       "CPU": 1861
+      },
+      "ne_supported_ops": 0,
+      "not_ne_supported_by_type": {
+       "ios18.mul": 420,
+       "ios18.clip": 314,
+       "ios18.pow": 216,
+       "ios18.add": 168,
+       "ios18.reshape": 133,
+       "ios18.linear": 122,
+       "ios16.reduce_mean": 108,
+       "ios18.transpose": 75,
+       "ios18.slice_by_index": 72,
+       "pad": 60,
+       "ios18.silu": 36,
+       "ios18.matmul": 36
+      }
+     },
+     "CPU_AND_GPU": {
+      "ops": 1861,
+      "preferred": {
+       "GPU": 1861
+      },
+      "ne_supported_ops": 0,
+      "not_ne_supported_by_type": {
+       "ios18.mul": 420,
+       "ios18.clip": 314,
+       "ios18.pow": 216,
+       "ios18.add": 168,
+       "ios18.reshape": 133,
+       "ios18.linear": 122,
+       "ios16.reduce_mean": 108,
+       "ios18.transpose": 75,
+       "ios18.slice_by_index": 72,
+       "pad": 60,
+       "ios18.silu": 36,
+       "ios18.matmul": 36
+      }
+     }
+    }
+   },
+   "trace_fp16": {
+    "convert": {
+     "ok": true,
+     "path": "<repo>/experiments/macos/coreml/out/s4_tower_F751.trace.fp16.mlpackage",
+     "seconds": 15.9,
+     "size_mb": 558.4
+    },
+    "run": {
+     "CPU_ONLY": {
+      "ok": true,
+      "load_s": 1.42,
+      "median_ms": 41.89,
+      "min_ms": 41.74,
+      "max_ms": 42.08,
+      "n": 5,
+      "parity": {
+       "var_4345": {
+        "max_abs": 1.1799507141113281,
+        "mean_abs": 0.04262990614241339,
+        "rel_l2": 0.010982116728001397
+       }
+      },
+      "reader_greedy_id_agree": 1.0
+     },
+     "CPU_AND_GPU": {
+      "ok": true,
+      "load_s": 1.62,
+      "median_ms": 15.32,
+      "min_ms": 14.82,
+      "max_ms": 16.77,
+      "n": 5,
+      "parity": {
+       "var_4345": {
+        "max_abs": 0.5869913101196289,
+        "mean_abs": 0.00750571664609666,
+        "rel_l2": 0.0025420329483673773
+       }
+      },
+      "reader_greedy_id_agree": 1.0
+     },
+     "CPU_AND_NE": {
+      "ok": true,
+      "load_s": 71.07,
+      "median_ms": 181.16,
+      "min_ms": 177.23,
+      "max_ms": 184.19,
+      "n": 5,
+      "parity": {
+       "var_4345": {
+        "max_abs": 0.46089422702789307,
+        "mean_abs": 0.023044629055327233,
+        "rel_l2": 0.006075562345779684
+       }
+      },
+      "reader_greedy_id_agree": 1.0
+     },
+     "ALL": {
+      "ok": true,
+      "load_s": 3.35,
+      "median_ms": 22.94,
+      "min_ms": 22.73,
+      "max_ms": 23.62,
+      "n": 5,
+      "parity": {
+       "var_4345": {
+        "max_abs": 0.4598836898803711,
+        "mean_abs": 0.01580101376806451,
+        "rel_l2": 0.004190542660852356
+       }
+      },
+      "reader_greedy_id_agree": 1.0
+     }
+    },
+    "placement": {
+     "ALL": {
+      "ops": 2053,
+      "preferred": {
+       "GPU": 1909,
+       "NeuralEngine": 144
+      },
+      "ne_supported_ops": 1741,
+      "not_ne_supported_by_type": {
+       "ios18.cast": 192,
+       "ios18.clip": 96,
+       "ios18.matmul": 24
+      }
+     },
+     "CPU_AND_NE": {
+      "ops": 2053,
+      "preferred": {
+       "NeuralEngine": 650,
+       "CPU": 1307,
+       "none": 96
+      },
+      "ne_supported_ops": 1669,
+      "not_ne_supported_by_type": {
+       "ios18.pow": 108,
+       "ios18.cast": 96,
+       "pad": 36,
+       "ios18.matmul": 36,
+       "select": 12
+      }
+     },
+     "CPU_AND_GPU": {
+      "ops": 2053,
+      "preferred": {
+       "GPU": 2053
+      },
+      "ne_supported_ops": 0,
+      "not_ne_supported_by_type": {
+       "ios18.mul": 420,
+       "ios18.clip": 314,
+       "ios18.pow": 216,
+       "ios18.cast": 192,
+       "ios18.add": 168,
+       "ios18.reshape": 133,
+       "ios18.linear": 122,
+       "ios16.reduce_mean": 108,
+       "ios18.transpose": 75,
+       "ios18.slice_by_index": 72,
+       "pad": 60,
+       "ios18.silu": 36
+      }
+     }
+    }
+   },
+   "export_fp32": {
+    "convert": {
+     "ok": true,
+     "path": "<repo>/experiments/macos/coreml/out/s4_tower_F751.export.fp32.mlpackage",
+     "seconds": 10.2,
+     "size_mb": 1116.7
+    },
+    "run": {
+     "CPU_ONLY": {
+      "ok": true,
+      "load_s": 2.09,
+      "median_ms": 71.82,
+      "min_ms": 68.62,
+      "max_ms": 73.09,
+      "n": 5,
+      "parity": {
+       "linear_133": {
+        "max_abs": 0.00031280517578125,
+        "mean_abs": 5.740217332736461e-06,
+        "rel_l2": 1.6960541288547843e-06
+       }
+      },
+      "reader_greedy_id_agree": 1.0
+     },
+     "CPU_AND_GPU": {
+      "ok": true,
+      "load_s": 2.19,
+      "median_ms": 15.83,
+      "min_ms": 15.57,
+      "max_ms": 16.16,
+      "n": 5,
+      "parity": {
+       "linear_133": {
+        "max_abs": 7.43865966796875e-05,
+        "mean_abs": 4.744027059604936e-06,
+        "rel_l2": 1.2040531728058127e-06
+       }
+      },
+      "reader_greedy_id_agree": 1.0
+     },
+     "CPU_AND_NE": {
+      "ok": true,
+      "load_s": 2.38,
+      "median_ms": 69.49,
+      "min_ms": 66.88,
+      "max_ms": 72.07,
+      "n": 5,
+      "parity": {
+       "linear_133": {
+        "max_abs": 0.00031280517578125,
+        "mean_abs": 5.740217332736461e-06,
+        "rel_l2": 1.6960541288547843e-06
+       }
+      },
+      "reader_greedy_id_agree": 1.0
+     },
+     "ALL": {
+      "ok": true,
+      "load_s": 2.46,
+      "median_ms": 15.95,
+      "min_ms": 15.82,
+      "max_ms": 16.28,
+      "n": 5,
+      "parity": {
+       "linear_133": {
+        "max_abs": 7.43865966796875e-05,
+        "mean_abs": 4.744027059604936e-06,
+        "rel_l2": 1.2040531728058127e-06
+       }
+      },
+      "reader_greedy_id_agree": 1.0
+     }
+    },
+    "placement": {
+     "ALL": {
+      "ops": 1861,
+      "preferred": {
+       "GPU": 1861
+      },
+      "ne_supported_ops": 0,
+      "not_ne_supported_by_type": {
+       "ios18.mul": 420,
+       "ios18.clip": 314,
+       "ios18.pow": 216,
+       "ios18.add": 168,
+       "ios18.reshape": 133,
+       "ios18.linear": 122,
+       "ios16.reduce_mean": 108,
+       "ios18.transpose": 75,
+       "ios18.slice_by_index": 72,
+       "pad": 60,
+       "ios18.silu": 36,
+       "ios18.matmul": 36
+      }
+     },
+     "CPU_AND_NE": {
+      "ops": 1861,
+      "preferred": {
+       "CPU": 1861
+      },
+      "ne_supported_ops": 0,
+      "not_ne_supported_by_type": {
+       "ios18.mul": 420,
+       "ios18.clip": 314,
+       "ios18.pow": 216,
+       "ios18.add": 168,
+       "ios18.reshape": 133,
+       "ios18.linear": 122,
+       "ios16.reduce_mean": 108,
+       "ios18.transpose": 75,
+       "ios18.slice_by_index": 72,
+       "pad": 60,
+       "ios18.silu": 36,
+       "ios18.matmul": 36
+      }
+     },
+     "CPU_AND_GPU": {
+      "ops": 1861,
+      "preferred": {
+       "GPU": 1861
+      },
+      "ne_supported_ops": 0,
+      "not_ne_supported_by_type": {
+       "ios18.mul": 420,
+       "ios18.clip": 314,
+       "ios18.pow": 216,
+       "ios18.add": 168,
+       "ios18.reshape": 133,
+       "ios18.linear": 122,
+       "ios16.reduce_mean": 108,
+       "ios18.transpose": 75,
+       "ios18.slice_by_index": 72,
+       "pad": 60,
+       "ios18.silu": 36,
+       "ios18.matmul": 36
+      }
+     }
+    }
+   },
+   "export_fp16": {
+    "convert": {
+     "ok": true,
+     "path": "<repo>/experiments/macos/coreml/out/s4_tower_F751.export.fp16.mlpackage",
+     "seconds": 13.1,
+     "size_mb": 559.2
+    },
+    "run": {
+     "CPU_ONLY": {
+      "ok": true,
+      "load_s": 1.42,
+      "median_ms": 39.5,
+      "min_ms": 39.29,
+      "max_ms": 39.67,
+      "n": 5,
+      "parity": {
+       "linear_133": {
+        "max_abs": 1.1799507141113281,
+        "mean_abs": 0.04262990614241339,
+        "rel_l2": 0.010982116728001397
+       }
+      },
+      "reader_greedy_id_agree": 1.0
+     },
+     "CPU_AND_GPU": {
+      "ok": true,
+      "load_s": 1.63,
+      "median_ms": 14.98,
+      "min_ms": 14.64,
+      "max_ms": 15.04,
+      "n": 5,
+      "parity": {
+       "linear_133": {
+        "max_abs": 0.5869913101196289,
+        "mean_abs": 0.00750571664609666,
+        "rel_l2": 0.0025420329483673773
+       }
+      },
+      "reader_greedy_id_agree": 1.0
+     },
+     "CPU_AND_NE": {
+      "ok": true,
+      "load_s": 68.85,
+      "median_ms": 175.77,
+      "min_ms": 175.55,
+      "max_ms": 180.0,
+      "n": 5,
+      "parity": {
+       "linear_133": {
+        "max_abs": 0.46089422702789307,
+        "mean_abs": 0.023044629055327233,
+        "rel_l2": 0.006075562345779684
+       }
+      },
+      "reader_greedy_id_agree": 1.0
+     },
+     "ALL": {
+      "ok": true,
+      "load_s": 3.81,
+      "median_ms": 32.22,
+      "min_ms": 31.49,
+      "max_ms": 33.66,
+      "n": 5,
+      "parity": {
+       "linear_133": {
+        "max_abs": 0.4598836898803711,
+        "mean_abs": 0.01580101376806451,
+        "rel_l2": 0.004190542660852356
+       }
+      },
+      "reader_greedy_id_agree": 1.0
+     }
+    },
+    "placement": {
+     "ALL": {
+      "ops": 2053,
+      "preferred": {
+       "GPU": 1909,
+       "NeuralEngine": 144
+      },
+      "ne_supported_ops": 1741,
+      "not_ne_supported_by_type": {
+       "ios18.cast": 192,
+       "ios18.clip": 96,
+       "ios18.matmul": 24
+      }
+     },
+     "CPU_AND_NE": {
+      "ops": 2053,
+      "preferred": {
+       "NeuralEngine": 650,
+       "CPU": 1307,
+       "none": 96
+      },
+      "ne_supported_ops": 1669,
+      "not_ne_supported_by_type": {
+       "ios18.pow": 108,
+       "ios18.cast": 96,
+       "pad": 36,
+       "ios18.matmul": 36,
+       "select": 12
+      }
+     },
+     "CPU_AND_GPU": {
+      "ops": 2053,
+      "preferred": {
+       "GPU": 2053
+      },
+      "ne_supported_ops": 0,
+      "not_ne_supported_by_type": {
+       "ios18.mul": 420,
+       "ios18.clip": 314,
+       "ios18.pow": 216,
+       "ios18.cast": 192,
+       "ios18.add": 168,
+       "ios18.reshape": 133,
+       "ios18.linear": 122,
+       "ios16.reduce_mean": 108,
+       "ios18.transpose": 75,
+       "ios18.slice_by_index": 72,
+       "pad": 60,
+       "ios18.silu": 36
+      }
+     }
+    }
+   }
+  },
+  "mix_29s": {
+   "torch_wrapper_vs_oracle": {
+    "max_abs": 0.000148773193359375
+   },
+   "trace_fp32": {
+    "convert": {
+     "ok": true,
+     "path": "<repo>/experiments/macos/coreml/out/s4_tower_F2999.trace.fp32.mlpackage",
+     "seconds": 11.2,
+     "size_mb": 1116.0
+    },
+    "run": {
+     "CPU_ONLY": {
+      "ok": true,
+      "load_s": 2.1,
+      "median_ms": 228.76,
+      "min_ms": 227.01,
+      "max_ms": 241.48,
+      "n": 5,
+      "parity": {
+       "var_4345": {
+        "max_abs": 0.0002994537353515625,
+        "mean_abs": 5.697710278506444e-06,
+        "rel_l2": 1.528052537342813e-06
+       }
+      },
+      "reader_greedy_id_agree": 1.0
+     },
+     "CPU_AND_GPU": {
+      "ok": true,
+      "load_s": 2.81,
+      "median_ms": 51.95,
+      "min_ms": 50.51,
+      "max_ms": 54.07,
+      "n": 5,
+      "parity": {
+       "var_4345": {
+        "max_abs": 0.00018215179443359375,
+        "mean_abs": 4.687560258920106e-06,
+        "rel_l2": 1.219974365121731e-06
+       }
+      },
+      "reader_greedy_id_agree": 1.0
+     },
+     "CPU_AND_NE": {
+      "ok": true,
+      "load_s": 3.38,
+      "median_ms": 485.92,
+      "min_ms": 398.47,
+      "max_ms": 516.27,
+      "n": 5,
+      "parity": {
+       "var_4345": {
+        "max_abs": 0.0002994537353515625,
+        "mean_abs": 5.697710278506444e-06,
+        "rel_l2": 1.528052537342813e-06
+       }
+      },
+      "reader_greedy_id_agree": 1.0
+     },
+     "ALL": {
+      "ok": true,
+      "load_s": 4.47,
+      "median_ms": 53.07,
+      "min_ms": 48.04,
+      "max_ms": 61.31,
+      "n": 5,
+      "parity": {
+       "var_4345": {
+        "max_abs": 0.00018215179443359375,
+        "mean_abs": 4.687560258920106e-06,
+        "rel_l2": 1.219974365121731e-06
+       }
+      },
+      "reader_greedy_id_agree": 1.0
+     }
+    },
+    "placement": {
+     "ALL": {
+      "ops": 1861,
+      "preferred": {
+       "GPU": 1861
+      },
+      "ne_supported_ops": 0,
+      "not_ne_supported_by_type": {
+       "ios18.mul": 420,
+       "ios18.clip": 314,
+       "ios18.pow": 216,
+       "ios18.add": 168,
+       "ios18.reshape": 133,
+       "ios18.linear": 122,
+       "ios16.reduce_mean": 108,
+       "ios18.transpose": 75,
+       "ios18.slice_by_index": 72,
+       "pad": 60,
+       "ios18.silu": 36,
+       "ios18.matmul": 36
+      }
+     },
+     "CPU_AND_NE": {
+      "ops": 1861,
+      "preferred": {
+       "CPU": 1861
+      },
+      "ne_supported_ops": 0,
+      "not_ne_supported_by_type": {
+       "ios18.mul": 420,
+       "ios18.clip": 314,
+       "ios18.pow": 216,
+       "ios18.add": 168,
+       "ios18.reshape": 133,
+       "ios18.linear": 122,
+       "ios16.reduce_mean": 108,
+       "ios18.transpose": 75,
+       "ios18.slice_by_index": 72,
+       "pad": 60,
+       "ios18.silu": 36,
+       "ios18.matmul": 36
+      }
+     },
+     "CPU_AND_GPU": {
+      "ops": 1861,
+      "preferred": {
+       "GPU": 1861
+      },
+      "ne_supported_ops": 0,
+      "not_ne_supported_by_type": {
+       "ios18.mul": 420,
+       "ios18.clip": 314,
+       "ios18.pow": 216,
+       "ios18.add": 168,
+       "ios18.reshape": 133,
+       "ios18.linear": 122,
+       "ios16.reduce_mean": 108,
+       "ios18.transpose": 75,
+       "ios18.slice_by_index": 72,
+       "pad": 60,
+       "ios18.silu": 36,
+       "ios18.matmul": 36
+      }
+     }
+    }
+   },
+   "trace_fp16": {
+    "convert": {
+     "ok": true,
+     "path": "<repo>/experiments/macos/coreml/out/s4_tower_F2999.trace.fp16.mlpackage",
+     "seconds": 33.1,
+     "size_mb": 558.4
+    },
+    "run": {
+     "CPU_ONLY": {
+      "ok": true,
+      "load_s": 2.43,
+      "median_ms": 208.08,
+      "min_ms": 186.93,
+      "max_ms": 397.21,
+      "n": 5,
+      "parity": {
+       "var_4345": {
+        "max_abs": 0.9410362243652344,
+        "mean_abs": 0.04271736194338509,
+        "rel_l2": 0.010366866584583533
+       }
+      },
+      "reader_greedy_id_agree": 0.9973333333333333
+     },
+     "CPU_AND_GPU": {
+      "ok": true,
+      "load_s": 2.0,
+      "median_ms": 42.55,
+      "min_ms": 42.35,
+      "max_ms": 43.0,
+      "n": 5,
+      "parity": {
+       "var_4345": {
+        "max_abs": 0.27207326889038086,
+        "mean_abs": 0.007317870876296739,
+        "rel_l2": 0.0018523808005979862
+       }
+      },
+      "reader_greedy_id_agree": 1.0
+     },
+     "CPU_AND_NE": {
+      "ok": true,
+      "load_s": 112.58,
+      "median_ms": 647.14,
+      "min_ms": 637.46,
+      "max_ms": 654.33,
+      "n": 5,
+      "parity": {
+       "var_4345": {
+        "max_abs": 0.6124594807624817,
+        "mean_abs": 0.023428534144571637,
+        "rel_l2": 0.0060922400071799915
+       }
+      },
+      "reader_greedy_id_agree": 1.0
+     },
+     "ALL": {
+      "ok": true,
+      "load_s": 5.17,
+      "median_ms": 102.91,
+      "min_ms": 100.2,
+      "max_ms": 103.1,
+      "n": 5,
+      "parity": {
+       "var_4345": {
+        "max_abs": 0.36900901794433594,
+        "mean_abs": 0.015523323315525672,
+        "rel_l2": 0.0038126869332176486
+       }
+      },
+      "reader_greedy_id_agree": 1.0
+     }
+    },
+    "placement": {
+     "ALL": {
+      "ops": 2053,
+      "preferred": {
+       "NeuralEngine": 434,
+       "GPU": 1619
+      },
+      "ne_supported_ops": 1741,
+      "not_ne_supported_by_type": {
+       "ios18.cast": 192,
+       "ios18.clip": 96,
+       "ios18.matmul": 24
+      }
+     },
+     "CPU_AND_NE": {
+      "ops": 2053,
+      "preferred": {
+       "NeuralEngine": 782,
+       "CPU": 1175,
+       "none": 96
+      },
+      "ne_supported_ops": 1669,
+      "not_ne_supported_by_type": {
+       "ios18.pow": 108,
+       "ios18.cast": 96,
+       "pad": 36,
+       "ios18.matmul": 36,
+       "select": 12
+      }
+     },
+     "CPU_AND_GPU": {
+      "ops": 2053,
+      "preferred": {
+       "GPU": 2053
+      },
+      "ne_supported_ops": 0,
+      "not_ne_supported_by_type": {
+       "ios18.mul": 420,
+       "ios18.clip": 314,
+       "ios18.pow": 216,
+       "ios18.cast": 192,
+       "ios18.add": 168,
+       "ios18.reshape": 133,
+       "ios18.linear": 122,
+       "ios16.reduce_mean": 108,
+       "ios18.transpose": 75,
+       "ios18.slice_by_index": 72,
+       "pad": 60,
+       "ios18.silu": 36
+      }
+     }
+    }
+   },
+   "export_fp32": {
+    "convert": {
+     "ok": true,
+     "path": "<repo>/experiments/macos/coreml/out/s4_tower_F2999.export.fp32.mlpackage",
+     "seconds": 10.1,
+     "size_mb": 1116.7
+    },
+    "run": {
+     "CPU_ONLY": {
+      "ok": true,
+      "load_s": 2.22,
+      "median_ms": 224.29,
+      "min_ms": 222.8,
+      "max_ms": 230.26,
+      "n": 5,
+      "parity": {
+       "linear_133": {
+        "max_abs": 0.0002994537353515625,
+        "mean_abs": 5.697710278506444e-06,
+        "rel_l2": 1.528052537342813e-06
+       }
+      },
+      "reader_greedy_id_agree": 1.0
+     },
+     "CPU_AND_GPU": {
+      "ok": true,
+      "load_s": 2.72,
+      "median_ms": 47.53,
+      "min_ms": 46.64,
+      "max_ms": 61.82,
+      "n": 5,
+      "parity": {
+       "linear_133": {
+        "max_abs": 0.00018215179443359375,
+        "mean_abs": 4.687560258920106e-06,
+        "rel_l2": 1.219974365121731e-06
+       }
+      },
+      "reader_greedy_id_agree": 1.0
+     },
+     "CPU_AND_NE": {
+      "ok": true,
+      "load_s": 2.83,
+      "median_ms": 227.55,
+      "min_ms": 225.55,
+      "max_ms": 241.71,
+      "n": 5,
+      "parity": {
+       "linear_133": {
+        "max_abs": 0.0002994537353515625,
+        "mean_abs": 5.697710278506444e-06,
+        "rel_l2": 1.528052537342813e-06
+       }
+      },
+      "reader_greedy_id_agree": 1.0
+     },
+     "ALL": {
+      "ok": true,
+      "load_s": 2.64,
+      "median_ms": 47.12,
+      "min_ms": 47.0,
+      "max_ms": 47.29,
+      "n": 5,
+      "parity": {
+       "linear_133": {
+        "max_abs": 0.00018215179443359375,
+        "mean_abs": 4.687560258920106e-06,
+        "rel_l2": 1.219974365121731e-06
+       }
+      },
+      "reader_greedy_id_agree": 1.0
+     }
+    },
+    "placement": {
+     "ALL": {
+      "ops": 1861,
+      "preferred": {
+       "GPU": 1861
+      },
+      "ne_supported_ops": 0,
+      "not_ne_supported_by_type": {
+       "ios18.mul": 420,
+       "ios18.clip": 314,
+       "ios18.pow": 216,
+       "ios18.add": 168,
+       "ios18.reshape": 133,
+       "ios18.linear": 122,
+       "ios16.reduce_mean": 108,
+       "ios18.transpose": 75,
+       "ios18.slice_by_index": 72,
+       "pad": 60,
+       "ios18.silu": 36,
+       "ios18.matmul": 36
+      }
+     },
+     "CPU_AND_NE": {
+      "ops": 1861,
+      "preferred": {
+       "CPU": 1861
+      },
+      "ne_supported_ops": 0,
+      "not_ne_supported_by_type": {
+       "ios18.mul": 420,
+       "ios18.clip": 314,
+       "ios18.pow": 216,
+       "ios18.add": 168,
+       "ios18.reshape": 133,
+       "ios18.linear": 122,
+       "ios16.reduce_mean": 108,
+       "ios18.transpose": 75,
+       "ios18.slice_by_index": 72,
+       "pad": 60,
+       "ios18.silu": 36,
+       "ios18.matmul": 36
+      }
+     },
+     "CPU_AND_GPU": {
+      "ops": 1861,
+      "preferred": {
+       "GPU": 1861
+      },
+      "ne_supported_ops": 0,
+      "not_ne_supported_by_type": {
+       "ios18.mul": 420,
+       "ios18.clip": 314,
+       "ios18.pow": 216,
+       "ios18.add": 168,
+       "ios18.reshape": 133,
+       "ios18.linear": 122,
+       "ios16.reduce_mean": 108,
+       "ios18.transpose": 75,
+       "ios18.slice_by_index": 72,
+       "pad": 60,
+       "ios18.silu": 36,
+       "ios18.matmul": 36
+      }
+     }
+    }
+   },
+   "export_fp16": {
+    "convert": {
+     "ok": true,
+     "path": "<repo>/experiments/macos/coreml/out/s4_tower_F2999.export.fp16.mlpackage",
+     "seconds": 14.3,
+     "size_mb": 559.2
+    },
+    "run": {
+     "CPU_ONLY": {
+      "ok": true,
+      "load_s": 1.41,
+      "median_ms": 141.5,
+      "min_ms": 140.12,
+      "max_ms": 143.61,
+      "n": 5,
+      "parity": {
+       "linear_133": {
+        "max_abs": 0.9410362243652344,
+        "mean_abs": 0.04271736194338509,
+        "rel_l2": 0.010366866584583533
+       }
+      },
+      "reader_greedy_id_agree": 0.9973333333333333
+     },
+     "CPU_AND_GPU": {
+      "ok": true,
+      "load_s": 1.52,
+      "median_ms": 42.53,
+      "min_ms": 41.99,
+      "max_ms": 42.74,
+      "n": 5,
+      "parity": {
+       "linear_133": {
+        "max_abs": 0.27207326889038086,
+        "mean_abs": 0.007317870876296739,
+        "rel_l2": 0.0018523808005979862
+       }
+      },
+      "reader_greedy_id_agree": 1.0
+     },
+     "CPU_AND_NE": {
+      "ok": true,
+      "load_s": 112.55,
+      "median_ms": 640.71,
+      "min_ms": 634.08,
+      "max_ms": 651.75,
+      "n": 5,
+      "parity": {
+       "linear_133": {
+        "max_abs": 0.6124594807624817,
+        "mean_abs": 0.023428534144571637,
+        "rel_l2": 0.0060922400071799915
+       }
+      },
+      "reader_greedy_id_agree": 1.0
+     },
+     "ALL": {
+      "ok": true,
+      "load_s": 5.01,
+      "median_ms": 114.82,
+      "min_ms": 108.6,
+      "max_ms": 177.58,
+      "n": 5,
+      "parity": {
+       "linear_133": {
+        "max_abs": 0.36900901794433594,
+        "mean_abs": 0.015523323315525672,
+        "rel_l2": 0.0038126869332176486
+       }
+      },
+      "reader_greedy_id_agree": 1.0
+     }
+    },
+    "placement": {
+     "ALL": {
+      "ops": 2053,
+      "preferred": {
+       "NeuralEngine": 434,
+       "GPU": 1619
+      },
+      "ne_supported_ops": 1741,
+      "not_ne_supported_by_type": {
+       "ios18.cast": 192,
+       "ios18.clip": 96,
+       "ios18.matmul": 24
+      }
+     },
+     "CPU_AND_NE": {
+      "ops": 2053,
+      "preferred": {
+       "NeuralEngine": 782,
+       "CPU": 1175,
+       "none": 96
+      },
+      "ne_supported_ops": 1669,
+      "not_ne_supported_by_type": {
+       "ios18.pow": 108,
+       "ios18.cast": 96,
+       "pad": 36,
+       "ios18.matmul": 36,
+       "select": 12
+      }
+     },
+     "CPU_AND_GPU": {
+      "ops": 2053,
+      "preferred": {
+       "GPU": 2053
+      },
+      "ne_supported_ops": 0,
+      "not_ne_supported_by_type": {
+       "ios18.mul": 420,
+       "ios18.clip": 314,
+       "ios18.pow": 216,
+       "ios18.cast": 192,
+       "ios18.add": 168,
+       "ios18.reshape": 133,
+       "ios18.linear": 122,
+       "ios16.reduce_mean": 108,
+       "ios18.transpose": 75,
+       "ios18.slice_by_index": 72,
+       "pad": 60,
+       "ios18.silu": 36
+      }
+     }
+    }
+   }
+  }
+ }
+}

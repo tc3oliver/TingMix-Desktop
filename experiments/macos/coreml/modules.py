@@ -115,3 +115,23 @@ class FixedAttn(nn.Module):
         w = F.softmax(w, dim=-1)
         o = (w @ v.permute(0, 3, 1, 2, 4)).permute(0, 2, 3, 1, 4).reshape(1, nb * C, -1)[:, :T]
         return a.post(o), None
+
+
+class TowerFull(nn.Module):
+    """mel [1,F,128] (all frames valid) -> last_hidden_state [1,T,1536]; T = ceil(ceil(F/2)/2)."""
+    def __init__(self, tower, F, rms_prescale=True):
+        super().__init__()
+        self.sub = SubsampleFull(tower)
+        self.T = (((F + 1) // 2) + 1) // 2
+        self.body = BlockFixed(tower, 0, len(tower.layers), self.T, proj=True, rms_prescale=rms_prescale)
+    def forward(self, mel):
+        return self.body(self.sub(mel))
+
+
+class EncoderReader(nn.Module):
+    """mel [1,F,128] -> CTC logits [1,T,5025] (full audio tower + Reader, fixed F, all frames valid)."""
+    def __init__(self, tower, reader, F):
+        super().__init__()
+        self.tower, self.reader = TowerFull(tower, F), ReaderFull(reader)
+    def forward(self, mel):
+        return self.reader(self.tower(mel))
