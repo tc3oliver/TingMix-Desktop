@@ -33,13 +33,24 @@ fn wav(path: &Path) -> Vec<f32> {
         p += 8 + u32::from_le_bytes(b[p + 4..p + 8].try_into().unwrap()) as usize;
     }
     let n = u32::from_le_bytes(b[p + 4..p + 8].try_into().unwrap()) as usize;
-    b[p + 8..p + 8 + n].chunks_exact(2).map(|s| i16::from_le_bytes([s[0], s[1]]) as f32 / 32768.0).collect()
+    b[p + 8..p + 8 + n]
+        .chunks_exact(2)
+        .map(|s| i16::from_le_bytes([s[0], s[1]]) as f32 / 32768.0)
+        .collect()
 }
 
 /// Same joining rule as `Transcript::text`: CJK-only output joins without spaces.
 fn join(finals: &[String]) -> String {
-    let parts: Vec<&str> = finals.iter().map(String::as_str).filter(|t| !t.is_empty()).collect();
-    parts.join(if parts.concat().contains(' ') { " " } else { "" })
+    let parts: Vec<&str> = finals
+        .iter()
+        .map(String::as_str)
+        .filter(|t| !t.is_empty())
+        .collect();
+    parts.join(if parts.concat().contains(' ') {
+        " "
+    } else {
+        ""
+    })
 }
 
 struct Run {
@@ -52,14 +63,19 @@ struct Run {
 }
 
 fn replay(backend: MlxLargeBackend, audio: &[f32], tail_partial: bool) -> Run {
-    let cfg = SessionConfig { tail_partial, ..SessionConfig::default() };
+    let cfg = SessionConfig {
+        tail_partial,
+        ..SessionConfig::default()
+    };
     let silence_s = cfg.silence_ms / 1000.0;
     let mut w = SessionWorker::spawn_with(backend, &cfg);
     let t0 = Instant::now();
     let (mut finals, mut latency, mut partials) = (Vec::new(), Vec::new(), 0);
     let mut take = |w: &SessionWorker| {
         for m in w.events().try_iter() {
-            let SessionMsg::Event(e) = m else { panic!("backend error: {m:?}") };
+            let SessionMsg::Event(e) = m else {
+                panic!("backend error: {m:?}")
+            };
             match e {
                 Event::Partial(_) => partials += 1,
                 Event::Final(f) => {
@@ -82,7 +98,9 @@ fn replay(backend: MlxLargeBackend, audio: &[f32], tail_partial: bool) -> Run {
     // the stream ends: flush, wait for every queued job, then collect (arrival time = now)
     let coalesced = w.coalesced_partials();
     for m in w.finish() {
-        let SessionMsg::Event(e) = m else { panic!("backend error: {m:?}") };
+        let SessionMsg::Event(e) = m else {
+            panic!("backend error: {m:?}")
+        };
         match e {
             Event::Partial(_) => partials += 1,
             Event::Final(f) => {
@@ -91,22 +109,41 @@ fn replay(backend: MlxLargeBackend, audio: &[f32], tail_partial: bool) -> Run {
             }
         }
     }
-    Run { text: join(&finals), finals: finals.len(), partials, final_latency_s: latency, coalesced }
+    Run {
+        text: join(&finals),
+        finals: finals.len(),
+        partials,
+        final_latency_s: latency,
+        coalesced,
+    }
 }
 
 fn sh(cmd: &str, args: &[&str]) -> String {
-    std::process::Command::new(cmd).args(args).output().map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned()).unwrap_or_default()
+    std::process::Command::new(cmd)
+        .args(args)
+        .output()
+        .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
+        .unwrap_or_default()
 }
 
 fn main() {
     let a: Vec<String> = std::env::args().collect();
     let (art, large, out) = (PathBuf::from(&a[1]), PathBuf::from(&a[2]), &a[3]);
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let exp: Expected = serde_json::from_slice(&std::fs::read(root.join("tests/fixtures/large/expected_texts.json")).unwrap()).unwrap();
+    let exp: Expected = serde_json::from_slice(
+        &std::fs::read(root.join("tests/fixtures/large/expected_texts.json")).unwrap(),
+    )
+    .unwrap();
     let lm_path = large.join("lm/lmCN_cv_parl_ascend_ntuml.charlm.json.gz");
     let load = || {
         let lm = CharLm::load(&lm_path).unwrap();
-        let mut b = MlxLargeBackend::new(&art, &large.join("units.json"), Dtype::F32, Decode::BeamLm(Box::new(lm), BeamConfig::default())).unwrap();
+        let mut b = MlxLargeBackend::new(
+            &art,
+            &large.join("units.json"),
+            Dtype::F32,
+            Decode::BeamLm(Box::new(lm), BeamConfig::default()),
+        )
+        .unwrap();
         // MLX streams are per thread and the weights are lazy: evaluate them once on this thread before the backend moves to
         // the inference thread, otherwise its first decode fails with "There is no Stream(gpu, 1) in current thread".
         b.transcribe_batch(&[&vec![0.0f32; 16_000]]).unwrap();
@@ -135,7 +172,18 @@ fn main() {
             "off_equals_oracle": off_ok, "on_equals_oracle": on_ok, "on_equals_off": off.text == on.text,
         }));
     }
-    let lat = |key: &str| -> Vec<f64> { clips.iter().flat_map(|c| c[key]["final_latency_s"].as_array().unwrap().iter().map(|v| v.as_f64().unwrap())).collect() };
+    let lat = |key: &str| -> Vec<f64> {
+        clips
+            .iter()
+            .flat_map(|c| {
+                c[key]["final_latency_s"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|v| v.as_f64().unwrap())
+            })
+            .collect()
+    };
     let stats = |mut v: Vec<f64>| {
         v.sort_by(f64::total_cmp);
         let q = |p: f64| v[((v.len() - 1) as f64 * p).round() as usize];
@@ -154,6 +202,9 @@ fn main() {
         "clips": clips,
     });
     std::fs::write(out, serde_json::to_string_pretty(&doc).unwrap() + "\n").unwrap();
-    println!("{}", serde_json::to_string_pretty(&doc["final_latency_after_endpoint_s"]).unwrap());
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&doc["final_latency_after_endpoint_s"]).unwrap()
+    );
     println!("only-tail-on differs from oracle: {differs_only_with_tail:?}; on != off: {tail_differs_from_off:?}");
 }
