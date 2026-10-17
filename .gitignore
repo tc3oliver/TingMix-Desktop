@@ -13,3 +13,4 @@ __pycache__/
 *.npy
 experiments/**/out/
 !tests/fixtures/**/*.npy
+tools/**/out/

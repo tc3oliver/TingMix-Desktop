@@ -1,0 +1,18 @@
+[package]
+name = "tingmix-runtime-onnx"
+description = "TingMix-Small on ONNX Runtime (CPU): Rust log-mel frontend and native streaming backend"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+tingmix-core = { path = "../tingmix-core" }
+ort = { version = "=2.0.0-rc.14", default-features = false, features = ["std", "ndarray", "download-binaries", "tls-native"] }
+rustfft = "6.4.1"
+thiserror = "2.0.21"
+
+[dev-dependencies]
+serde_json = "1.0.154"
+tingmix-streaming = { path = "../tingmix-streaming" }
+hound = "3.5.1"

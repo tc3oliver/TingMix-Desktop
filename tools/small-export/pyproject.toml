@@ -1,0 +1,15 @@
+[project]
+name = "small-export"
+version = "0.0.0"
+description = "TingMix-Small streaming ONNX export, INT8 quantization and parity tooling (random-init weights only until a checkpoint exists)"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "numpy",
+    "torch==2.9.1",
+    "onnx==1.19.1",
+    "onnxruntime==1.23.2",
+    "tingmix @ git+https://github.com/tc3oliver/tingmix.git@f44cbdbd2cd99598c99cf8d60da6cb41bb15d1db",
+]
+
+[tool.uv]
+package = false
