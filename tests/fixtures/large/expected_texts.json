@@ -1,0 +1,60 @@
+{
+ "model": "tc3oliver/TingMix-Large@75071a1260fb21874f150df6ebd53716ac423f13",
+ "encoder": "google/embeddinggemma-2@914f7f89142e33e77833254d9c9b90c3cef7303b",
+ "lm": {
+  "alpha": 0.35,
+  "beta": 1.5,
+  "beam": 16
+ },
+ "note": "CPU fp32 oracle texts (raw model output, no punctuation); see experiments/macos/reference/README.md",
+ "clips": {
+  "zh_02s": {
+   "ref": "今天天氣很好",
+   "greedy": "今天天氣很好",
+   "beam_lm": "今天天氣很好",
+   "n_chunks": 1
+  },
+  "en_02s": {
+   "ref": "good morning everyone",
+   "greedy": "good morning everyone",
+   "beam_lm": "good morning everyone",
+   "n_chunks": 1
+  },
+  "mix_04s": {
+   "ref": "今天我們來 review 這個 API 的設計",
+   "greedy": "今天我們來review這個ai的設計",
+   "beam_lm": "今天我們來review這個ai的設計",
+   "n_chunks": 1
+  },
+  "zh_08s": {
+   "ref": "立法院今天下午召開會議，討論明年度的中央政府總預算案，以及多項重要的民生法案。",
+   "greedy": "立法院今天下午召開會議討論明年度的中央政府總預算案以及多項重要的民生法案",
+   "beam_lm": "立法院今天下午召開會議討論明年度的中央政府總預算案以及多項重要的民生法案",
+   "n_chunks": 1
+  },
+  "en_08s": {
+   "ref": "the quick brown fox jumps over the lazy dog while the weather stays calm and clear all afternoon",
+   "greedy": "the quick brown fox jumps over the lazy dog while the weather stays comm and clear all afternoon",
+   "beam_lm": "the quick brown fox jumps over the lazy dog while the weather stays comm and clear all afternoon",
+   "n_chunks": 1
+  },
+  "mix_08s": {
+   "ref": "我覺得這個 deadline 有點太趕了，我們要不要先跟 PM 討論一下 scope 再決定",
+   "greedy": "我覺得這個deadline有點太趕了我們要不要先跟pn討論一下sc再決定",
+   "beam_lm": "我覺得這個deadline有點太趕了我們要不要先跟pn討論一下sc再決定",
+   "n_chunks": 1
+  },
+  "zh_16s": {
+   "ref": "語音辨識系統需要處理不同的口音、背景噪音以及說話速度。為了讓模型在桌面電腦上即時運作，我們必須仔細設計串流架構，確保每一段音訊只處理一次，並且在使用者停止說話之後盡快輸出最終結果。",
+   "greedy": "語音辨識系統需要處理不同的口音被警噪音以及說話速度為了讓模型在桌面電腦上即時運作我們必須仔細設計串流架構卻保每一段因訊只處理一次並且在使用著停止說話之後儘快輸出最終結果",
+   "beam_lm": "語音辨識系統需要處理不同的口音被警噪音以及說話速度為了讓模型在桌面電腦上即時運作我們必須仔細設計串流架構確保每一段音訊只處理一次並且在使用者停止說話之後儘快輸出最終結果",
+   "n_chunks": 1
+  },
+  "mix_29s": {
+   "ref": "大家好，今天的 meeting 主要有三個 topic。第一個是上週的 release 狀況，QA 回報了幾個 bug，其中兩個已經 fix 了。第二個是新的 feature 規劃，我們希望下個 sprint 可以完成 prototype。第三個是 performance 的問題，目前在 Windows 上面的 latency 還是太高，需要再做一些 profiling 跟 optimization。最後，請大家記得更新自己的 ticket 狀態，謝謝大家。",
+   "greedy": "大家好今天的meeting主要有三個chpic第一個是上週的releas狀況qa回報了幾個b其中兩個已經fixed了第二個是新的feature規劃我們希望下個sprint可以完成prototype第三個是performance的問題目前在windows上面的latternc還是太高需要再做一些proadfiling跟optimization最後請大家記得更新自己的k狀態謝謝大家",
+   "beam_lm": "大家好今天的meeting主要有三個chpic第一個是上週的releas狀況qa回報了幾個b其中兩個已經fixed了第二個是新的feature規劃我們希望下個sprint可以完成prototype第三個是performance的問題目前在windows上面的latternc還是太高需要再做一些proadfiling跟optimization然後請大家記得更新自己的k狀態謝謝大家",
+   "n_chunks": 2
+  }
+ }
+}
