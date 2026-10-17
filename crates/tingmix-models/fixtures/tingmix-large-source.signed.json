@@ -1,0 +1,164 @@
+{
+  "manifest": {
+    "schema_version": 1,
+    "id": "tingmix-large-source-r75071a1",
+    "family": "tingmix-large",
+    "revision": "75071a1260fb21874f150df6ebd53716ac423f13",
+    "backend": "source-safetensors",
+    "os": "any",
+    "arch": "any",
+    "precision": "fp32-source",
+    "requirements": {
+      "min_ram_bytes": 8589934592,
+      "cpu_features": [],
+      "apple_chip_min_generation": null
+    },
+    "runtime": {
+      "name": "safetensors-source",
+      "min_version": "0"
+    },
+    "base_model": {
+      "id": "google/embeddinggemma-2",
+      "revision": "914f7f89142e33e77833254d9c9b90c3cef7303b"
+    },
+    "adapter": {
+      "id": "tc3oliver/TingMix-Large:encoder_delta.safetensors (LoRA r16 alpha32, all 12 layers)",
+      "revision": "75071a1260fb21874f150df6ebd53716ac423f13"
+    },
+    "tokenizer": {
+      "id": "tc3oliver/TingMix-Large:units.json+tokenizer_bpe.model",
+      "revision": "75071a1260fb21874f150df6ebd53716ac423f13"
+    },
+    "lm": {
+      "id": "tc3oliver/TingMix-Large:lm/lmCN_cv_parl_ascend_ntuml.charlm.json.gz (alpha 0.35, beta 1.5, beam 16)",
+      "revision": "75071a1260fb21874f150df6ebd53716ac423f13"
+    },
+    "files": [
+      {
+        "path": "model.safetensors",
+        "component": "reader",
+        "url": "https://huggingface.co/tc3oliver/TingMix-Large/resolve/75071a1260fb21874f150df6ebd53716ac423f13/model.safetensors",
+        "size": 88687532,
+        "sha256": "67a06c21d757fdfa0b347a84942097e7bf6315fc4b9d3437b58b008cc5b7e271"
+      },
+      {
+        "path": "config.json",
+        "component": "reader",
+        "url": "https://huggingface.co/tc3oliver/TingMix-Large/resolve/75071a1260fb21874f150df6ebd53716ac423f13/config.json",
+        "size": 660,
+        "sha256": "eac5da8ce273202417906279698130b09c810111d75f82882ac323102ceb7431"
+      },
+      {
+        "path": "units.json",
+        "component": "tokenizer",
+        "url": "https://huggingface.co/tc3oliver/TingMix-Large/resolve/75071a1260fb21874f150df6ebd53716ac423f13/units.json",
+        "size": 35553,
+        "sha256": "dbc1aba97abeeae49dc7556531a2f670d4dc5f39705b54ca28e84b8de9187756"
+      },
+      {
+        "path": "tokenizer_bpe.model",
+        "component": "tokenizer",
+        "url": "https://huggingface.co/tc3oliver/TingMix-Large/resolve/75071a1260fb21874f150df6ebd53716ac423f13/tokenizer_bpe.model",
+        "size": 245401,
+        "sha256": "959e7af76bb54482be709575e7ee3da49dce7f293f1e6e18cc99baaf2eeb0c7a"
+      },
+      {
+        "path": "encoder_delta.safetensors",
+        "component": "adapter",
+        "url": "https://huggingface.co/tc3oliver/TingMix-Large/resolve/75071a1260fb21874f150df6ebd53716ac423f13/encoder_delta.safetensors",
+        "size": 22042112,
+        "sha256": "1b155cfeec560a07b975eea14eee515aa06d75074256989fc510129fab51d9cb"
+      },
+      {
+        "path": "tingmix.json",
+        "component": "adapter",
+        "url": "https://huggingface.co/tc3oliver/TingMix-Large/resolve/75071a1260fb21874f150df6ebd53716ac423f13/tingmix.json",
+        "size": 412,
+        "sha256": "5b818f0dcd7752539a449f49d834a684518e3feac006ceb929f8d6548d6beb6e"
+      },
+      {
+        "path": "lm/lmCN_cv_parl_ascend_ntuml.charlm.json.gz",
+        "component": "lm",
+        "url": "https://huggingface.co/tc3oliver/TingMix-Large/resolve/75071a1260fb21874f150df6ebd53716ac423f13/lm/lmCN_cv_parl_ascend_ntuml.charlm.json.gz",
+        "size": 113932911,
+        "sha256": "c8251c39fd003df0527f074287acd5094f9da476c3bcd0a5eb86a5d6d9cc5a84"
+      },
+      {
+        "path": "base/model.safetensors",
+        "component": "base",
+        "url": "https://huggingface.co/google/embeddinggemma-2/resolve/914f7f89142e33e77833254d9c9b90c3cef7303b/model.safetensors",
+        "size": 1488915288,
+        "sha256": "197a32965d4b1105faf060417baa899e193fb73cd401f42ec9295234d5553d79"
+      },
+      {
+        "path": "base/config.json",
+        "component": "base",
+        "url": "https://huggingface.co/google/embeddinggemma-2/resolve/914f7f89142e33e77833254d9c9b90c3cef7303b/config.json",
+        "size": 4455,
+        "sha256": "b8f1e9931b57fbc054acdb445c41765d55b0074c58d145fa82839941ad1b5bb3"
+      },
+      {
+        "path": "base/preprocessor_config.json",
+        "component": "base",
+        "url": "https://huggingface.co/google/embeddinggemma-2/resolve/914f7f89142e33e77833254d9c9b90c3cef7303b/preprocessor_config.json",
+        "size": 511,
+        "sha256": "ea2ae257e901064abdd98dceb19f2b0da06af600bed15e0f99f5c85c37ee9d78"
+      },
+      {
+        "path": "base/processor_config.json",
+        "component": "base",
+        "url": "https://huggingface.co/google/embeddinggemma-2/resolve/914f7f89142e33e77833254d9c9b90c3cef7303b/processor_config.json",
+        "size": 1788,
+        "sha256": "168f6a08522f3ce5dea596d94d003af2fd691742d4f41fe1f9d8cce76bfbf69c"
+      }
+    ],
+    "licenses": [
+      {
+        "id": "tingmix-large-model",
+        "name": "TingMix-Large model card terms (Apache-2.0 declared; training-data restrictions unresolved)",
+        "spdx": "Apache-2.0",
+        "url": "https://huggingface.co/tc3oliver/TingMix-Large/blob/75071a1260fb21874f150df6ebd53716ac423f13/README.md",
+        "applies_to": [
+          "reader",
+          "adapter",
+          "tokenizer",
+          "lm"
+        ],
+        "acceptance_required": true,
+        "attribution": [
+          "LibriSpeech (Panayotov et al. 2015)",
+          "AMI (Carletta et al.)",
+          "FLEURS (Conneau et al. 2022)",
+          "People's Speech (Galvez et al. 2021)",
+          "ASCEND (Lovenia et al., LREC 2022)",
+          "VoxPopuli audio (c) European Union - Source: European Parliament",
+          "Common Voice: speakers must not be identified"
+        ],
+        "notes": "Training data includes CC BY-NC 4.0 Taiwan Parliament speech and NTUML2021 train split without a stated licence (tingmix docs/licensing.md); commercial use is unresolved. Apache-2.0 for source code does not automatically cover the weights."
+      },
+      {
+        "id": "google-embeddinggemma-2",
+        "name": "google/embeddinggemma-2 (Google DeepMind)",
+        "spdx": "Apache-2.0",
+        "url": "https://huggingface.co/google/embeddinggemma-2/blob/914f7f89142e33e77833254d9c9b90c3cef7303b/README.md",
+        "applies_to": [
+          "base"
+        ],
+        "acceptance_required": true,
+        "attribution": [
+          "EmbeddingGemma 2, Google DeepMind"
+        ],
+        "notes": "Not redistributed by TingMix; downloaded from Google. On 2026-10-17 the Hugging Face API reported gated=false and licence tag apache-2.0, while the TingMix docs say users accept Google's terms and the Gemma prohibited-use policy. Acceptance is required here conservatively until the licence audit settles it."
+      }
+    ],
+    "compat": {
+      "status": "EXPERIMENTAL",
+      "rtf_x1000": null,
+      "notes": "Source-format weights for converters and the PyTorch reference; no native backend consumes this version directly. Reader and adapter hashes equal tc3oliver/TingMix-Large SHA256SUMS at the pinned commit."
+    },
+    "created": "2026-10-17",
+    "min_app_version": "0.1.0"
+  },
+  "key_id": "tingmix-dev-1",
+  "signature": "cbab9a020d1a83cac1b24e4191b055ae5fa65eb15386d98b5f0c79433a85490a8dd1d5ec9b0c9342f5d53ac9c75c4d1cd3f56cacba69da636fd3760c26eba604"
+}
