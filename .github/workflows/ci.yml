@@ -40,6 +40,14 @@ jobs:
         run: mkdir -p dist
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
+      # tingmix-runtime-onnx tests need tools/small-export/out/tiny.onnx (random-weight fixture network, gitignored)
+      - uses: astral-sh/setup-uv@v6
+      - name: Build the ONNX test fixtures
+        shell: bash
+        working-directory: tools/small-export
+        run: |
+          uv sync --locked
+          uv run python make_fixtures.py
       - run: cargo test --workspace
       - name: Heavy tests are skipped without their inputs
         shell: bash
