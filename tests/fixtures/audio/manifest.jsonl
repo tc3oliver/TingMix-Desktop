@@ -1,0 +1,8 @@
+{"id": "zh_02s", "audio": "zh_02s.wav", "text": "今天天氣很好", "lang": "zh", "voice": "Meijia", "duration_s": 1.704}
+{"id": "en_02s", "audio": "en_02s.wav", "text": "good morning everyone", "lang": "en", "voice": "Samantha", "duration_s": 1.408}
+{"id": "mix_04s", "audio": "mix_04s.wav", "text": "今天我們來 review 這個 API 的設計", "lang": "mix", "voice": "Meijia", "duration_s": 3.55}
+{"id": "zh_08s", "audio": "zh_08s.wav", "text": "立法院今天下午召開會議，討論明年度的中央政府總預算案，以及多項重要的民生法案。", "lang": "zh", "voice": "Meijia", "duration_s": 8.6}
+{"id": "en_08s", "audio": "en_08s.wav", "text": "the quick brown fox jumps over the lazy dog while the weather stays calm and clear all afternoon", "lang": "en", "voice": "Samantha", "duration_s": 5.144}
+{"id": "mix_08s", "audio": "mix_08s.wav", "text": "我覺得這個 deadline 有點太趕了，我們要不要先跟 PM 討論一下 scope 再決定", "lang": "mix", "voice": "Meijia", "duration_s": 7.519}
+{"id": "zh_16s", "audio": "zh_16s.wav", "text": "語音辨識系統需要處理不同的口音、背景噪音以及說話速度。為了讓模型在桌面電腦上即時運作，我們必須仔細設計串流架構，確保每一段音訊只處理一次，並且在使用者停止說話之後盡快輸出最終結果。", "lang": "zh", "voice": "Meijia", "duration_s": 20.417}
+{"id": "mix_29s", "audio": "mix_29s.wav", "text": "大家好，今天的 meeting 主要有三個 topic。第一個是上週的 release 狀況，QA 回報了幾個 bug，其中兩個已經 fix 了。第二個是新的 feature 規劃，我們希望下個 sprint 可以完成 prototype。第三個是 performance 的問題，目前在 Windows 上面的 latency 還是太高，需要再做一些 profiling 跟 optimization。最後，請大家記得更新自己的 ticket 狀態，謝謝大家。", "lang": "mix", "voice": "Meijia", "duration_s": 34.63}
