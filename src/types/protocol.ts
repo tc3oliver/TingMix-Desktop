@@ -88,6 +88,7 @@ export interface Settings {
   theme: "system" | "light" | "dark";
   caption_size: number;
   save_history: boolean;
+  experimental_backends: boolean;
 }
 
 export interface HistorySummary {
@@ -109,6 +110,9 @@ export interface Diagnostics {
   os: string;
   arch: string;
   backend: string;
+  backend_reason: string;
+  ort_library: string | null;
+  updater_enabled: boolean;
   input_devices: Device[];
   device_error: string | null;
   live: LiveStatus;
@@ -134,7 +138,7 @@ export interface InstalledModel {
 }
 
 export interface ModelOp {
-  kind: "download" | "import";
+  kind: "download" | "import" | "probe";
   name: string;
   state: "running" | "done" | "failed" | "cancelled";
   message: string | null;
@@ -172,4 +176,21 @@ export interface PendingInstall {
   download_bytes: number;
   compat_status: string;
   licenses: LicenseInfo[];
+}
+
+export interface BackendInfo {
+  label: string;
+  mock: boolean;
+  experimental: boolean;
+  reason: string;
+  rejected: [string, string][];
+  ort_library: string | null;
+  experimental_allowed: boolean;
+}
+
+export interface UpdateInfo {
+  enabled: boolean;
+  available: boolean;
+  version: string | null;
+  notes: string | null;
 }

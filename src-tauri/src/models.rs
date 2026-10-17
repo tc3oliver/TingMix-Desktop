@@ -11,8 +11,7 @@ use serde::Serialize;
 use tingmix_models::caps::Capabilities;
 use tingmix_models::fetch::Downloader;
 use tingmix_models::import::{import_dir, import_zip};
-use tingmix_models::select::select;
-use tingmix_models::{Manifest, Registry, VerifiedManifest, Verifier};
+use tingmix_models::{Registry, VerifiedManifest, Verifier};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct InstalledDto {
@@ -109,6 +108,10 @@ pub struct Models {
 pub type Notify = Arc<dyn Fn(OpView) + Send + Sync>;
 
 impl Models {
+    pub fn caps(&self) -> &Capabilities {
+        &self.caps
+    }
+
     pub fn open(root: PathBuf) -> Self {
         let registry = std::fs::create_dir_all(&root)
             .map_err(|e| e.to_string())
@@ -122,7 +125,7 @@ impl Models {
         }
     }
 
-    fn reg(&self) -> Result<&Registry, String> {
+    pub fn reg(&self) -> Result<&Registry, String> {
         self.registry
             .as_ref()
             .map_err(|e| format!("model registry unavailable: {e}"))
@@ -152,8 +155,7 @@ impl Models {
             }
         };
         let (active, previous) = (reg.active().ok().flatten(), reg.previous().ok().flatten());
-        let (mut installed, mut unreadable, mut manifests) =
-            (Vec::new(), Vec::new(), Vec::<Manifest>::new());
+        let (mut installed, mut unreadable) = (Vec::new(), Vec::new());
         for id in reg.list().unwrap_or_default() {
             match reg.open_model(&id) {
                 Ok(m) => {
@@ -172,28 +174,18 @@ impl Models {
                         compat_status: mf.compat.status.clone(),
                         compat_notes: mf.compat.notes.clone(),
                     });
-                    manifests.push(mf);
                 }
                 Err(e) => unreadable.push((id, e.to_string())),
             }
         }
-        // No inference backend is registered in this build, so nothing is eligible; the reasons say why.
-        let selection = (!manifests.is_empty()).then(|| match select(&manifests, &self.caps, &[], None) {
-            Ok(s) => SelectionDto { chosen: Some(s.manifest_id), reason: s.reason, rejected: s.rejected },
-            Err(rejected) => SelectionDto {
-                chosen: None,
-                reason: "No installed model can run: no inference backend is available in this build.".into(),
-                rejected,
-            },
-        });
         ModelsOverview {
             registry_available: true,
-            note: "Transcription in this build uses the mock backend (not ASR). Installed models are stored and verified but not loaded.".into(),
+            note: "Installed models are stored and verified here; whether one can run is decided by runtime selection below.".into(),
             root: self.root.display().to_string(),
             capabilities: Some(caps),
             installed,
             unreadable,
-            selection,
+            selection: None,
             op,
         }
     }
@@ -346,7 +338,12 @@ impl Models {
         self.reg()?.verify_full(id).map_err(|e| e.to_string())
     }
 
-    fn start_op(&self, kind: &str, name: &str, notify: Notify) -> Result<Arc<AtomicBool>, String> {
+    pub(crate) fn start_op(
+        &self,
+        kind: &str,
+        name: &str,
+        notify: Notify,
+    ) -> Result<Arc<AtomicBool>, String> {
         let mut slot = self.op.lock().unwrap();
         if slot.as_ref().is_some_and(|o| o.view.state == "running") {
             return Err("another model operation is still running".into());
@@ -375,7 +372,7 @@ impl Models {
         }
     }
 
-    fn finish_op(&self, r: Result<(), String>, notify: &Notify) {
+    pub(crate) fn finish_op(&self, r: Result<(), String>, notify: &Notify) {
         if let Some(op) = self.op.lock().unwrap().as_mut() {
             (op.view.state, op.view.message) = match r {
                 Ok(()) => ("done".into(), None),
@@ -419,7 +416,6 @@ mod tests {
         let (m, dir) = models("fresh");
         let o = m.overview();
         assert!(o.registry_available && o.installed.is_empty() && o.selection.is_none());
-        assert!(o.note.contains("mock"));
         std::fs::remove_dir_all(dir).unwrap();
     }
 

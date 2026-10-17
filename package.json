@@ -9,7 +9,10 @@
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "bundle:macos": "tauri build --bundles app,dmg --config src-tauri/tauri.ort-macos.conf.json",
+    "bundle:macos:debug": "tauri build --debug --bundles app --config src-tauri/tauri.ort-macos.conf.json",
+    "bundle:windows": "tauri build --bundles nsis --config src-tauri/tauri.ort-windows.conf.json"
   },
   "dependencies": {
     "@tauri-apps/api": "2.12.4",

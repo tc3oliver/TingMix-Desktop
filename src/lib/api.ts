@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type {
+  BackendInfo,
   Device,
   Diagnostics,
   FileMsg,
@@ -15,6 +16,7 @@ import type {
   ModelsOverview,
   PendingInstall,
   Settings,
+  UpdateInfo,
 } from "../types/protocol";
 
 // One wrapper per host command (src-tauri/src/commands.rs); argument names are camelCase here, snake_case in Rust.
@@ -43,6 +45,10 @@ export const api = {
   modelsActivate: (id: string) => invoke<void>("models_activate", { id }),
   modelsRollback: () => invoke<string>("models_rollback"),
   modelsRemove: (id: string) => invoke<void>("models_remove", { id }),
+  modelsProbe: (id: string) => invoke<void>("models_probe", { id }),
+  backendInfo: () => invoke<BackendInfo>("backend_info"),
+  updaterCheck: () => invoke<UpdateInfo>("updater_check"),
+  updaterInstall: () => invoke<void>("updater_install"),
   modelsVerify: (id: string) => invoke<void>("models_verify", { id }),
 };
 

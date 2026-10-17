@@ -6,6 +6,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Emitter, Manager, State};
 use tauri_plugin_dialog::DialogExt;
 
+use crate::backends;
 use crate::dto::*;
 use crate::files;
 use crate::live::{Live, Persist, Sink};
@@ -49,6 +50,16 @@ pub async fn live_start(
         return Err("a live session is already running".into());
     }
     let id = state.next_id("live");
+    let resolved = backends::resolve(
+        &state.models,
+        state.store.settings().experimental_backends,
+        &state.runtimes,
+    )
+    .map_err(|e| {
+        state.note_error(format!("backend: {e}"));
+        e
+    })?;
+    let label = resolved.label.clone();
     let sink: Sink = {
         let app = app.clone();
         Arc::new(move |m| {
@@ -57,7 +68,7 @@ pub async fn live_start(
     };
     let persist: Persist = {
         let app = app.clone();
-        let (id, started) = (id.clone(), now_s());
+        let (id, started, label) = (id.clone(), now_s(), label.clone());
         Arc::new(move |finals, dur| {
             let st = app.state::<AppState>();
             if !st.store.settings().save_history || finals.is_empty() {
@@ -69,7 +80,7 @@ pub async fn live_start(
                 name: "Live session".into(),
                 started_at: started,
                 duration_s: dur,
-                backend: BACKEND_LABEL.into(),
+                backend: label.clone(),
                 finals: finals.to_vec(),
             };
             if let Err(e) = st.store.save_history(&entry) {
@@ -77,7 +88,14 @@ pub async fn live_start(
             }
         })
     };
-    match Live::start_mic(id, device_id, sink, persist) {
+    match Live::start_mic(
+        id,
+        resolved.label,
+        resolved.backend,
+        device_id,
+        sink,
+        persist,
+    ) {
         Ok(live) => {
             let status = live.shared.status();
             *state.last.lock().unwrap() = Some(live.shared.clone());
@@ -164,6 +182,12 @@ pub async fn file_start(
     let name = path
         .file_name()
         .map_or_else(|| "audio".into(), |n| n.to_string_lossy().into_owned());
+    let resolved = backends::resolve(
+        &state.models,
+        state.store.settings().experimental_backends,
+        &state.runtimes,
+    )
+    .inspect_err(|e| state.note_error(format!("backend: {e}")))?;
     let job_id = state.next_id("job");
     let cancel = Arc::new(std::sync::atomic::AtomicBool::new(false));
     state.jobs.lock().unwrap().push((
@@ -180,7 +204,7 @@ pub async fn file_start(
     let jid = job_id.clone();
     std::thread::Builder::new()
         .name("tingmix-file".into())
-        .spawn(move || run_job(app, jid, name, path, cancel))
+        .spawn(move || run_job(app, jid, name, path, cancel, resolved))
         .map_err(|e| e.to_string())?;
     Ok(job_id)
 }
@@ -191,7 +215,9 @@ fn run_job(
     name: String,
     path: PathBuf,
     cancel: Arc<std::sync::atomic::AtomicBool>,
+    resolved: backends::Resolved,
 ) {
+    let backends::Resolved { backend, label } = resolved;
     let st = app.state::<AppState>();
     let started = now_s();
     let send = |body: FileBody| {
@@ -206,7 +232,7 @@ fn run_job(
     // the decoder returns errors, but a panic inside a codec must still not take the app down
     let mut reducer = tingmix_core::Reducer::new();
     let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        files::run(&path, &cancel, &mut reducer, &mut |b| {
+        files::run(&path, backend, &cancel, &mut reducer, &mut |b| {
             if let FileBody::Event { event } = &b {
                 if let Some((_, j)) = st
                     .jobs
@@ -250,7 +276,7 @@ fn run_job(
                     name,
                     started_at: started,
                     duration_s: outcome.audio_s,
-                    backend: BACKEND_LABEL.into(),
+                    backend: label,
                     finals,
                 };
                 if let Err(e) = st.store.save_history(&entry) {
@@ -365,11 +391,19 @@ pub async fn diagnostics(state: State<'_, AppState>) -> Result<Diagnostics, Stri
         .as_ref()
         .map(|s| s.status())
         .unwrap_or_default();
+    let bi = backends::info(
+        &state.models,
+        state.store.settings().experimental_backends,
+        &state.runtimes,
+    );
     Ok(Diagnostics {
         app_version: env!("CARGO_PKG_VERSION").into(),
         os: std::env::consts::OS.into(),
         arch: std::env::consts::ARCH.into(),
-        backend: BACKEND_LABEL.into(),
+        backend: bi.label,
+        backend_reason: bi.reason,
+        ort_library: bi.ort_library,
+        updater_enabled: state.updater,
         input_devices: devices,
         device_error,
         live,
@@ -397,7 +431,20 @@ fn models_notify(app: &AppHandle) -> crate::models::Notify {
 
 #[tauri::command]
 pub async fn models_overview(state: State<'_, AppState>) -> Result<ModelsOverview, String> {
-    Ok(state.models.overview())
+    let mut o = state.models.overview();
+    if o.registry_available {
+        let d = backends::decide(
+            &state.models,
+            state.store.settings().experimental_backends,
+            &state.runtimes,
+        );
+        o.selection = Some(crate::models::SelectionDto {
+            chosen: d.chosen.map(|c| c.0),
+            reason: d.reason,
+            rejected: d.rejected,
+        });
+    }
+    Ok(o)
 }
 
 /// `kind` is `folder` or `zip`; the dialog is opened here, so the frontend never names a path.
@@ -481,4 +528,95 @@ pub async fn models_remove(state: State<'_, AppState>, id: String) -> Result<(),
 #[tauri::command]
 pub async fn models_verify(state: State<'_, AppState>, id: String) -> Result<(), String> {
     state.models.verify(&id)
+}
+
+#[tauri::command]
+pub async fn backend_info(state: State<'_, AppState>) -> Result<backends::BackendInfoDto, String> {
+    Ok(backends::info(
+        &state.models,
+        state.store.settings().experimental_backends,
+        &state.runtimes,
+    ))
+}
+
+/// Compatibility probe of an installed version (loads it, decodes the shipped fixture, records RTF).
+#[tauri::command]
+pub async fn models_probe(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    id: String,
+) -> Result<(), String> {
+    backends::start_probe(
+        &state.models,
+        state.runtimes.clone(),
+        id,
+        models_notify(&app),
+    )
+}
+
+const NO_UPDATER: &str = "Updates are disabled: this build has no update signing key configured (see docs/release/signing-checklist.md).";
+
+#[tauri::command]
+pub async fn updater_check(
+    app: AppHandle,
+    state: State<'_, AppState>,
+) -> Result<UpdateInfo, String> {
+    if !state.updater {
+        return Ok(UpdateInfo {
+            enabled: false,
+            available: false,
+            version: None,
+            notes: Some(NO_UPDATER.into()),
+        });
+    }
+    use tauri_plugin_updater::UpdaterExt;
+    let update = app
+        .updater()
+        .map_err(|e| e.to_string())?
+        .check()
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(match update {
+        Some(u) => UpdateInfo {
+            enabled: true,
+            available: true,
+            version: Some(u.version),
+            notes: u.body,
+        },
+        None => UpdateInfo {
+            enabled: true,
+            available: false,
+            version: None,
+            notes: None,
+        },
+    })
+}
+
+/// Replaces the application bundle only. Models live in the app data directory and are never touched or re-activated.
+#[tauri::command]
+pub async fn updater_install(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
+    if !state.updater {
+        return Err(NO_UPDATER.into());
+    }
+    if state
+        .live
+        .lock()
+        .unwrap()
+        .as_ref()
+        .is_some_and(Live::is_running)
+    {
+        return Err("Stop the live session before updating.".into());
+    }
+    use tauri_plugin_updater::UpdaterExt;
+    let update = app
+        .updater()
+        .map_err(|e| e.to_string())?
+        .check()
+        .await
+        .map_err(|e| e.to_string())?
+        .ok_or("already up to date")?;
+    update
+        .download_and_install(|_, _| {}, || {})
+        .await
+        .map_err(|e| e.to_string())
 }

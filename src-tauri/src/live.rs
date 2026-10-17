@@ -12,9 +12,10 @@ use tingmix_audio::{
     start_capture, CaptureEvent, CaptureGuard, CaptureReader, Resampler, MODEL_SAMPLE_RATE,
 };
 use tingmix_core::{Event, FinalEvent, Reducer};
-use tingmix_streaming::{MockBackend, SessionConfig, SessionMsg, SessionWorker};
+use tingmix_streaming::{SessionConfig, SessionMsg, SessionWorker};
 
-use crate::dto::{LiveMsg, LiveState, LiveStatus, BACKEND_LABEL};
+use crate::backends::Dyn;
+use crate::dto::{LiveMsg, LiveState, LiveStatus};
 
 /// Mono samples at some native rate; the capture device in production, synthetic audio in tests.
 pub trait PcmSource {
@@ -83,12 +84,12 @@ pub struct Shared {
 }
 
 impl Shared {
-    fn new(id: String) -> Arc<Self> {
+    fn new(id: String, label: String) -> Arc<Self> {
         let status = LiveStatus {
             state: LiveState::Starting,
             session_id: Some(id.clone()),
             level_db: -120.0,
-            backend: BACKEND_LABEL.into(),
+            backend: label,
             ..LiveStatus::default()
         };
         Arc::new(Self {
@@ -123,12 +124,16 @@ impl Live {
     /// Opens the microphone on the capture thread and returns once it is recording (or failed to open).
     pub fn start_mic(
         id: String,
+        label: String,
+        backend: Dyn,
         device_id: Option<String>,
         sink: Sink,
         persist: Persist,
     ) -> Result<Self, String> {
         Self::start(
             id,
+            label,
+            backend,
             move || Ok(Box::new(MicSource::open(device_id)?) as Box<dyn PcmSource>),
             sink,
             persist,
@@ -138,11 +143,13 @@ impl Live {
     /// `open` runs on the new thread because the OS capture stream must stay on the thread that created it.
     pub fn start(
         id: String,
+        label: String,
+        backend: Dyn,
         open: impl FnOnce() -> Result<Box<dyn PcmSource>, String> + Send + 'static,
         sink: Sink,
         persist: Persist,
     ) -> Result<Self, String> {
-        let shared = Shared::new(id);
+        let shared = Shared::new(id, label);
         let stop = Arc::new(AtomicBool::new(false));
         let (ready_tx, ready_rx) = channel();
         let (sh, st) = (shared.clone(), stop.clone());
@@ -151,7 +158,7 @@ impl Live {
             .spawn(move || match open() {
                 Ok(src) => {
                     let _ = ready_tx.send(Ok(()));
-                    pump(src, &sh, &st, &sink, &persist);
+                    pump(src, backend, &sh, &st, &sink, &persist);
                 }
                 Err(e) => {
                     sh.update(&sink, |s| {
@@ -205,6 +212,7 @@ fn rms_db(x: &[f32]) -> f64 {
 
 fn pump(
     mut src: Box<dyn PcmSource>,
+    backend: Dyn,
     sh: &Arc<Shared>,
     stop: &AtomicBool,
     sink: &Sink,
@@ -213,7 +221,7 @@ fn pump(
     let native = src.sample_rate();
     let mut resampler =
         (native != MODEL_SAMPLE_RATE).then(|| Resampler::new(native, MODEL_SAMPLE_RATE));
-    let mut worker = SessionWorker::spawn(MockBackend::new(false), &SessionConfig::default());
+    let mut worker = SessionWorker::spawn(backend, &SessionConfig::default());
     let t0 = Instant::now();
     let device = src.device();
     sh.update(sink, |s| {
@@ -316,6 +324,7 @@ fn pump(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::dto::BACKEND_LABEL;
 
     /// 3 s of a loud tone, 1.5 s of silence, then nothing more: one segment that must end up final.
     struct Synthetic {
@@ -368,6 +377,8 @@ mod tests {
         let persist: Persist = Arc::new(move |f, _| p.lock().unwrap().push(f.len()));
         let mut live = Live::start(
             "live-test".into(),
+            BACKEND_LABEL.into(),
+            Dyn::mock(),
             move || Ok(synthetic(disconnect)),
             sink,
             persist,
@@ -438,6 +449,8 @@ mod tests {
         let persist: Persist = Arc::new(|_, _| {});
         let err = Live::start(
             "x".into(),
+            "m".into(),
+            Dyn::mock(),
             || Err("microphone access denied".into()),
             sink,
             persist,
@@ -454,8 +467,15 @@ mod tests {
     fn mic_smoke() {
         let sink: Sink = Arc::new(|_| {});
         let persist: Persist = Arc::new(|_, _| {});
-        let mut live =
-            Live::start_mic("live-smoke".into(), None, sink, persist).expect("open microphone");
+        let mut live = Live::start_mic(
+            "live-smoke".into(),
+            BACKEND_LABEL.into(),
+            Dyn::mock(),
+            None,
+            sink,
+            persist,
+        )
+        .expect("open microphone");
         std::thread::sleep(Duration::from_secs(3));
         live.stop();
         let st = live.shared.status();

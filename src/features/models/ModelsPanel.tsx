@@ -100,7 +100,7 @@ export function ModelsPanel() {
       {op && (
         <article className="card" aria-live="polite">
           <div className="row">
-            <strong>{op.kind === "download" ? "Download" : "Import"}: {op.name}</strong>
+            <strong>{op.kind === "download" ? "Download" : op.kind === "probe" ? "Probe" : "Import"}: {op.name}</strong>
             <span className={`pill ${op.state === "running" ? "running" : op.state === "done" ? "done" : "failed"}`}>{op.state}</span>
             {running && <button onClick={() => act(api.modelsCancel)}>Cancel</button>}
           </div>
@@ -123,6 +123,7 @@ export function ModelsPanel() {
           <p className="muted small">Status: {m.compat_status}. {m.compat_notes}</p>
           {m.licenses.length > 0 && <p className="muted small">Licences: {m.licenses.join(", ")}</p>}
           <div className="row">
+            <button disabled={running} onClick={() => act(() => api.modelsProbe(m.id), `Compatibility probe of ${m.id} finished`)}>Run compatibility probe</button>
             <button disabled={m.active || running} onClick={() => act(() => api.modelsActivate(m.id), `Activated ${m.id}`)}>Make active</button>
             <button disabled={running} onClick={() => act(() => api.modelsVerify(m.id), `${m.id}: every file matches its signed hash`)}>Verify files</button>
             <button disabled={m.active || m.previous || running} onClick={() => act(() => api.modelsRemove(m.id), `Removed ${m.id}`)}>Remove</button>

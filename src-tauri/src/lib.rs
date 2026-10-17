@@ -1,5 +1,6 @@
 //! Tauri host: owns the audio/streaming pipeline and exposes typed commands and events to the React UI.
 
+mod backends;
 mod commands;
 mod dto;
 mod files;
@@ -9,11 +10,21 @@ mod state;
 mod store;
 
 use tauri::menu::{Menu, MenuItem};
+use tauri::path::BaseDirectory;
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{DragDropEvent, Emitter, Manager, RunEvent, WindowEvent};
 
 use state::AppState;
 use store::Store;
+
+/// Where the bundle script puts the library, relative to the resource directory.
+const ORT_RESOURCE: Option<&str> = if cfg!(target_os = "macos") {
+    Some("onnxruntime/libonnxruntime.1.31.0.dylib")
+} else if cfg!(target_os = "windows") {
+    Some("onnxruntime/onnxruntime.dll")
+} else {
+    None
+};
 
 fn show_main(app: &tauri::AppHandle) {
     if let Some(w) = app.get_webview_window("main") {
@@ -36,7 +47,35 @@ pub fn run() {
         .setup(|app| {
             let store = Store::new(app.path().app_config_dir()?, app.path().app_data_dir()?);
             let models = models::Models::open(app.path().app_data_dir()?.join("models"));
-            app.manage(AppState::new(store, models));
+
+            // The bundled ONNX Runtime (docs/release/onnxruntime.md); dev runs fall back to TINGMIX_ORT_DYLIB.
+            let bundled = ORT_RESOURCE
+                .and_then(|r| app.path().resolve(r, BaseDirectory::Resource).ok())
+                .filter(|p| p.is_file());
+            let ort_library =
+                bundled.or_else(|| std::env::var_os("TINGMIX_ORT_DYLIB").map(Into::into));
+            if let Some(p) = &ort_library {
+                tingmix_runtime_onnx::set_runtime_library(p.clone());
+            }
+            // Registering the updater without a pubkey makes plugin init fail, so it exists only when one is configured.
+            let updater = app
+                .config()
+                .plugins
+                .0
+                .get("updater")
+                .and_then(|c| c.get("pubkey"))
+                .and_then(|k| k.as_str())
+                .is_some_and(|k| !k.trim().is_empty());
+            if updater {
+                app.handle()
+                    .plugin(tauri_plugin_updater::Builder::new().build())?;
+            }
+            app.manage(AppState::new(
+                store,
+                models,
+                backends::Runtimes { ort_library },
+                updater,
+            ));
 
             let menu = Menu::with_items(
                 app,
@@ -128,6 +167,10 @@ pub fn run() {
             commands::models_rollback,
             commands::models_remove,
             commands::models_verify,
+            commands::models_probe,
+            commands::backend_info,
+            commands::updater_check,
+            commands::updater_install,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");

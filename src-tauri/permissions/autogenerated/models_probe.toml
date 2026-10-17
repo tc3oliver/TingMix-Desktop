@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-models-probe"
+description = "Enables the models_probe command without any pre-configured scope."
+commands.allow = ["models_probe"]
+
+[[permission]]
+identifier = "deny-models-probe"
+description = "Denies the models_probe command without any pre-configured scope."
+commands.deny = ["models_probe"]

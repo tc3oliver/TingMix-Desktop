@@ -1,0 +1,9 @@
+{
+  "bundle": {
+    "resources": {
+      "../vendor/onnxruntime/macos-arm64/lib/libonnxruntime.1.31.0.dylib": "onnxruntime/libonnxruntime.1.31.0.dylib",
+      "../vendor/onnxruntime/macos-arm64/LICENSE": "onnxruntime/LICENSE",
+      "../vendor/onnxruntime/macos-arm64/ThirdPartyNotices.txt": "onnxruntime/ThirdPartyNotices.txt"
+    }
+  }
+}

@@ -109,6 +109,9 @@ pub struct Settings {
     /// Caption font size in px.
     pub caption_size: u32,
     pub save_history: bool,
+    /// Allow EXPERIMENTAL inference backends (ONNX Small, MLX Large) to be selected. Off by default.
+    #[serde(default)]
+    pub experimental_backends: bool,
 }
 
 impl Default for Settings {
@@ -118,6 +121,7 @@ impl Default for Settings {
             theme: "system".into(),
             caption_size: 28,
             save_history: true,
+            experimental_backends: false,
         }
     }
 }
@@ -162,6 +166,9 @@ pub struct Diagnostics {
     pub os: String,
     pub arch: String,
     pub backend: String,
+    pub backend_reason: String,
+    pub ort_library: Option<String>,
+    pub updater_enabled: bool,
     pub input_devices: Vec<DeviceDto>,
     pub device_error: Option<String>,
     pub live: LiveStatus,
@@ -169,4 +176,12 @@ pub struct Diagnostics {
     pub config_dir: String,
     pub data_dir: String,
     pub recent_errors: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct UpdateInfo {
+    pub enabled: bool,
+    pub available: bool,
+    pub version: Option<String>,
+    pub notes: Option<String>,
 }

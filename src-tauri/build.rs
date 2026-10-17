@@ -24,6 +24,10 @@ const COMMANDS: &[&str] = &[
     "models_rollback",
     "models_remove",
     "models_verify",
+    "models_probe",
+    "backend_info",
+    "updater_check",
+    "updater_install",
 ];
 
 fn main() {

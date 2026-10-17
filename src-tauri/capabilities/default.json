@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Main window: IPC events plus exactly the app commands it needs. No fs, shell or http plugin.",
+  "description": "Main window: IPC events plus exactly the app commands it needs. No fs, shell, http or updater plugin permissions.",
   "windows": [
     "main"
   ],
@@ -30,6 +30,10 @@
     "allow-models-activate",
     "allow-models-rollback",
     "allow-models-remove",
-    "allow-models-verify"
+    "allow-models-verify",
+    "allow-models-probe",
+    "allow-backend-info",
+    "allow-updater-check",
+    "allow-updater-install"
   ]
 }

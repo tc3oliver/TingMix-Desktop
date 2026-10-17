@@ -16,6 +16,9 @@ export function DiagnosticsPanel() {
   const rows: [string, string][] = [
     ["App", `${d.app_version} · ${d.os}/${d.arch}`],
     ["Backend", d.backend],
+    ["Why", d.backend_reason],
+    ["ONNX Runtime library", d.ort_library ?? "not found (set by the bundle or TINGMIX_ORT_DYLIB)"],
+    ["App updater", d.updater_enabled ? "enabled" : "disabled (no update signing key in this build)"],
     ["Live state", `${d.live.state}${d.live.message ? ` (${d.live.message})` : ""}`],
     ["Samples captured", String(d.live.samples_in)],
     ["Samples dropped (ring overflow)", String(d.live.overflow_samples)],

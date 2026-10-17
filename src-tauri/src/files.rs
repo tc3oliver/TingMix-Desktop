@@ -5,8 +5,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use tingmix_audio::{decode_file_chunks, MODEL_SAMPLE_RATE};
 use tingmix_core::Reducer;
-use tingmix_streaming::{MockBackend, SessionConfig, SessionMsg, StreamingSession};
+use tingmix_streaming::{SessionConfig, SessionMsg, StreamingSession};
 
+use crate::backends::Dyn;
 use crate::dto::{FileBody, JobState};
 
 pub struct Outcome {
@@ -19,11 +20,12 @@ pub struct Outcome {
 /// unsupported file ends as `Failed` with the decoder's message.
 pub fn run(
     path: &Path,
+    backend: Dyn,
     cancel: &AtomicBool,
     reducer: &mut Reducer,
     emit: &mut dyn FnMut(FileBody),
 ) -> Outcome {
-    let mut session = StreamingSession::new(MockBackend::new(false), &SessionConfig::default());
+    let mut session = StreamingSession::new(backend, &SessionConfig::default());
     let mut samples = 0u64;
     let handle = |msgs: Vec<SessionMsg>, reducer: &mut Reducer, emit: &mut dyn FnMut(FileBody)| {
         for m in msgs {
@@ -104,6 +106,7 @@ mod tests {
         let (mut r, mut progress, mut events) = (Reducer::new(), 0, 0);
         let out = run(
             &dir.join("a.wav"),
+            Dyn::mock(),
             &AtomicBool::new(false),
             &mut r,
             &mut |b| match b {
@@ -126,6 +129,7 @@ mod tests {
         let mut r = Reducer::new();
         let out = run(
             &dir.join("junk.wav"),
+            Dyn::mock(),
             &AtomicBool::new(false),
             &mut r,
             &mut |_| {},
@@ -135,6 +139,7 @@ mod tests {
         assert_eq!(
             run(
                 &dir.join("missing.mp3"),
+                Dyn::mock(),
                 &AtomicBool::new(false),
                 &mut r,
                 &mut |_| {}
@@ -146,6 +151,7 @@ mod tests {
         wav(&dir.join("c.wav"), 3);
         let out = run(
             &dir.join("c.wav"),
+            Dyn::mock(),
             &AtomicBool::new(true),
             &mut r,
             &mut |_| {},
