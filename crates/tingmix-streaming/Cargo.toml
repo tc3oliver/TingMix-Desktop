@@ -1,0 +1,15 @@
+[package]
+name = "tingmix-streaming"
+description = "VAD, endpointing, scheduling and the streaming session (buffered re-decode and native streams)"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+tingmix-core = { path = "../tingmix-core" }
+
+[dev-dependencies]
+hound = "3.5.1"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"

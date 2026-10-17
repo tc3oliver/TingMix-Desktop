@@ -1,0 +1,13 @@
+[project]
+name = "golden-session"
+version = "0.0.0"
+description = "Writes golden streaming-event sequences from the Python reference StreamingSession"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy==2.3.3",
+    # pinned reference implementation (docs/research/PINNED.md)
+    "tingmix @ git+https://github.com/tc3oliver/tingmix.git@f44cbdbd2cd99598c99cf8d60da6cb41bb15d1db",
+]
+
+[tool.uv]
+package = false
