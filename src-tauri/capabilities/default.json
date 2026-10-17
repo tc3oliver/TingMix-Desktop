@@ -1,0 +1,27 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Main window: IPC events plus exactly the app commands it needs. No fs, shell or http plugin.",
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "core:event:default",
+    "allow-list-input-devices",
+    "allow-live-start",
+    "allow-live-stop",
+    "allow-live-snapshot",
+    "allow-file-pick",
+    "allow-file-start",
+    "allow-file-cancel",
+    "allow-file-jobs",
+    "allow-export-text",
+    "allow-settings-get",
+    "allow-settings-set",
+    "allow-history-list",
+    "allow-history-load",
+    "allow-history-delete",
+    "allow-diagnostics",
+    "allow-models-overview"
+  ]
+}

@@ -1,0 +1,27 @@
+[package]
+name = "tingmix-app"
+description = "TingMix desktop host: typed commands and events over the Rust pipeline"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[lib]
+name = "tingmix_app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = "=2.7.3"
+
+[dependencies]
+tauri = { version = "=2.12.4", features = ["tray-icon"] }
+tauri-plugin-dialog = "=2.8.3"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+thiserror = "2.0.21"
+tingmix-core = { path = "../crates/tingmix-core" }
+tingmix-audio = { path = "../crates/tingmix-audio" }
+tingmix-streaming = { path = "../crates/tingmix-streaming" }
+
+[dev-dependencies]
+hound = "3.5.1"
