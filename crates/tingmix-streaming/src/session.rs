@@ -13,7 +13,7 @@ impl<B: AsrBackend> StreamingSession<B> {
     pub fn new(backend: B, cfg: &SessionConfig) -> Self {
         Self {
             pipeline: Pipeline::new(backend.info(), cfg),
-            decoder: Decoder::new(backend, cfg.stability_k),
+            decoder: Decoder::new(backend, cfg.stability_k).with_suppression(cfg.suppression),
         }
     }
 

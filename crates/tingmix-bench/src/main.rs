@@ -8,6 +8,7 @@ mod report;
 mod run;
 mod source;
 mod stats;
+mod vadeval;
 
 #[cfg(feature = "mlx")]
 mod lazy;
@@ -23,7 +24,7 @@ use probe::{Rec, Sim};
 use run::{RunCfg, RunOut};
 
 const USAGE: &str = "usage: tingmix-bench [--backend mock|onnx|mlx] [--duration-s 120] [--chunk-ms 20] [--seed 1] [--gap-min 1.0] [--gap-max 4.0]
-  [--noise-dbfs -70] [--clips id,id] [--tail-s 4] [--mock-native] [--tail-partial on|off|live] [--discard-first N] [--mock-delay-ms 0] [--sim-base-ms 0] [--sim-rtf 0]
+  [--noise-dbfs -70] [--clips id,id] [--tail-s 4] [--mock-native] [--tail-partial on|off|live]\n  [--noise none|white|pink|fan|babble] [--snr-db N | --noise-dbfs N] [--no-speech] [--vad energy|adaptive] [--suppress on|off]\n  [--sup-min C] [--sup-short-chars N] [--sup-short-min C] [--speed X] [--vad-only] [--wav FILE (segment a recording, no model)] [--cut-search S] [--oracle FILE|prompt] [--avad key=value,...] [--oracle FILE] [--discard-first N] [--mock-delay-ms 0] [--sim-base-ms 0] [--sim-rtf 0]
   [--artifact PATH] [--model onnx] [--units units.json --dtype f16 --lm charlm.json.gz] [--scenario NAME] [--soak] --out FILE.json";
 
 struct Args(std::collections::HashMap<String, String>);
@@ -37,7 +38,10 @@ impl Args {
                 .strip_prefix("--")
                 .ok_or(format!("unexpected argument {k}\n{USAGE}"))?
                 .to_string();
-            let flag = matches!(k.as_str(), "soak" | "mock-native");
+            let flag = matches!(
+                k.as_str(),
+                "soak" | "mock-native" | "vad-only" | "no-speech"
+            );
             let v = if flag {
                 "1".into()
             } else {
@@ -80,6 +84,34 @@ fn main() {
     }
 }
 
+/// `--avad key=value,key=value` overrides of the adaptive VAD defaults (for tuning).
+fn avad_params(spec: Option<&str>) -> Result<tingmix_streaming::AdaptiveVadParams, String> {
+    let mut p = tingmix_streaming::AdaptiveVadParams::default();
+    for kv in spec.unwrap_or("").split(',').filter(|s| !s.is_empty()) {
+        let (k, v) = kv
+            .split_once('=')
+            .ok_or(format!("--avad: expected key=value, got {kv}"))?;
+        let f: f64 = v
+            .parse()
+            .map_err(|_| format!("--avad {k}: not a number: {v}"))?;
+        match k {
+            "floor_percentile" => p.floor_percentile = f as f32,
+            "window_frames" => p.window_frames = f as usize,
+            "rise_db_per_s" => p.rise_db_per_s = f as f32,
+            "smooth_frames" => p.smooth_frames = f as usize,
+            "start_margin_db" => p.start_margin_db = f as f32,
+            "stay_margin_db" => p.stay_margin_db = f as f32,
+            "abs_min_db" => p.abs_min_db = f as f32,
+            "start_window" => p.start_window = f as usize,
+            "start_votes" => p.start_votes = f as usize,
+            "hang_frames" => p.hang_frames = f as u32,
+            "warmup_frames" => p.warmup_frames = f as usize,
+            _ => return Err(format!("--avad: unknown parameter {k}")),
+        }
+    }
+    Ok(p)
+}
+
 fn real_main() -> Result<(), String> {
     let a = Args::parse()?;
     let out_path = PathBuf::from(a.s("out").ok_or(format!("--out is required\n{USAGE}"))?);
@@ -89,18 +121,113 @@ fn real_main() -> Result<(), String> {
     let fixtures = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/audio");
     let clips = source::load_clips(&fixtures, only.as_deref())?;
     let (duration_s, chunk_ms) = (a.f("duration-s", 120.0)?, a.f("chunk-ms", 20.0)? as u64);
-    let noise =
-        a.0.contains_key("noise-dbfs")
-            .then(|| a.f("noise-dbfs", -70.0))
-            .transpose()?
-            .or(Some(-70.0));
-    let src = source::Source::new(
+    let prompts: std::collections::HashMap<String, String> = clips
+        .iter()
+        .map(|c| (c.id.clone(), c.text.clone()))
+        .collect();
+    let kind = a.s("noise").unwrap_or("white");
+    let noise = if kind == "none" {
+        None
+    } else {
+        let level = match (a.0.contains_key("snr-db"), a.0.contains_key("noise-dbfs")) {
+            (true, false) => source::Level::SnrDb(a.f("snr-db", 20.0)?),
+            (false, _) => source::Level::Dbfs(a.f("noise-dbfs", -70.0)?),
+            (true, true) => return Err("use either --snr-db or --noise-dbfs".into()),
+        };
+        Some(source::NoiseSpec {
+            kind: source::NoiseKind::parse(kind).ok_or(format!(
+                "--noise {kind}: expected none|white|pink|fan|babble|music"
+            ))?,
+            level,
+        })
+    };
+    let noise_desc = format!("{noise:?}");
+    let mut src = source::Source::new(
         clips,
         a.f("seed", 1.0)? as u64,
         (a.f("gap-min", 1.0)?, a.f("gap-max", 4.0)?),
         noise,
         duration_s,
     );
+    if a.0.contains_key("no-speech") {
+        src = src.without_speech();
+    }
+    let session = SessionConfig {
+        vad: match a.s("vad") {
+            None | Some("energy") => tingmix_streaming::VadKind::Energy,
+            Some("adaptive") => tingmix_streaming::VadKind::Adaptive,
+            Some(v) => return Err(format!("--vad {v}: expected energy|adaptive")),
+        },
+        suppression: match a.s("suppress") {
+            None | Some("off") => None,
+            Some("on") => Some(tingmix_streaming::Suppression {
+                min_confidence: a.f("sup-min", 0.4)? as f32,
+                short_chars: a.f("sup-short-chars", 2.0)? as usize,
+                short_min_confidence: a.f("sup-short-min", 0.9)? as f32,
+            }),
+            Some(v) => return Err(format!("--suppress {v}: expected on|off")),
+        },
+        adaptive_vad: avad_params(a.s("avad"))?,
+        max_cut_search_s: a.f("cut-search", 0.0)?,
+        ..SessionConfig::default()
+    };
+    if let Some(path) = a.s("wav") {
+        let mut r = hound::WavReader::open(path).map_err(|e| format!("{path}: {e}"))?;
+        let spec = r.spec();
+        if spec.sample_rate != 16_000 || spec.channels != 1 {
+            return Err(format!("{path}: expected 16 kHz mono, got {spec:?}"));
+        }
+        let wav: Vec<f32> = match spec.sample_format {
+            hound::SampleFormat::Int => r
+                .samples::<i16>()
+                .map(|x| x.map(|v| f32::from(v) / 32768.0))
+                .collect::<Result<_, _>>()
+                .map_err(|e| e.to_string())?,
+            hound::SampleFormat::Float => r
+                .samples::<f32>()
+                .collect::<Result<_, _>>()
+                .map_err(|e| e.to_string())?,
+        };
+        let out = vadeval::evaluate_wav(&wav, &session);
+        std::fs::write(&out_path, serde_json::to_vec_pretty(&serde_json::json!({ "command": std::env::args().collect::<Vec<_>>().join(" "), "vad": a.s("vad").unwrap_or("energy"), "cut_search_s": a.f("cut-search", 0.0)?, "result": out })).unwrap()).map_err(|e| e.to_string())?;
+        let o = &out;
+        eprintln!(
+            "{} s: {} segments, {} ended at the cap, median {:.1} s, longest {:.1} s",
+            o.audio_s as u64, o.segments, o.ended_at_cap, o.median_segment_s, o.longest_segment_s
+        );
+        return Ok(());
+    }
+    if a.0.contains_key("vad-only") {
+        let out = vadeval::evaluate(src, &session, chunk_ms as usize);
+        let body = serde_json::json!({ "command": std::env::args().collect::<Vec<_>>().join(" "), "env": report::env(),
+            "config": { "noise": noise_desc, "vad": a.s("vad").unwrap_or("energy"), "avad": a.s("avad"), "cut_search_s": a.f("cut-search", 0.0)?, "oracle": a.s("oracle"), "seed": a.f("seed", 1.0)?, "duration_s": duration_s, "gap_s": [a.f("gap-min", 1.0)?, a.f("gap-max", 4.0)?], "no_speech": a.0.contains_key("no-speech") },
+            "result": out });
+        std::fs::write(&out_path, serde_json::to_vec_pretty(&body).unwrap())
+            .map_err(|e| format!("{}: {e}", out_path.display()))?;
+        eprintln!("{}", serde_json::to_string(&body["result"]).unwrap());
+        return Ok(());
+    }
+    let oracle = if a.s("oracle") == Some("prompt") {
+        Some(prompts)
+    } else {
+        None
+    };
+    let oracle = oracle.or((a.s("backend").unwrap_or("mock") != "mock")
+        .then(|| {
+            let p = a.s("oracle").map(PathBuf::from).unwrap_or_else(|| {
+                PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                    .join("../../tests/fixtures/large/expected_texts.json")
+            });
+            let v: serde_json::Value = serde_json::from_slice(&std::fs::read(&p).ok()?).ok()?;
+            Some(
+                v["clips"]
+                    .as_object()?
+                    .iter()
+                    .filter_map(|(k, c)| Some((k.clone(), c["beam_lm"].as_str()?.to_string())))
+                    .collect::<std::collections::HashMap<_, _>>(),
+            )
+        })
+        .flatten());
     #[allow(unused_mut)] // only the mlx arm adjusts it
     let mut cfg = RunCfg {
         discard_first: a.f("discard-first", 0.0)? as usize,
@@ -112,11 +239,13 @@ fn real_main() -> Result<(), String> {
             Some(v) => return Err(format!("--tail-partial {v}: expected on|off|live")),
         },
         tail_s: a.f("tail-s", 4.0)?,
+        speed: a.f("speed", 1.0)?,
+        oracle,
         sim: Sim {
             base_s: a.f("sim-base-ms", 0.0)? / 1000.0,
             rtf: a.f("sim-rtf", 0.0)?,
         },
-        session: SessionConfig::default(),
+        session,
     };
     let backend_name = a.s("backend").unwrap_or("mock");
     let (t0, soak) = (Instant::now(), a.0.contains_key("soak"));
@@ -233,7 +362,7 @@ fn real_main() -> Result<(), String> {
         artifacts_sha256: artifacts,
         env: report::env(),
         config: serde_json::json!({ "duration_s": duration_s, "chunk_ms": chunk_ms, "sim_base_ms": cfg.sim.base_s * 1000.0, "sim_rtf": cfg.sim.rtf,
-            "gap_s": [a.f("gap-min", 1.0)?, a.f("gap-max", 4.0)?], "noise_dbfs": noise, "seed": a.f("seed", 1.0)?,
+            "gap_s": [a.f("gap-min", 1.0)?, a.f("gap-max", 4.0)?], "noise": noise_desc, "speed": cfg.speed, "latency_valid": cfg.speed == 1.0, "vad": a.s("vad").unwrap_or("energy"), "suppress": a.s("suppress").unwrap_or("off"), "no_speech": a.0.contains_key("no-speech"), "seed": a.f("seed", 1.0)?,
             "tail_partial": a.s("tail-partial").unwrap_or("live"), "session": format!("{:?}", cfg.session) }),
         note: "Wall-clock real-time replay. Times are inference-side (audio in -> event received); UI render time is not included. \
                Mock backends recognise nothing and emit text even for silence, so mock first-partial latency is optimistic: with --backend mock these numbers characterise the harness, scheduler and queue only. \
@@ -274,10 +403,21 @@ mod tests {
         let fixtures = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/audio");
         let clips =
             source::load_clips(&fixtures, Some(&["zh_02s".into(), "en_02s".into()])).unwrap();
-        let src = source::Source::new(clips, 3, (1.0, 1.5), Some(-70.0), 9.0);
+        let src = source::Source::new(
+            clips,
+            3,
+            (1.0, 1.5),
+            Some(source::NoiseSpec {
+                kind: source::NoiseKind::White,
+                level: source::Level::Dbfs(-70.0),
+            }),
+            9.0,
+        );
         let t0 = Instant::now();
         let rec = Rec::new(t0);
         let cfg = RunCfg {
+            speed: 1.0,
+            oracle: None,
             discard_first: 0,
             tail_partial: None,
             chunk_ms: 20,

@@ -44,6 +44,31 @@ pub fn slope(xs: &[f64], ys: &[f64]) -> f64 {
     }
 }
 
+/// Characters that count for CER: letters and digits, lower-cased (spaces and punctuation ignored).
+pub fn norm(s: &str) -> Vec<char> {
+    s.chars()
+        .filter(|c| c.is_alphanumeric())
+        .flat_map(char::to_lowercase)
+        .collect()
+}
+
+/// Levenshtein distance between two char sequences.
+pub fn edit_distance(a: &[char], b: &[char]) -> usize {
+    let mut prev: Vec<usize> = (0..=b.len()).collect();
+    for (i, ca) in a.iter().enumerate() {
+        let mut cur = vec![i + 1];
+        for (j, cb) in b.iter().enumerate() {
+            cur.push(
+                (prev[j] + usize::from(ca != cb))
+                    .min(prev[j + 1] + 1)
+                    .min(cur[j] + 1),
+            );
+        }
+        prev = cur;
+    }
+    prev[b.len()]
+}
+
 pub fn median(v: &[f64]) -> f64 {
     dist(v).p50
 }
@@ -51,6 +76,13 @@ pub fn median(v: &[f64]) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn edit_distance_counts_chars() {
+        let (a, b) = (norm("Hello, World"), norm("helo wurld"));
+        assert_eq!(edit_distance(&a, &b), 2);
+        assert_eq!(edit_distance(&norm("今天天氣"), &norm("")), 4);
+    }
 
     #[test]
     fn percentiles_and_slope() {

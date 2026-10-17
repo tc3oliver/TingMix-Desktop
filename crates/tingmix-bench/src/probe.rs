@@ -5,12 +5,14 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-use tingmix_core::{AsrBackend, AsrStream, BackendError, BackendInfo};
+use tingmix_core::{AsrBackend, AsrStream, BackendError, BackendInfo, Transcription};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct Call {
     pub dur_s: f64,
     pub audio_s: f64,
+    pub text: String,
+    pub confidence: Option<f32>,
 }
 
 pub struct Rec {
@@ -37,6 +39,25 @@ impl Rec {
         }
     }
 
+    /// Attach the decoded text and confidence to the call that just finished.
+    fn annotate(&self, text: &str, confidence: Option<f32>) {
+        if let Some(c) = self.calls.lock().unwrap().last_mut() {
+            c.text = text.trim().to_string();
+            c.confidence = confidence;
+        }
+    }
+
+    /// Confidence of the most recent decode that produced exactly `text`.
+    pub fn confidence_of(&self, text: &str) -> Option<f32> {
+        self.calls
+            .lock()
+            .unwrap()
+            .iter()
+            .rev()
+            .find(|c| c.text == text.trim())
+            .and_then(|c| c.confidence)
+    }
+
     fn timed<T>(&self, audio_samples: usize, sr: u32, sim: Sim, f: impl FnOnce() -> T) -> T {
         let start = Instant::now();
         self.inflight.store(
@@ -48,7 +69,12 @@ impl Rec {
         let r = f();
         let dur_s = start.elapsed().as_secs_f64();
         self.inflight.store(0, Ordering::Relaxed);
-        self.calls.lock().unwrap().push(Call { dur_s, audio_s });
+        self.calls.lock().unwrap().push(Call {
+            dur_s,
+            audio_s,
+            text: String::new(),
+            confidence: None,
+        });
         r
     }
 }
@@ -77,6 +103,22 @@ impl<B: AsrBackend> AsrBackend for Timed<B> {
         );
         let (inner, rec, sim) = (&mut self.inner, &self.rec, self.sim);
         rec.timed(n, sr, sim, || inner.transcribe_batch(wavs))
+    }
+
+    fn transcribe_batch_scored(
+        &mut self,
+        wavs: &[&[f32]],
+    ) -> Result<Vec<Transcription>, BackendError> {
+        let (n, sr) = (
+            wavs.iter().map(|w| w.len()).sum(),
+            self.inner.info().sample_rate,
+        );
+        let (inner, rec, sim) = (&mut self.inner, &self.rec, self.sim);
+        let r = rec.timed(n, sr, sim, || inner.transcribe_batch_scored(wavs))?;
+        if let Some(t) = r.first() {
+            rec.annotate(&t.text, t.confidence);
+        }
+        Ok(r)
     }
 
     fn new_stream(&mut self) -> Result<Box<dyn AsrStream>, BackendError> {

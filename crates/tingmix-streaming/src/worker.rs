@@ -122,10 +122,10 @@ impl SessionWorker {
         let pipeline = Pipeline::new(backend.info(), cfg);
         let queue = Arc::new(Queue::default());
         let (tx, events) = channel();
-        let (q, k) = (queue.clone(), cfg.stability_k);
+        let (q, k, sup) = (queue.clone(), cfg.stability_k, cfg.suppression);
         let thread = std::thread::Builder::new()
             .name("tingmix-inference".into())
-            .spawn(move || run_worker(Decoder::new(backend, k), q, tx))
+            .spawn(move || run_worker(Decoder::new(backend, k).with_suppression(sup), q, tx))
             .expect("spawn inference thread");
         Self {
             pipeline,

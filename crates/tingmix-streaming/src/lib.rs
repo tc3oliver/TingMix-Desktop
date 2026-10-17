@@ -16,6 +16,7 @@ mod pipeline;
 mod scheduler;
 mod session;
 mod stability;
+mod suppress;
 mod vad;
 mod worker;
 
@@ -27,5 +28,6 @@ pub use pipeline::{Job, JobKind, Pipeline, SessionConfig};
 pub use scheduler::Scheduler;
 pub use session::StreamingSession;
 pub use stability::StablePrefix;
-pub use vad::{EnergyVad, Vad};
+pub use suppress::Suppression;
+pub use vad::{AdaptiveVad, AdaptiveVadParams, EnergyVad, Vad, VadKind};
 pub use worker::{SessionMsg, SessionWorker};

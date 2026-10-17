@@ -64,6 +64,180 @@ impl Vad for EnergyVad {
     }
 }
 
+/// Which voice activity detector a [`crate::Pipeline`] uses.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum VadKind {
+    /// Fixed threshold (`SessionConfig::vad_threshold_db`): the Python reference's behaviour.
+    #[default]
+    Energy,
+    /// Tracks the noise floor; see [`AdaptiveVad`].
+    Adaptive,
+}
+
+/// Tunables of [`AdaptiveVad`]; the defaults are the values chosen in docs/research/vad-noise.md.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct AdaptiveVadParams {
+    /// Noise floor = this percentile of the last `window_frames` smoothed frame levels.
+    pub floor_percentile: f32,
+    pub window_frames: usize,
+    /// The floor may rise at most this fast (dB per second); it falls freely.
+    pub rise_db_per_s: f32,
+    /// Frame levels are averaged (as power) over this many frames before comparison.
+    pub smooth_frames: usize,
+    /// A frame is loud when above floor + this and above `abs_min_db`.
+    pub start_margin_db: f32,
+    /// Speech continues while a frame is above floor + this.
+    pub stay_margin_db: f32,
+    pub abs_min_db: f32,
+    /// Speech opens when at least `start_votes` of the last `start_window` frames are loud.
+    pub start_window: usize,
+    pub start_votes: usize,
+    /// Quiet frames in a row that end speech.
+    pub hang_frames: u32,
+    /// Frames heard before the first decision (the floor needs a baseline).
+    pub warmup_frames: usize,
+}
+
+impl Default for AdaptiveVadParams {
+    fn default() -> Self {
+        Self {
+            floor_percentile: 0.2,
+            window_frames: 250,
+            rise_db_per_s: 4.0,
+            smooth_frames: 3,
+            start_margin_db: 10.0,
+            stay_margin_db: 5.0,
+            abs_min_db: -55.0,
+            start_window: 12,
+            start_votes: 8,
+            hang_frames: 10,
+            warmup_frames: 25,
+        }
+    }
+}
+
+/// Energy VAD whose threshold follows the room: speech = frame level above (tracked noise floor + margin).
+///
+/// - Floor: a low percentile of the recent frame levels (speech and non-speech alike, so a changing noise level is
+///   followed), limited in how fast it may rise so a burst or a long vowel cannot drag it up; it falls freely.
+/// - Start: enough loud frames among the last few (see [`AdaptiveVadParams`]), so a click or a cough shorter than
+///   ~250 ms never opens a segment. The pipeline's preroll buffer returns the audio before the decision.
+/// - Stay: a frame above the lower stay threshold continues speech; `hang_frames` quiet frames end it.
+///
+/// shortcut: energy only, so non-stationary noise (a second talker, music) still passes; the confidence check on the
+/// decoded text is the second line of defence. Upgrade to a neural VAD if that proves insufficient.
+pub struct AdaptiveVad {
+    p: AdaptiveVadParams,
+    frame_ms: u32,
+    window: std::collections::VecDeque<f32>,
+    power: std::collections::VecDeque<f64>,
+    floor_db: f32,
+    floor_known: bool,
+    speech: bool,
+    votes: std::collections::VecDeque<bool>,
+    quiet_run: u32,
+    heard: usize,
+}
+
+impl AdaptiveVad {
+    pub fn new() -> Self {
+        Self::with_params(AdaptiveVadParams::default())
+    }
+
+    pub fn with_params(p: AdaptiveVadParams) -> Self {
+        Self {
+            p,
+            frame_ms: 20,
+            window: Default::default(),
+            power: Default::default(),
+            floor_db: -60.0,
+            floor_known: false,
+            speech: false,
+            votes: Default::default(),
+            quiet_run: 0,
+            heard: 0,
+        }
+    }
+
+    /// Current noise-floor estimate in dBFS (for diagnostics).
+    pub fn floor_db(&self) -> f32 {
+        self.floor_db
+    }
+
+    fn track_floor(&mut self, db: f32) {
+        self.window.push_back(db);
+        if self.window.len() > self.p.window_frames {
+            self.window.pop_front();
+        }
+        if self.window.len() < self.p.warmup_frames {
+            return; // keep the prior until enough has been heard
+        }
+        let mut v: Vec<f32> = self.window.iter().copied().collect();
+        let k = ((v.len() - 1) as f32 * self.p.floor_percentile) as usize;
+        let target = *v.select_nth_unstable_by(k, f32::total_cmp).1;
+        let rise = self.p.rise_db_per_s * self.frame_ms as f32 / 1000.0;
+        self.floor_db = if !self.floor_known || target < self.floor_db {
+            target
+        } else {
+            target.min(self.floor_db + rise)
+        };
+        // the first estimate replaces the prior outright: no ramp-up false trigger at stream start
+        self.floor_known = true;
+    }
+}
+
+impl Default for AdaptiveVad {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Vad for AdaptiveVad {
+    fn frame_ms(&self) -> u32 {
+        self.frame_ms
+    }
+
+    fn update(&mut self, frame: &[f32]) -> bool {
+        let ms = frame
+            .iter()
+            .map(|&x| f64::from(x) * f64::from(x))
+            .sum::<f64>()
+            / frame.len().max(1) as f64;
+        self.power.push_back(ms);
+        if self.power.len() > self.p.smooth_frames.max(1) {
+            self.power.pop_front();
+        }
+        let mean = self.power.iter().sum::<f64>() / self.power.len() as f64;
+        let db = (10.0 * (mean + 1e-20).log10()) as f32;
+        self.track_floor(db);
+        self.heard += 1;
+        let start_thr = (self.floor_db + self.p.start_margin_db).max(self.p.abs_min_db);
+        let stay_thr = (self.floor_db + self.p.stay_margin_db).max(self.p.abs_min_db - 4.0);
+        if self.speech {
+            self.quiet_run = if db > stay_thr { 0 } else { self.quiet_run + 1 };
+            if self.quiet_run >= self.p.hang_frames {
+                self.speech = false;
+                self.votes.clear();
+            }
+        } else {
+            // votes cast against the unsettled prior floor are meaningless: start counting after the warm-up
+            if self.heard > self.p.warmup_frames {
+                self.votes.push_back(db > start_thr);
+            }
+            if self.votes.len() > self.p.start_window {
+                self.votes.pop_front();
+            }
+            if self.heard >= self.p.warmup_frames
+                && self.votes.iter().filter(|v| **v).count() >= self.p.start_votes
+            {
+                self.speech = true;
+                self.quiet_run = 0;
+            }
+        }
+        self.speech
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -90,5 +264,49 @@ mod tests {
         assert!(!v.update(&frame(0.0)));
         assert!(!v.update(&frame(0.1)));
         assert!(v.update(&frame(0.1)));
+    }
+
+    fn level(db: f32) -> Vec<f32> {
+        // a square wave of the requested RMS
+        vec![10f32.powf(db / 20.0); 320]
+    }
+
+    fn feed(v: &mut AdaptiveVad, db: f32, n: usize) -> bool {
+        (0..n).map(|_| v.update(&level(db))).last().unwrap()
+    }
+
+    #[test]
+    fn adaptive_ignores_steady_noise_that_energy_vad_would_call_speech() {
+        let mut e = EnergyVad::default();
+        let mut a = AdaptiveVad::new();
+        // -40 dBFS room noise is above the fixed -50 dB threshold
+        assert!((0..100).map(|_| e.update(&level(-40.0))).last().unwrap());
+        assert!(!feed(&mut a, -40.0, 400));
+        assert!((a.floor_db() + 40.0).abs() < 1.0, "{}", a.floor_db());
+        // speech 20 dB above the noise opens after 8 loud frames (160 ms) and closes ~200 ms (+ smoothing) after it ends
+        assert!(!feed(&mut a, -20.0, 7));
+        assert!(feed(&mut a, -20.0, 1));
+        assert!(feed(&mut a, -40.0, 9));
+        assert!(!feed(&mut a, -40.0, 3));
+    }
+
+    #[test]
+    fn adaptive_ignores_clicks_shorter_than_the_minimum_speech_duration() {
+        let mut a = AdaptiveVad::new();
+        feed(&mut a, -60.0, 100);
+        for _ in 0..5 {
+            assert!(!feed(&mut a, -20.0, 4)); // 80 ms bursts (smoothing stretches them to 6 frames)
+            feed(&mut a, -60.0, 10);
+        }
+    }
+
+    #[test]
+    fn floor_follows_a_rising_noise_level_slowly() {
+        let mut a = AdaptiveVad::new();
+        feed(&mut a, -60.0, 100);
+        feed(&mut a, -45.0, 50); // 1 s later it has moved by at most ~4 dB
+        assert!(a.floor_db() < -54.0, "{}", a.floor_db());
+        feed(&mut a, -45.0, 800);
+        assert!((a.floor_db() + 45.0).abs() < 1.0, "{}", a.floor_db());
     }
 }

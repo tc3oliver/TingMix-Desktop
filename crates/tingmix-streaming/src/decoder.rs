@@ -2,7 +2,7 @@ use std::time::Instant;
 
 use tingmix_core::{AsrBackend, AsrStream, BackendError, Event, Transcript};
 
-use crate::{Job, JobKind, StablePrefix};
+use crate::{Job, JobKind, StablePrefix, Suppression};
 
 /// Result of one job. A failed final still yields an event when a partial was shown, so a
 /// segment never stays open forever; the error is reported alongside.
@@ -21,8 +21,9 @@ pub struct Decoder<B: AsrBackend> {
     transcript: Transcript,
     stability: StablePrefix,
     stream: Option<Box<dyn AsrStream>>,
-    last: Option<(usize, usize, String)>, // (start, end, text) of the latest buffered decode
-    tail: Option<(u64, String)>,          // (segment, text) of the latest completed tail partial
+    last: Option<(usize, usize, String, Option<f32>)>, // (start, end, text, confidence) of the latest buffered decode
+    tail: Option<(u64, String, Option<f32>)>, // (segment, text, confidence) of the latest completed tail partial
+    suppression: Option<Suppression>,
 }
 
 impl<B: AsrBackend> Decoder<B> {
@@ -36,7 +37,14 @@ impl<B: AsrBackend> Decoder<B> {
             stream: None,
             last: None,
             tail: None,
+            suppression: None,
         }
+    }
+
+    /// Never show text the backend is not confident about (see [`Suppression`]). Off by default.
+    pub fn with_suppression(mut self, s: Option<Suppression>) -> Self {
+        self.suppression = s;
+        self
     }
 
     pub fn backend(&self) -> &B {
@@ -64,7 +72,7 @@ impl<B: AsrBackend> Decoder<B> {
             && self.tail.as_ref().is_some_and(|t| t.0 == job.segment_id);
         let t0 = Instant::now();
         let res = if reused {
-            Ok(self.tail.take().map(|t| t.1).unwrap_or_default())
+            Ok(self.tail.take().map(|t| (t.1, t.2)).unwrap_or_default())
         } else {
             self.decode(job)
         };
@@ -73,9 +81,20 @@ impl<B: AsrBackend> Decoder<B> {
         } else {
             t0.elapsed().as_secs_f64()
         };
-        if let (Ok(text), true) = (&res, job.tail) {
-            self.tail = Some((job.segment_id, text.clone()));
+        if let (Ok((text, conf)), true) = (&res, job.tail) {
+            self.tail = Some((job.segment_id, text.clone(), *conf));
         }
+        // A suppressed decode is treated as empty text: no partial, and no final for a segment that never showed anything.
+        let res = res.map(|(text, conf)| {
+            match self
+                .suppression
+                .as_ref()
+                .is_some_and(|p| p.rejects(&text, conf))
+            {
+                true => String::new(),
+                false => text,
+            }
+        });
         match (res, job.kind) {
             (Ok(text), JobKind::Partial) => Outcome {
                 event: self.partial(job, text),
@@ -91,7 +110,8 @@ impl<B: AsrBackend> Decoder<B> {
         }
     }
 
-    fn decode(&mut self, job: &Job) -> Result<String, BackendError> {
+    fn decode(&mut self, job: &Job) -> Result<(String, Option<f32>), BackendError> {
+        let mut conf = None;
         let text = if job.incremental {
             let no_stream = || BackendError::Inference("no open stream for this segment".into());
             let stream = self.stream.as_mut().ok_or_else(no_stream)?;
@@ -112,20 +132,26 @@ impl<B: AsrBackend> Decoder<B> {
                 .as_ref()
                 .is_some_and(|l| (l.0, l.1) == (job.start, job.end))
         {
-            self.last.take().map(|l| l.2).unwrap_or_default() // the last partial already covered exactly this audio
+            let (_, _, text, c) = self.last.take().unwrap_or_default(); // the last partial already covered exactly this audio
+            conf = c;
+            text
         } else if job.audio.len() >= self.sr / 10 {
-            let text = self
+            let t = self
                 .backend
-                .transcribe_batch(&[&job.audio])?
+                .transcribe_batch_scored(&[&job.audio])?
                 .into_iter()
                 .next()
-                .unwrap_or_default();
-            self.last = Some((job.start, job.end, text.trim().to_owned()));
-            text
+                .unwrap_or_else(|| tingmix_core::Transcription {
+                    text: String::new(),
+                    confidence: None,
+                });
+            conf = t.confidence;
+            self.last = Some((job.start, job.end, t.text.trim().to_owned(), conf));
+            t.text
         } else {
             String::new()
         };
-        Ok(text.trim().to_owned())
+        Ok((text.trim().to_owned(), conf))
     }
 
     fn partial(&mut self, job: &Job, text: String) -> Option<Event> {
@@ -144,6 +170,11 @@ impl<B: AsrBackend> Decoder<B> {
 
     fn final_(&mut self, job: &Job, text: String) -> Option<Event> {
         self.last = None;
+        // A suppressed (or empty) final of a segment that already showed text keeps what the user saw.
+        let text = match (text.is_empty(), self.transcript.current(job.segment_id)) {
+            (true, Some(p)) if self.suppression.is_some() => p.text.clone(),
+            _ => text,
+        };
         if text.is_empty() && self.transcript.current(job.segment_id).is_none() {
             return None; // false trigger, nothing was ever shown
         }

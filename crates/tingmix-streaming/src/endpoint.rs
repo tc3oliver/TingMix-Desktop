@@ -25,6 +25,13 @@ impl Endpointer {
         }
     }
 
+    /// Keep the segment open after a `MaxLength` close that was moved back in time: `length_s` of it is already behind us.
+    pub fn resume(&mut self, length_s: f64) {
+        self.active = true;
+        self.length_s = length_s;
+        self.trailing_s = 0.0;
+    }
+
     /// Feed one frame. Returns the reason when the segment ended with this frame.
     pub fn update(&mut self, speech: bool, dur_s: f64) -> Option<CloseReason> {
         if !self.active {

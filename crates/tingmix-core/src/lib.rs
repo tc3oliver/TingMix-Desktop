@@ -8,7 +8,7 @@ mod event;
 mod reducer;
 mod transcript;
 
-pub use backend::{AsrBackend, AsrStream, BackendError, BackendInfo};
+pub use backend::{AsrBackend, AsrStream, BackendError, BackendInfo, Transcription};
 pub use event::{Event, FinalEvent, PartialEvent};
 pub use reducer::{Reducer, Rejected, Snapshot};
 pub use transcript::{Transcript, TranscriptError};

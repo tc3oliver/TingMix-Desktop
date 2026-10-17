@@ -1,6 +1,9 @@
 use tingmix_core::BackendInfo;
 
-use crate::{CloseReason, Endpointer, EnergyVad, SampleRing, Scheduler, Vad};
+use crate::{
+    AdaptiveVad, AdaptiveVadParams, CloseReason, Endpointer, EnergyVad, SampleRing, Scheduler,
+    Suppression, Vad, VadKind,
+};
 
 #[derive(Debug, Clone)]
 pub struct SessionConfig {
@@ -13,12 +16,21 @@ pub struct SessionConfig {
     /// Compute budget of partial decoding, as a fraction of real time.
     pub max_load: f64,
     pub vad_threshold_db: f64,
+    /// Voice activity detector. `Energy` (default) is the Python reference's fixed threshold; `Adaptive` tracks the noise floor.
+    pub vad: VadKind,
+    /// Tunables used when `vad` is `Adaptive`.
+    pub adaptive_vad: AdaptiveVadParams,
+    /// Hide low-confidence text (default off, see [`Suppression`]).
+    pub suppression: Option<Suppression>,
     /// Live-latency policy for models that re-decode the open segment (off = Python-identical):
     /// when the VAD reports speech has ended, decode the whole segment once right away (the "tail
     /// partial") and issue no further partials; at the endpoint the final reuses that result
     /// instead of decoding again, so a final costs at most the remainder of one decode. The final
     /// then covers up to one VAD frame more silence than a fresh decode would.
     pub tail_partial: bool,
+    /// When a segment hits `max_segment_s`, cut at the quietest point of its last this-many seconds instead of at the cap,
+    /// and carry the rest into the next segment (0 = hard cut, Python-identical). Buffered models only.
+    pub max_cut_search_s: f64,
 }
 
 impl Default for SessionConfig {
@@ -32,7 +44,11 @@ impl Default for SessionConfig {
             stability_k: 2,
             max_load: 0.5,
             vad_threshold_db: -50.0,
+            vad: VadKind::Energy,
+            adaptive_vad: AdaptiveVadParams::default(),
+            suppression: None,
             tail_partial: false,
+            max_cut_search_s: 0.0,
         }
     }
 }
@@ -83,16 +99,18 @@ pub struct Pipeline {
     fed: usize,
     first_job: bool,
     tail_partial: bool,
-    tail_end: Option<usize>, // end of the tail partial issued for the open segment
+    cut_search: usize,                       // frames
+    levels: std::collections::VecDeque<f32>, // dB of the latest VAD frames, for the quiet-point search
+    tail_end: Option<usize>,                 // end of the tail partial issued for the open segment
 }
 
 impl Pipeline {
     pub fn new(info: &BackendInfo, cfg: &SessionConfig) -> Self {
-        Self::with_vad(
-            info,
-            cfg,
-            Box::new(EnergyVad::new(cfg.vad_threshold_db, 20, 2, 10)),
-        )
+        let vad: Box<dyn Vad> = match cfg.vad {
+            VadKind::Energy => Box::new(EnergyVad::new(cfg.vad_threshold_db, 20, 2, 10)),
+            VadKind::Adaptive => Box::new(AdaptiveVad::with_params(cfg.adaptive_vad)),
+        };
+        Self::with_vad(info, cfg, vad)
     }
 
     pub fn with_vad(info: &BackendInfo, cfg: &SessionConfig, vad: Box<dyn Vad>) -> Self {
@@ -102,7 +120,8 @@ impl Pipeline {
         let max_seg = cfg
             .max_segment_s
             .min(info.max_window_s - cfg.preroll_ms / 1000.0 - 0.1);
-        let frame = ms(f64::from(vad.frame_ms()));
+        let frame_ms = f64::from(vad.frame_ms());
+        let frame = ms(frame_ms);
         let ring = ((info.max_window_s.min(cfg.max_segment_s) + 30.0) * sr as f64) as usize;
         Self {
             sr,
@@ -122,6 +141,12 @@ impl Pipeline {
             fed: 0,
             first_job: false,
             tail_partial: cfg.tail_partial && !info.streaming_native,
+            cut_search: if info.streaming_native {
+                0
+            } else {
+                (cfg.max_cut_search_s * 1000.0 / frame_ms) as usize
+            },
+            levels: Default::default(),
             tail_end: None,
         }
     }
@@ -144,7 +169,16 @@ impl Pipeline {
         let mut jobs = Vec::new();
         let n = x.len() / self.frame;
         for i in 0..n {
-            let speech = self.vad.update(&x[i * self.frame..(i + 1) * self.frame]);
+            let fr = &x[i * self.frame..(i + 1) * self.frame];
+            let speech = self.vad.update(fr);
+            if self.cut_search > 0 {
+                let ms =
+                    fr.iter().map(|&v| f64::from(v) * f64::from(v)).sum::<f64>() / fr.len() as f64;
+                self.levels.push_back((10.0 * (ms + 1e-20).log10()) as f32);
+                if self.levels.len() > self.cut_search + 2 {
+                    self.levels.pop_front();
+                }
+            }
             self.pos += self.frame;
             let was_active = self.endpointer.active;
             let reason = self
@@ -164,7 +198,10 @@ impl Pipeline {
                 }
             }
             if let Some(r) = reason {
-                jobs.push(self.close(r != CloseReason::MaxLength));
+                match (r, self.quiet_cut()) {
+                    (CloseReason::MaxLength, Some(cut)) => jobs.push(self.cut_at(cut)),
+                    _ => jobs.push(self.close(r != CloseReason::MaxLength)),
+                }
             }
         }
         self.rem = x[n * self.frame..].to_vec();
@@ -230,6 +267,40 @@ impl Pipeline {
         self.job(JobKind::Partial, self.pos)
     }
 
+    /// Sample position of the quietest 3-frame stretch in the last `cut_search` frames, if it leaves a usable segment.
+    fn quiet_cut(&self) -> Option<usize> {
+        let n = self.levels.len();
+        if self.cut_search == 0 || n < 3 {
+            return None;
+        }
+        let lv: Vec<f32> = self.levels.iter().copied().collect();
+        let (mut best, mut at) = (f32::INFINITY, 0);
+        for j in 1..n - 1 {
+            let m = (lv[j - 1] + lv[j] + lv[j + 1]) / 3.0;
+            if m < best {
+                (best, at) = (m, j);
+            }
+        }
+        // frame j ends at pos - (n - 1 - j) frames; cut in its middle
+        let cut = self.pos - (n - 1 - at) * self.frame - self.frame / 2;
+        (cut > self.seg_start + self.sr).then_some(cut)
+    }
+
+    /// Close the open segment at `cut` and continue straight into the next one that starts there (speech goes on).
+    fn cut_at(&mut self, cut: usize) -> Job {
+        self.prev_end = cut;
+        let job = self.job(JobKind::Final, cut);
+        self.next_id += 1;
+        self.seg_start = cut;
+        self.fed = cut;
+        self.first_job = true;
+        self.tail_end = None;
+        self.scheduler.reset();
+        self.endpointer
+            .resume((self.pos - cut) as f64 / self.sr as f64);
+        job
+    }
+
     fn close(&mut self, trim_tail: bool) -> Job {
         let mut end = self.pos;
         if trim_tail {
@@ -246,5 +317,66 @@ impl Pipeline {
         self.tail_end = None;
         self.next_id += 1;
         job
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn tone(secs: f64, amp: f32) -> Vec<f32> {
+        (0..(secs * 16_000.0) as usize)
+            .map(|i| amp * (i as f32 * 0.3).sin())
+            .collect()
+    }
+
+    #[test]
+    fn max_length_cut_moves_to_the_quiet_point_and_loses_no_audio() {
+        let info = BackendInfo {
+            name: "t".into(),
+            sample_rate: 16_000,
+            max_window_s: 29.5,
+            streaming_native: false,
+        };
+        let run = |search: f64| {
+            let cfg = SessionConfig {
+                max_cut_search_s: search,
+                ..SessionConfig::default()
+            };
+            let mut p = Pipeline::new(&info, &cfg);
+            // 22 s of speech-level tone, a 0.3 s dip (shorter than the endpoint silence), then 8 s more
+            let mut pcm = tone(22.0, 0.2);
+            pcm.extend(tone(0.3, 0.0004));
+            pcm.extend(tone(8.0, 0.2));
+            let mut jobs = Vec::new();
+            for c in pcm.chunks(320) {
+                jobs.extend(p.feed(c));
+            }
+            jobs.extend(p.flush());
+            jobs.into_iter()
+                .filter(|j| j.kind == JobKind::Final)
+                .collect::<Vec<_>>()
+        };
+        let hard = run(0.0);
+        assert!(
+            hard[0].end as f64 / 16_000.0 > 25.0,
+            "hard cut at the cap: {}",
+            hard[0].end
+        );
+        let soft = run(3.0);
+        let cut = soft[0].end as f64 / 16_000.0;
+        assert!(
+            (22.0..22.4).contains(&cut),
+            "cut {cut} should sit in the dip"
+        );
+        assert_eq!(
+            soft[1].start, soft[0].end,
+            "the next segment starts exactly where the first ended"
+        );
+        assert!(
+            soft.last().unwrap().end as f64 / 16_000.0 > 29.5,
+            "the rest of the audio is not dropped"
+        );
+        assert!(soft.iter().all(|j| j.audio.len() == j.end - j.start));
     }
 }
