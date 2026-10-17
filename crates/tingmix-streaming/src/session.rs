@@ -32,7 +32,9 @@ impl<B: AsrBackend> StreamingSession<B> {
         let mut out = Vec::new();
         for job in &jobs {
             let o = self.decoder.run(job);
-            self.pipeline.report_cost(o.cost_s);
+            if o.cost_s > 0.0 {
+                self.pipeline.report_cost(o.cost_s);
+            }
             out.extend(SessionMsg::from_outcome(job, o));
         }
         out

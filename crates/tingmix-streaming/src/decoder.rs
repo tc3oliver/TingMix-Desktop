@@ -9,7 +9,7 @@ use crate::{Job, JobKind, StablePrefix};
 pub struct Outcome {
     pub event: Option<Event>,
     pub error: Option<BackendError>,
-    /// Wall-clock seconds spent in the backend; feeds the scheduler.
+    /// Wall-clock seconds spent in the backend; feeds the scheduler. 0.0: the backend was not called.
     pub cost_s: f64,
 }
 
@@ -22,6 +22,7 @@ pub struct Decoder<B: AsrBackend> {
     stability: StablePrefix,
     stream: Option<Box<dyn AsrStream>>,
     last: Option<(usize, usize, String)>, // (start, end, text) of the latest buffered decode
+    tail: Option<(u64, String)>,          // (segment, text) of the latest completed tail partial
 }
 
 impl<B: AsrBackend> Decoder<B> {
@@ -34,6 +35,7 @@ impl<B: AsrBackend> Decoder<B> {
             stability: StablePrefix::new(stability_k),
             stream: None,
             last: None,
+            tail: None,
         }
     }
 
@@ -57,9 +59,23 @@ impl<B: AsrBackend> Decoder<B> {
                 }
             }
         }
+        let reused = job.kind == JobKind::Final
+            && job.reuse_tail
+            && self.tail.as_ref().is_some_and(|t| t.0 == job.segment_id);
         let t0 = Instant::now();
-        let res = self.decode(job);
-        let cost_s = t0.elapsed().as_secs_f64();
+        let res = if reused {
+            Ok(self.tail.take().map(|t| t.1).unwrap_or_default())
+        } else {
+            self.decode(job)
+        };
+        let cost_s = if reused {
+            0.0
+        } else {
+            t0.elapsed().as_secs_f64()
+        };
+        if let (Ok(text), true) = (&res, job.tail) {
+            self.tail = Some((job.segment_id, text.clone()));
+        }
         match (res, job.kind) {
             (Ok(text), JobKind::Partial) => Outcome {
                 event: self.partial(job, text),

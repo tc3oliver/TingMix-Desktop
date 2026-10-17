@@ -13,6 +13,12 @@ pub struct SessionConfig {
     /// Compute budget of partial decoding, as a fraction of real time.
     pub max_load: f64,
     pub vad_threshold_db: f64,
+    /// Live-latency policy for models that re-decode the open segment (off = Python-identical):
+    /// when the VAD reports speech has ended, decode the whole segment once right away (the "tail
+    /// partial") and issue no further partials; at the endpoint the final reuses that result
+    /// instead of decoding again, so a final costs at most the remainder of one decode. The final
+    /// then covers up to one VAD frame more silence than a fresh decode would.
+    pub tail_partial: bool,
 }
 
 impl Default for SessionConfig {
@@ -26,6 +32,7 @@ impl Default for SessionConfig {
             stability_k: 2,
             max_load: 0.5,
             vad_threshold_db: -50.0,
+            tail_partial: false,
         }
     }
 }
@@ -49,6 +56,10 @@ pub struct Job {
     /// First job of its segment: the decoder starts a fresh utterance.
     pub opens: bool,
     pub incremental: bool,
+    /// Partial: the tail partial (see [`SessionConfig::tail_partial`]).
+    pub tail: bool,
+    /// Final: the tail partial covers this range, so its result may stand in for a fresh decode.
+    pub reuse_tail: bool,
 }
 
 /// VAD, endpointing and decode scheduling over an absolute sample timeline. Feed it any chunking
@@ -71,6 +82,8 @@ pub struct Pipeline {
     next_id: u64,
     fed: usize,
     first_job: bool,
+    tail_partial: bool,
+    tail_end: Option<usize>, // end of the tail partial issued for the open segment
 }
 
 impl Pipeline {
@@ -108,6 +121,8 @@ impl Pipeline {
             next_id: 0,
             fed: 0,
             first_job: false,
+            tail_partial: cfg.tail_partial && !info.streaming_native,
+            tail_end: None,
         }
     }
 
@@ -138,12 +153,25 @@ impl Pipeline {
             if !was_active && (self.endpointer.active || reason.is_some()) {
                 self.open(self.pos - self.frame);
             }
+            if self.tail_partial && reason.is_none() && self.endpointer.active {
+                if self.endpointer.trailing_s == 0.0 {
+                    self.tail_end = None; // speech resumed
+                } else if self.tail_end.is_none() {
+                    self.tail_end = Some(self.pos);
+                    let mut job = self.partial();
+                    job.tail = true;
+                    jobs.push(job);
+                }
+            }
             if let Some(r) = reason {
                 jobs.push(self.close(r != CloseReason::MaxLength));
             }
         }
         self.rem = x[n * self.frame..].to_vec();
-        if self.endpointer.active && self.scheduler.due(self.pos - self.seg_start) {
+        if self.endpointer.active
+            && self.tail_end.is_none()
+            && self.scheduler.due(self.pos - self.seg_start)
+        {
             jobs.push(self.partial());
         }
         jobs
@@ -165,6 +193,7 @@ impl Pipeline {
             .max(self.buf.start());
         self.fed = self.seg_start;
         self.first_job = true;
+        self.tail_end = None;
         self.scheduler.reset();
     }
 
@@ -191,6 +220,8 @@ impl Pipeline {
             audio,
             opens,
             incremental: self.native,
+            tail: false,
+            reuse_tail: false,
         }
     }
 
@@ -208,7 +239,11 @@ impl Pipeline {
         }
         let end = end.max(self.seg_start);
         self.prev_end = end;
-        let job = self.job(JobKind::Final, end);
+        let mut job = self.job(JobKind::Final, end);
+        job.reuse_tail = self
+            .tail_end
+            .is_some_and(|e| end <= e + self.tail_pad && e - end.min(e) <= self.frame);
+        self.tail_end = None;
         self.next_id += 1;
         job
     }

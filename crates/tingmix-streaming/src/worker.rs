@@ -60,6 +60,8 @@ impl Queue {
             .position(|j| j.segment_id == job.segment_id && j.kind == JobKind::Partial)
         {
             let old = st.jobs.remove(i).unwrap();
+            // a tail partial that never started cannot be reused: the final decodes the audio itself
+            job.reuse_tail &= !old.tail;
             if job.incremental {
                 let mut audio = old.audio;
                 audio.append(&mut job.audio);
@@ -103,7 +105,20 @@ pub struct SessionWorker {
 }
 
 impl SessionWorker {
+    /// Live session. Uses the tail-partial policy (`cfg.tail_partial` is forced on) so a final
+    /// costs at most the remainder of one decode.
     pub fn spawn<B: AsrBackend + 'static>(backend: B, cfg: &SessionConfig) -> Self {
+        Self::spawn_with(
+            backend,
+            &SessionConfig {
+                tail_partial: true,
+                ..cfg.clone()
+            },
+        )
+    }
+
+    /// Like [`spawn`](Self::spawn) but uses `cfg` exactly as given (for comparing policies).
+    pub fn spawn_with<B: AsrBackend + 'static>(backend: B, cfg: &SessionConfig) -> Self {
         let pipeline = Pipeline::new(backend.info(), cfg);
         let queue = Arc::new(Queue::default());
         let (tx, events) = channel();
@@ -169,7 +184,9 @@ impl Drop for SessionWorker {
 fn run_worker<B: AsrBackend>(mut decoder: Decoder<B>, queue: Arc<Queue>, tx: Sender<SessionMsg>) {
     while let Some(job) = queue.pop() {
         let o = decoder.run(&job);
-        queue.cost_bits.store(o.cost_s.to_bits(), Ordering::Relaxed);
+        if o.cost_s > 0.0 {
+            queue.cost_bits.store(o.cost_s.to_bits(), Ordering::Relaxed);
+        }
         for m in SessionMsg::from_outcome(&job, o) {
             if tx.send(m).is_err() {
                 return; // consumer gone

@@ -187,3 +187,114 @@ fn failed_final_falls_back_to_the_last_partial_and_reports_the_error() {
     };
     assert_eq!(f.text, "partial text");
 }
+
+/// Time from the audio-clock endpoint (speech end + VAD hang + silence_ms) to the final's arrival.
+fn final_latency(tail_partial: bool, delay: Duration) -> Duration {
+    use std::time::Instant;
+    let cfg = SessionConfig {
+        tail_partial,
+        ..SessionConfig::default()
+    };
+    let mut w = SessionWorker::spawn_with(MockBackend::new(false).with_delay(delay), &cfg);
+    let tone = tone_then_silence(3.0, 0.0);
+    for c in tone.chunks(1600) {
+        w.feed(c); // faster than real time: the worker is busy with a partial when the speech ends
+    }
+    let endpoint_s = 3.0 + 0.2 + 0.6 - 0.04; // VAD hang is 10 frames of 20 ms, then silence_ms (closes within one frame of it)
+    let (mut fed_s, mut t_endpoint) = (3.0f64, None);
+    let silence = [0.0f32; 320];
+    let started = Instant::now();
+    let final_at = loop {
+        w.feed(&silence);
+        fed_s += 0.02;
+        std::thread::sleep(Duration::from_millis(20));
+        if t_endpoint.is_none() && fed_s >= endpoint_s {
+            t_endpoint = Some(Instant::now());
+        }
+        if let Some(at) = w
+            .events()
+            .try_iter()
+            .find_map(|m| matches!(m, SessionMsg::Event(Event::Final(_))).then(Instant::now))
+        {
+            break at;
+        }
+        assert!(started.elapsed() < Duration::from_secs(10), "no final");
+    };
+    final_at.saturating_duration_since(t_endpoint.expect("endpoint passed before the final"))
+}
+
+#[test]
+fn final_waits_at_most_one_inflight_decode_plus_its_own() {
+    let delay = Duration::from_millis(300);
+    let slack = Duration::from_millis(250); // paced feed granularity and a loaded machine
+    let baseline = final_latency(false, delay);
+    assert!(
+        baseline <= 2 * delay + slack,
+        "baseline final latency {baseline:?}"
+    );
+}
+
+#[test]
+fn tail_partial_lets_the_final_reuse_the_decode_done_during_the_silence() {
+    let delay = Duration::from_millis(300);
+    let slack = Duration::from_millis(250);
+    let (base, tail) = (final_latency(false, delay), final_latency(true, delay));
+    println!("final latency after endpoint: baseline {base:?}, tail-partial {tail:?}");
+    assert!(tail <= delay + slack, "tail-partial final latency {tail:?}");
+    assert!(tail <= base + slack);
+}
+
+struct CallCounter(BackendInfo, Arc<AtomicUsize>);
+
+impl AsrBackend for CallCounter {
+    fn info(&self) -> &BackendInfo {
+        &self.0
+    }
+    fn transcribe_batch(&mut self, wavs: &[&[f32]]) -> Result<Vec<String>, BackendError> {
+        self.1.fetch_add(1, Ordering::SeqCst);
+        Ok(wavs
+            .iter()
+            .map(|w| format!("w{}", w.len() / 8000))
+            .collect())
+    }
+}
+
+#[test]
+fn tail_partial_saves_the_final_decode_and_keeps_the_event_contract() {
+    let info = BackendInfo {
+        name: "count".into(),
+        sample_rate: 16_000,
+        max_window_s: 30.0,
+        streaming_native: false,
+    };
+    let run = |tail_partial: bool| {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let cfg = SessionConfig {
+            tail_partial,
+            ..SessionConfig::default()
+        };
+        let mut s = StreamingSession::new(CallCounter(info.clone(), calls.clone()), &cfg);
+        let mut r = Reducer::new();
+        for c in tone_then_silence(2.0, 1.5).chunks(1600) {
+            for m in s.feed(c) {
+                let SessionMsg::Event(e) = m else {
+                    panic!("{m:?}")
+                };
+                r.apply(e).unwrap();
+            }
+        }
+        (
+            calls.load(Ordering::SeqCst),
+            r.finals().count(),
+            r.open().count(),
+        )
+    };
+    let (base, tail) = (run(false), run(true));
+    assert_eq!((base.1, base.2, tail.1, tail.2), (1, 0, 1, 0));
+    assert!(
+        tail.0 < base.0,
+        "decodes: baseline {}, tail {}",
+        base.0,
+        tail.0
+    );
+}
