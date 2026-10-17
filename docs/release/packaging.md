@@ -33,7 +33,11 @@ Outputs: `target/release/bundle/macos/TingMix.app`, `target/release/bundle/dmg/T
 - Windows: the NSIS installer, DLL loading, WebView2 and VC++ runtime handling, MSI. The `windows-latest` CI job is untested because the repository has no remote; the `unzip` fallback in the `package` job (7z) is a guess about the runner image.
 - The DMG layout (background, icon positions) was not inspected visually.
 
-## Windows installer configuration (for the owner of `src-tauri`)
+## Windows installer configuration (applied in `src-tauri/tauri.conf.json`; not built on Windows)
+
+Applied: `bundle.targets` is `["app", "dmg", "nsis"]` (no MSI/WiX), `bundle.windows.webviewInstallMode` is `embedBootstrapper` (the WebView2 bootstrapper is inside the installer, so an offline first install does not need a download; it only fetches the runtime if missing, so a machine with no network and no WebView2 still fails), `bundle.windows.nsis.installMode` is `currentUser` (no elevation; models and settings are per user). No signing keys are in the config. The file parses with the pinned Tauri 2.12.4 (a macOS build was run with it); the Windows values are unverified until a Windows build.
+
+Original suggestions:
 
 Existing: `src-tauri/tauri.ort-windows.conf.json` and `pnpm bundle:windows` (`--bundles nsis`). `tauri.conf.json` has `"targets": "all"`, which would
 also request MSI on Windows; MSI needs WiX. Suggested changes, to be checked against `https://v2.tauri.app/reference/config/` for the pinned Tauri version before use
