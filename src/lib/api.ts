@@ -10,6 +10,7 @@ import type {
   HistorySummary,
   JobView,
   LiveMsg,
+  LoadView,
   LiveSnapshot,
   LiveStatus,
   MicStatus,
@@ -47,6 +48,7 @@ export const api = {
   modelsRollback: () => invoke<string>("models_rollback"),
   modelsRemove: (id: string) => invoke<void>("models_remove", { id }),
   modelsProbe: (id: string) => invoke<void>("models_probe", { id }),
+  backendLoadState: () => invoke<LoadView>("backend_load_state"),
   backendInfo: () => invoke<BackendInfo>("backend_info"),
   updaterCheck: () => invoke<UpdateInfo>("updater_check"),
   micStatus: () => invoke<MicStatus>("mic_permission_status"),
@@ -64,3 +66,4 @@ export const onFilesDropped = (f: (r: FileRef[]) => void): Promise<UnlistenFn> =
 export const onDrag = (f: (over: boolean) => void): Promise<UnlistenFn> => listen<boolean>("tingmix://drag", (e) => f(e.payload));
 
 export const errorText = (e: unknown): string => (typeof e === "string" ? e : e instanceof Error ? e.message : JSON.stringify(e));
+export const onBackendLoad = (f: (v: LoadView) => void): Promise<UnlistenFn> => listen<LoadView>("tingmix://backend", (e) => f(e.payload));

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-backend-load-state"
+description = "Enables the backend_load_state command without any pre-configured scope."
+commands.allow = ["backend_load_state"]
+
+[[permission]]
+identifier = "deny-backend-load-state"
+description = "Denies the backend_load_state command without any pre-configured scope."
+commands.deny = ["backend_load_state"]

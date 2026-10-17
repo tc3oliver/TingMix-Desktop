@@ -26,7 +26,16 @@ install_name_tool -add_rpath @executable_path/../Frameworks "$W"
 codesign -s - --force "$W"
 
 L="$MLX_PREFIX/lib"
-CONF=$(printf '{"bundle":{"externalBin":["binaries/tingmix-mlx-worker"],"macOS":{"files":{"Frameworks/libmlx.dylib":"%s/libmlx.dylib","Frameworks/libjaccl.dylib":"%s/libjaccl.dylib","Frameworks/mlx.metallib":"%s/mlx.metallib"}}}}' "$L" "$L" "$L")
-# shellcheck disable=SC2086
+CONF=$(printf '{"bundle":{"externalBin":["binaries/tingmix-mlx-worker"],"macOS":{"signingIdentity":null,"files":{"Frameworks/libmlx.dylib":"%s/libmlx.dylib","Frameworks/libjaccl.dylib":"%s/libjaccl.dylib","Frameworks/mlx.metallib":"%s/mlx.metallib"}}}}' "$L" "$L" "$L")
+# Tauri's own ad-hoc signing cannot seal a bundle whose Frameworks hold an unsigned data file (mlx.metallib; codesign keeps
+# its signature in an xattr that the bundler's copy drops), so signing is switched off here and done below, inside the bundle.
 pnpm tauri build $TFLAG --bundles app --features mlx \
   --config src-tauri/tauri.ort-macos.conf.json --config "$CONF"
+
+APP="target/$PROFILE/bundle/macos/TingMix.app"
+for f in Frameworks/mlx.metallib Frameworks/libmlx.dylib Frameworks/libjaccl.dylib MacOS/tingmix-mlx-worker; do
+  codesign -s - --force "$APP/Contents/$f"
+done
+codesign -s - --force --entitlements src-tauri/Entitlements.plist "$APP"
+codesign --verify --deep --strict "$APP"
+codesign -dv "$APP" 2>&1 | grep -E "Identifier|Info.plist"

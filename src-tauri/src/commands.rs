@@ -52,12 +52,7 @@ pub async fn live_start(
         return Err("a live session is already running".into());
     }
     let id = state.next_id("live");
-    let resolved = backends::resolve(
-        &state.models,
-        state.store.settings().experimental_backends,
-        &state.runtimes,
-    )
-    .map_err(|e| {
+    let resolved = backends::take(&app).map_err(|e| {
         state.note_error(format!("backend: {e}"));
         e
     })?;
@@ -112,11 +107,14 @@ pub async fn live_start(
 }
 
 #[tauri::command]
-pub async fn live_stop(state: State<'_, AppState>) -> Result<LiveStatus, String> {
+pub async fn live_stop(app: AppHandle, state: State<'_, AppState>) -> Result<LiveStatus, String> {
     let live = state.live.lock().unwrap().take();
     if let Some(mut live) = live {
         live.stop();
-        return Ok(live.shared.status());
+        let status = live.shared.status();
+        drop(live); // releases the backend before the next one is preloaded
+        backends::preload(&app);
+        return Ok(status);
     }
     Ok(state
         .last
@@ -184,12 +182,8 @@ pub async fn file_start(
     let name = path
         .file_name()
         .map_or_else(|| "audio".into(), |n| n.to_string_lossy().into_owned());
-    let resolved = backends::resolve(
-        &state.models,
-        state.store.settings().experimental_backends,
-        &state.runtimes,
-    )
-    .inspect_err(|e| state.note_error(format!("backend: {e}")))?;
+    let resolved =
+        backends::take(&app).inspect_err(|e| state.note_error(format!("backend: {e}")))?;
     let job_id = state.next_id("job");
     let cancel = Arc::new(std::sync::atomic::AtomicBool::new(false));
     state.jobs.lock().unwrap().push((
@@ -265,6 +259,7 @@ fn run_job(
         j.audio_s = outcome.audio_s;
         j.message = outcome.message.clone();
     }
+    backends::preload(&app); // the backend moved into the job and is released; load the next one now
     match outcome.state {
         JobState::Done => {
             send(FileBody::Done {
@@ -359,10 +354,13 @@ pub async fn settings_get(state: State<'_, AppState>) -> Result<Settings, String
 
 #[tauri::command]
 pub async fn settings_set(
+    app: AppHandle,
     state: State<'_, AppState>,
     settings: Settings,
 ) -> Result<Settings, String> {
-    state.store.save_settings(settings)
+    let saved = state.store.save_settings(settings)?;
+    backends::preload(&app);
+    Ok(saved)
 }
 
 #[tauri::command]
@@ -427,7 +425,12 @@ pub const MODELS_EVENT: &str = "tingmix://models";
 fn models_notify(app: &AppHandle) -> crate::models::Notify {
     let app = app.clone();
     Arc::new(move |v| {
+        let finished = v.state != "running";
         let _ = app.emit(MODELS_EVENT, v);
+        if finished {
+            // a new, imported or probed model can change which backend the next session uses
+            backends::preload(&app);
+        }
     })
 }
 
@@ -511,13 +514,21 @@ pub async fn models_cancel(state: State<'_, AppState>) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub async fn models_activate(state: State<'_, AppState>, id: String) -> Result<(), String> {
-    state.models.activate(&id)
+pub async fn models_activate(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    id: String,
+) -> Result<(), String> {
+    state.models.activate(&id)?;
+    backends::preload(&app);
+    Ok(())
 }
 
 #[tauri::command]
-pub async fn models_rollback(state: State<'_, AppState>) -> Result<String, String> {
-    state.models.rollback()
+pub async fn models_rollback(app: AppHandle, state: State<'_, AppState>) -> Result<String, String> {
+    let id = state.models.rollback()?;
+    backends::preload(&app);
+    Ok(id)
 }
 
 #[tauri::command]
@@ -635,4 +646,9 @@ pub async fn mic_permission_request() -> Result<crate::mic::MicStatus, String> {
 #[tauri::command]
 pub async fn mic_open_settings() -> Result<(), String> {
     crate::mic::open_settings()
+}
+
+#[tauri::command]
+pub async fn backend_load_state(state: State<'_, AppState>) -> Result<backends::LoadView, String> {
+    Ok(state.warm.view())
 }

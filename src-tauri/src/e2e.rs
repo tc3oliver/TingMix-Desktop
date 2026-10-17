@@ -76,7 +76,14 @@ fn join(parts: Vec<String>) -> String {
 fn mlx_import_probe_select_transcribe_live() {
     let package =
         PathBuf::from(std::env::var("TINGMIX_E2E_MLX_PACKAGE").expect("TINGMIX_E2E_MLX_PACKAGE"));
-    let dir = std::env::temp_dir().join(format!("tingmix-e2e-{}", std::process::id()));
+    // TINGMIX_E2E_HOME keeps the registry where an app run with HOME=<it> finds it (used to check preloading by hand)
+    let keep = std::env::var_os("TINGMIX_E2E_HOME").map(PathBuf::from);
+    let dir = keep
+        .as_ref()
+        .map(|h| h.join("Library/Application Support/app.tingmix.desktop"))
+        .unwrap_or_else(|| {
+            std::env::temp_dir().join(format!("tingmix-e2e-{}", std::process::id()))
+        });
     let _ = std::fs::remove_dir_all(&dir);
     let models = Arc::new(Models::open(dir.join("models")));
     let rt = Runtimes::default();
@@ -220,5 +227,7 @@ fn mlx_import_probe_select_transcribe_live() {
     );
     assert!(n_partial > 0 && !snap.finals.is_empty());
     assert!(snap.finals.iter().any(|f| !f.text.is_empty()));
-    let _ = std::fs::remove_dir_all(dir);
+    if keep.is_none() {
+        let _ = std::fs::remove_dir_all(dir);
+    }
 }

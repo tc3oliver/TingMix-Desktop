@@ -37,6 +37,7 @@
     "allow-updater-install",
     "allow-mic-permission-status",
     "allow-mic-permission-request",
-    "allow-mic-open-settings"
+    "allow-mic-open-settings",
+    "allow-backend-load-state"
   ]
 }

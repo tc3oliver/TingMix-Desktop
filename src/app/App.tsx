@@ -5,8 +5,8 @@ import { HistoryPanel } from "../features/history/HistoryPanel";
 import { LivePanel } from "../features/live/LivePanel";
 import { ModelsPanel } from "../features/models/ModelsPanel";
 import { SettingsPanel } from "../features/settings/SettingsPanel";
-import { api, errorText, onModelOp } from "../lib/api";
-import type { BackendInfo, Settings } from "../types/protocol";
+import { api, errorText, onBackendLoad, onModelOp } from "../lib/api";
+import type { BackendInfo, LoadView, Settings } from "../types/protocol";
 
 const TABS = ["Live", "Files", "History", "Models", "Settings", "Diagnostics"] as const;
 type Tab = (typeof TABS)[number];
@@ -18,6 +18,7 @@ export function App() {
   const [settings, setSettings] = useState<Settings>(DEFAULTS);
   const [error, setError] = useState<string | null>(null);
   const [backend, setBackend] = useState<BackendInfo | null>(null);
+  const [load, setLoad] = useState<LoadView>({ loading: false, label: null, error: null });
 
   useEffect(() => void api.settingsGet().then(setSettings).catch((e) => setError(errorText(e))), []);
   // the banner follows the selection: it changes with the experimental switch and when a model operation finishes
@@ -32,6 +33,17 @@ export function App() {
       off?.();
     };
   }, [settings.experimental_backends]);
+  // the model is loaded in the background when it becomes the active one; Start waits for it if pressed early
+  useEffect(() => {
+    let alive = true;
+    let off: (() => void) | undefined;
+    void api.backendLoadState().then((v) => alive && setLoad(v)).catch(() => undefined);
+    onBackendLoad(setLoad).then((u) => (alive ? (off = u) : u()));
+    return () => {
+      alive = false;
+      off?.();
+    };
+  }, []);
   useEffect(() => {
     if (settings.theme === "system") delete document.documentElement.dataset.theme;
     else document.documentElement.dataset.theme = settings.theme;
@@ -55,6 +67,8 @@ export function App() {
           <button key={t} role="tab" aria-selected={t === tab} className={t === tab ? "active" : ""} onClick={() => setTab(t)}>{t}</button>
         ))}
       </nav>
+      {load.loading && <p className="muted" role="status">Loading model {load.label}… Start will wait for it.</p>}
+      {load.error && <p className="error" role="alert">The selected model could not be loaded: {load.error}</p>}
       {error && <p className="error" role="alert">{error}</p>}
       <main>
         {/* the live and file panels stay mounted so their state survives switching tabs */}

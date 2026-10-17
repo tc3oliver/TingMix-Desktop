@@ -470,6 +470,138 @@ fn onnx_backend(
     Ok(Box::new(b))
 }
 
+// ---- preloading ---------------------------------------------------------------------------------------------------
+
+enum WarmState {
+    Empty,
+    Loading(String),
+    Ready(String, Resolved),
+    Failed(String, String),
+}
+
+/// One preloaded backend (model and LM already in memory) so Start does not wait for the load. A session takes it; the next
+/// one is loaded after the session ends, never in parallel (a second copy of Large is ~2 GiB).
+pub struct Warm {
+    slot: std::sync::Mutex<WarmState>,
+    cv: std::sync::Condvar,
+}
+
+impl Default for Warm {
+    fn default() -> Self {
+        Self {
+            slot: std::sync::Mutex::new(WarmState::Empty),
+            cv: std::sync::Condvar::new(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct LoadView {
+    pub loading: bool,
+    pub label: Option<String>,
+    pub error: Option<String>,
+}
+
+pub const BACKEND_EVENT: &str = "tingmix://backend";
+
+fn key_of(d: &Decision) -> Option<String> {
+    d.chosen.as_ref().map(|(id, b)| format!("{id}|{b}"))
+}
+
+impl Warm {
+    pub fn view(&self) -> LoadView {
+        match &*self.slot.lock().unwrap() {
+            WarmState::Loading(k) => LoadView {
+                loading: true,
+                label: Some(k.split('|').next().unwrap_or(k).to_string()),
+                error: None,
+            },
+            WarmState::Failed(_, e) => LoadView {
+                loading: false,
+                label: None,
+                error: Some(e.clone()),
+            },
+            _ => LoadView {
+                loading: false,
+                label: None,
+                error: None,
+            },
+        }
+    }
+}
+
+/// Start loading the backend the next session would use, in the background. No-op for the mock or when it is already
+/// loading / loaded. Call after anything that can change the choice (start-up, activation, settings, probe, session end).
+pub fn preload(app: &tauri::AppHandle) {
+    use tauri::{Emitter, Manager};
+    let st = app.state::<crate::state::AppState>();
+    let exp = st.store.settings().experimental_backends;
+    let d = decide(&st.models, exp, &st.runtimes);
+    let notify = |app: &tauri::AppHandle| {
+        let st = app.state::<crate::state::AppState>();
+        let _ = app.emit(BACKEND_EVENT, st.warm.view());
+    };
+    let Some(key) = key_of(&d) else {
+        *st.warm.slot.lock().unwrap() = WarmState::Empty;
+        notify(app);
+        return;
+    };
+    {
+        let mut slot = st.warm.slot.lock().unwrap();
+        match &*slot {
+            WarmState::Loading(k) | WarmState::Ready(k, _) if *k == key => return,
+            _ => *slot = WarmState::Loading(key.clone()),
+        }
+    }
+    notify(app);
+    let app = app.clone();
+    let _ = std::thread::Builder::new()
+        .name("tingmix-preload".into())
+        .spawn(move || {
+            let st = app.state::<crate::state::AppState>();
+            let r = resolve(&st.models, exp, &st.runtimes);
+            {
+                let mut slot = st.warm.slot.lock().unwrap();
+                // the choice may have changed while loading; then this copy is simply dropped
+                if matches!(&*slot, WarmState::Loading(k) if *k == key) {
+                    *slot = match r {
+                        Ok(res) => WarmState::Ready(key, res),
+                        Err(e) => WarmState::Failed(key, e),
+                    };
+                }
+                st.warm.cv.notify_all();
+            }
+            notify(&app);
+        });
+}
+
+/// The backend for a new session: the preloaded one if it matches the current choice (waiting for it while it loads),
+/// otherwise a fresh load. A preload failure is reported once and then retried fresh.
+pub fn take(app: &tauri::AppHandle) -> Result<Resolved, String> {
+    use tauri::Manager;
+    let st = app.state::<crate::state::AppState>();
+    let exp = st.store.settings().experimental_backends;
+    let key = key_of(&decide(&st.models, exp, &st.runtimes));
+    if let Some(key) = key {
+        let mut slot = st.warm.slot.lock().unwrap();
+        loop {
+            match std::mem::replace(&mut *slot, WarmState::Empty) {
+                WarmState::Ready(k, r) if k == key => return Ok(r),
+                WarmState::Loading(k) if k == key => {
+                    *slot = WarmState::Loading(k);
+                    slot = st.warm.cv.wait(slot).unwrap();
+                }
+                WarmState::Failed(k, e) if k == key => return Err(e),
+                other => {
+                    *slot = other;
+                    break;
+                }
+            }
+        }
+    }
+    resolve(&st.models, exp, &st.runtimes)
+}
+
 // ---- compatibility probe ------------------------------------------------------------------------------------------
 
 struct AppProbe<'a> {

@@ -196,3 +196,9 @@ export interface UpdateInfo {
 }
 
 export type MicStatus = "not_determined" | "authorized" | "denied" | "restricted" | "unsupported";
+
+export interface LoadView {
+  loading: boolean;
+  label: string | null;
+  error: string | null;
+}

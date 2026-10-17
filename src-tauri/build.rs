@@ -31,6 +31,7 @@ const COMMANDS: &[&str] = &[
     "mic_permission_status",
     "mic_permission_request",
     "mic_open_settings",
+    "backend_load_state",
 ];
 
 fn main() {

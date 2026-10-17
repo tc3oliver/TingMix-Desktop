@@ -46,11 +46,22 @@ Builds the app with `--features mlx` against `MLX_PREFIX` (default: the wheel in
 mlx.metallib}`. Both executables carry only the rpath `@executable_path/../Frameworks`; `otool -L` shows `@rpath/libmlx.dylib`
 and no absolute path (`TINGMIX_MLX_DEV_RPATH=1` adds the wheel path for `cargo test` builds only). Debug bundle: 327 MiB
 (Frameworks 227 MiB, of which the metallib is 204 MiB, binaries 57 MiB, resources 44 MiB). Not signed with a real identity;
-`codesign -s -` ad hoc only, hardened runtime and notarization untested.
+ad-hoc signed inside the bundle by the script (Tauri's own ad-hoc signing cannot seal a bundle whose Frameworks hold the
+unsigned `mlx.metallib`), so `codesign -dv` shows `Identifier=app.tingmix.desktop` and `codesign --verify --deep --strict` passes;
+hardened runtime and notarization untested.
 
 The backend is built **on its own thread** (`Dyn::spawn`) and every call is forwarded to it: MLX streams are thread-local, and
 a model loaded on one thread and decoded on another failed with `There is no Stream(gpu, 1) in current thread` (found by the
 live part of the end-to-end test). Build errors therefore still surface at Start / file import.
+
+**Preloading**: the backend the next session would use (and its CharLM, ~2.4 s in a release build) is loaded in the
+background at start-up and again after activation, settings changes, model import/download/probe and the end of every
+session (`backends::preload`); Start / file import takes the loaded one (`backends::take`) and waits if it is still loading.
+Only one copy is kept (about 1.9 GiB resident for MLX Large), loaded after the previous session released its copy. The UI
+shows "Loading model ... Start will wait for it" and a load failure. Checked by hand: with an imported, probed and activated
+MLX model in a scratch HOME and experimental backends on, the bundled debug app went from 150 MB to 1.94 GB resident within
+30 s with no UI action (unoptimised LM load is slow in debug builds), and stayed at ~118 MB with the setting off. The state
+machine itself has no unit test (it needs a Tauri `AppHandle`).
 
 Importing a package (folder or zip) now shows the licence step first: the signed manifest inside the package is verified, the
 licences are listed, and `models_install` with the ticked ids records them and imports.

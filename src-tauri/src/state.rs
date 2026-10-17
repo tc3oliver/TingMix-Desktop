@@ -5,7 +5,7 @@ use std::sync::{Arc, Mutex};
 
 use tingmix_core::Reducer;
 
-use crate::backends::Runtimes;
+use crate::backends::{Runtimes, Warm};
 use crate::dto::{FileRef, JobState, JobView};
 use crate::live::{Live, Shared};
 use crate::models::Models;
@@ -37,6 +37,7 @@ pub struct AppState {
     pub store: Store,
     pub models: Arc<Models>,
     pub runtimes: Runtimes,
+    pub warm: Warm,
     /// The updater plugin is registered only when the build carries an update signing key.
     pub updater: bool,
     pub live: Mutex<Option<Live>>,
@@ -55,6 +56,7 @@ impl AppState {
             store,
             models: Arc::new(models),
             runtimes,
+            warm: Warm::default(),
             updater,
             live: Mutex::default(),
             last: Mutex::default(),

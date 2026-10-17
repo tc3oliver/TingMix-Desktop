@@ -79,6 +79,7 @@ pub fn run() {
                 backends::Runtimes { ort_library },
                 updater,
             ));
+            backends::preload(app.handle());
 
             let menu = Menu::with_items(
                 app,
@@ -177,6 +178,7 @@ pub fn run() {
             commands::mic_permission_status,
             commands::mic_permission_request,
             commands::mic_open_settings,
+            commands::backend_load_state,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");
