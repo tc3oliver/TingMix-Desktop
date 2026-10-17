@@ -68,3 +68,39 @@ def load_wav(path) -> "torch.Tensor":
         assert (w.getframerate(), w.getnchannels(), w.getsampwidth()) == (16000, 1, 2)
         pcm = np.frombuffer(w.readframes(w.getnframes()), dtype="<i2")
     return torch.from_numpy(pcm.astype(np.float32) / 32768.0)
+
+
+class StepNetUnrolled(StepNet):
+    """Same step with the GRU written out as MatMuls and unrolled over a fixed number of output steps `t`.
+
+    The ONNX GRU operator cannot be dynamically quantized by ONNX Runtime; as MatMuls its input projection (one
+    [t,in]x[in,3H] product per layer) and recurrent projection become quantizable. Fixed `t` (= K/4) is baked in,
+    so this variant exists to measure INT8, not to ship."""
+
+    def __init__(self, net: SmallNet, t: int):
+        super().__init__(net)
+        self.t = t
+
+    def forward(self, mel, c1, c2, h):
+        n = self.net
+        d = mel - mel.mean(-1, keepdim=True)
+        x = (d / torch.sqrt((d * d).mean(-1, keepdim=True) + n.norm.eps) * n.norm.weight + n.norm.bias).transpose(1, 2)
+        y1 = F.gelu(n.conv1(torch.cat([c1, x], dim=2)))
+        y2 = F.gelu(n.conv2(torch.cat([c2, y1], dim=2)))
+        seq = y2.transpose(1, 2)[0]  # [t, d] (batch 1)
+        hs = []
+        for layer in range(n.gru.num_layers):
+            w_ih, w_hh = getattr(n.gru, f"weight_ih_l{layer}"), getattr(n.gru, f"weight_hh_l{layer}")
+            b_ih, b_hh = getattr(n.gru, f"bias_ih_l{layer}"), getattr(n.gru, f"bias_hh_l{layer}")
+            gi = seq @ w_ih.t() + b_ih  # [t, 3H] for all steps at once
+            hp, outs = h[layer], []  # [1, H]
+            for s in range(self.t):
+                gh = hp @ w_hh.t() + b_hh
+                ir, iz, inn = gi[s : s + 1].chunk(3, -1)
+                hr, hz, hn = gh.chunk(3, -1)
+                r, z = torch.sigmoid(ir + hr), torch.sigmoid(iz + hz)
+                hp = (1 - z) * torch.tanh(inn + r * hn) + z * hp
+                outs.append(hp)
+            hs.append(hp)
+            seq = torch.cat(outs, 0)
+        return n.out(seq[None]).log_softmax(-1), x[:, :, -1:], y1[:, :, -1:], torch.stack(hs, 0)

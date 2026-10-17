@@ -1,0 +1,1 @@
+{"threads":1,"chunk_ms":320,"audio_s":3600.00,"wall_s":28.800,"rtf":0.0080,"push_ms_p50":2.412,"push_ms_p95":3.160,"push_ms_p99":6.205,"push_ms_max":69.735,"first_output_push_ms":2.353,"pushes_slower_than_chunk":0,"peak_rss_mb":374.8}

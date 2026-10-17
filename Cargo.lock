@@ -4356,6 +4356,7 @@ dependencies = [
 name = "tingmix-app"
 version = "0.1.0"
 dependencies = [
+ "hound",
  "serde",
  "serde_json",
  "tauri",
@@ -4426,6 +4427,7 @@ name = "tingmix-runtime-mlx"
 version = "0.1.0"
 dependencies = [
  "cc",
+ "libc",
  "serde",
  "serde_json",
  "thiserror 2.0.21",
@@ -4441,6 +4443,7 @@ name = "tingmix-runtime-onnx"
 version = "0.1.0"
 dependencies = [
  "hound",
+ "libc",
  "ort",
  "rustfft",
  "serde_json",
