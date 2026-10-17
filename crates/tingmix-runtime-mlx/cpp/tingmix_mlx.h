@@ -13,6 +13,8 @@ enum { TM_FP32 = 0, TM_FP16 = 1, TM_BF16 = 2 };
 tm_model* tm_load(const char* safetensors_path, int dtype, char* err, size_t err_len);
 void tm_free(tm_model*);
 int tm_vocab(const tm_model*);
+/* "<mlx version>\t<gpu|cpu>:<device name>" of the MLX default device, NUL-terminated into buf. Returns 0 on success. */
+int tm_runtime_info(char* buf, size_t len);
 /* Encoder frames for n_valid mel frames (two stride-2 convs). */
 int tm_out_frames(int n_valid_mel);
 /* mel: [n_mel, 128] f32 row-major, the first n_valid rows are real (rest padding). feats (optional): [n_out, 1536] f32;

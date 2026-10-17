@@ -9,6 +9,7 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <variant>
 
 #include "mlx/mlx.h"
 
@@ -244,6 +245,19 @@ tm_model* tm_load(const char* path, int dtype, char* err, size_t err_len) {
 }
 void tm_free(tm_model* h) { delete h; }
 int tm_vocab(const tm_model* h) { return const_cast<tm_model*>(h)->m["reader.out.bias"].shape(0); }
+int tm_runtime_info(char* buf, size_t len) {
+  try {
+    const auto& d = mx::default_device();
+    std::string name = "unknown";
+    const auto& info = mx::device_info(d);
+    if (auto it = info.find("device_name"); it != info.end() && std::holds_alternative<std::string>(it->second)) name = std::get<std::string>(it->second);
+    put(buf, len, std::string(mx::version()) + "\t" + (d.type == mx::Device::gpu ? "gpu:" : "cpu:") + name);
+    return 0;
+  } catch (const std::exception& e) {
+    put(buf, len, e.what());
+    return 1;
+  }
+}
 int tm_out_frames(int n) { return ((n + 1) / 2 + 1) / 2; }
 
 int tm_run(tm_model* h, const float* mel, int n_mel, int n_valid, float* feats, float* logits, char* err, size_t err_len) {

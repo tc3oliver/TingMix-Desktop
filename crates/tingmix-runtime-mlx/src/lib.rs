@@ -4,6 +4,8 @@
 //! decoding. [`MlxLargeBackend`] adds the Rust mel front end, 29.5 s chunking and CTC decoding behind `AsrBackend`.
 
 mod backend;
+#[cfg(feature = "probe")]
+pub mod probe;
 
 pub use backend::{Decode, MlxLargeBackend};
 
@@ -24,6 +26,7 @@ mod ffi {
         ) -> *mut TmModel;
         pub fn tm_free(m: *mut TmModel);
         pub fn tm_vocab(m: *const TmModel) -> c_int;
+        pub fn tm_runtime_info(buf: *mut c_char, len: usize) -> c_int;
         pub fn tm_run(
             m: *mut TmModel,
             mel: *const f32,
@@ -61,6 +64,22 @@ pub const MEL_BINS: usize = 128;
 /// Encoder frames produced for `n_valid_mel` real mel frames (two stride-2 convolutions).
 pub fn out_frames(n_valid_mel: usize) -> usize {
     (n_valid_mel.div_ceil(2)).div_ceil(2)
+}
+
+/// `(mlx version, "gpu:<device name>")` of the linked MLX runtime; `None` when built without MLX or MLX fails to initialise.
+pub fn runtime_info() -> Option<(String, String)> {
+    #[cfg(mlx_native)]
+    {
+        let mut buf = [0u8; 256];
+        // SAFETY: buf outlives the call and tm_runtime_info writes at most buf.len() bytes, NUL-terminated.
+        if unsafe { ffi::tm_runtime_info(buf.as_mut_ptr().cast(), buf.len()) } == 0 {
+            let s = msg(&buf);
+            return s
+                .split_once('\t')
+                .map(|(v, d)| (v.to_string(), d.to_string()));
+        }
+    }
+    None
 }
 
 #[cfg(mlx_native)]

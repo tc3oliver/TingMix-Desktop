@@ -146,3 +146,26 @@ Not done: a 60-minute soak (task #14), power, and streaming of segments near the
 
 Remaining gaps are unchanged from the list above (Metal toolchain / source build and bundling, single window, batch 1,
 no `mx.compile`, host-launched GRU), plus: no runtime-selection wiring and no Windows/other-platform equivalent.
+
+## App integration: probe, worker, bundling (task #19)
+
+**Probe** (`tingmix-runtime-mlx`, feature `probe`): `probe::MlxProbeTarget` implements `tingmix_models::probe::ProbeTarget`. It
+spawns the `tingmix-mlx-worker` binary, which loads the model once and answers decode requests over stdin/stdout (request: u64
+LE sample count + f32 LE samples; reply: `OK\t<text>` / `ERR\t<msg>`; first line `READY\t<mlx version>\t<device>`). A crash,
+abort or hang in MLX/Metal kills the child, the parent returns an error (120 s timeout) and respawns on the next call.
+`backend_version` and `device` come from the linked libmlx inside the child (`tm_runtime_info`), not from a guess.
+Measured with `cargo test --release -p tingmix-runtime-mlx --features probe --test probe` (beam+LM, fp32, en_02s, 5 timed runs):
+passed, device `gpu:Apple M4 Max`, backend_version `0.32.4`, `rtf_x1000` 15 (includes pipe transfer; the clip is 1.4 s),
+first run 2.4 s (child start, model load and LM load). A separate run of the worker with LM on mix_08s: max RSS 1.85 GiB,
+peak memory footprint 2.22 GiB, warm decode 64 ms.
+
+**Bundling, tested**: a worker with its rpath rewritten to `@executable_path/../Frameworks` and `libmlx.dylib`, `libjaccl.dylib`,
+`mlx.metallib` placed together in `Contents/Frameworks` decoded en_02s correctly from `/` as cwd. With `mlx.metallib` removed the
+worker aborts (SIGTRAP) before `READY`; in-process that would take the app down, which is why decoding in production should use
+the worker, or the in-process backend only after a successful probe. `build.rs` only sets the rpath on this crate's own
+targets (the worker, tests, examples); a host binary linking the crate directly must add its own rpath. Ad-hoc `codesign -s -`
+was applied after `install_name_tool`; Developer ID signing, hardened runtime and notarization of these three files were not tested.
+
+**Stays EXPERIMENTAL**: parity and timings are on 8 synthetic TTS clips (no real-speech WER); libmlx is the PyPI wheel (no
+source build; the Metal toolchain is not installed here); one machine (M4 Max) measured; fp32 only recommended; 29.5 s single
+window, batch 1; the model file is not published and is installed by offline import of a locally converted artifact.
