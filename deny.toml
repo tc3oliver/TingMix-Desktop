@@ -1,0 +1,45 @@
+# cargo-deny configuration. Run: cargo deny check
+# Policy: permissive licences only, MPL-2.0 allowed (file-level copyleft: symphonia, tauri's cssparser/selectors; see
+# docs/release/dependency-licenses.md), no GPL/LGPL/AGPL, crates.io only.
+
+[graph]
+targets = ["aarch64-apple-darwin", "x86_64-pc-windows-msvc"]
+
+[licenses]
+confidence-threshold = 0.9
+allow = [
+    "MIT",
+    "MIT-0",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "0BSD",
+    "Unicode-3.0",
+    "Unlicense",
+    "CC0-1.0",
+    "CDLA-Permissive-2.0",
+    "MPL-2.0",
+]
+
+[advisories]
+version = 2
+yanked = "deny"
+ignore = []
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+allow-wildcard-paths = true
+deny = [
+    # TLS goes through the platform stack (ort `tls-native`); a bundled OpenSSL would be a second trust store.
+    { crate = "openssl-sys" },
+]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []
