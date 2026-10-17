@@ -1,0 +1,15 @@
+/target
+node_modules/
+dist/
+.venv/
+__pycache__/
+*.pyc
+# model weights, converted artifacts and large reference dumps never enter git
+*.safetensors
+*.mlpackage/
+*.mlmodelc/
+*.onnx
+*.npz
+*.npy
+experiments/**/out/
+!tests/fixtures/**/*.npy
