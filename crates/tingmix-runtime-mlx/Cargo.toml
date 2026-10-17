@@ -1,0 +1,13 @@
+[package]
+name = "tingmix-runtime-mlx"
+description = "EXPERIMENTAL: TingMix-Large audio tower + reader on MLX C++ behind a narrow C ABI (Apple silicon only)"
+edition.workspace = true
+license.workspace = true
+version.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+thiserror = "2.0.21"
+
+[build-dependencies]
+cc = "1.2.40"
