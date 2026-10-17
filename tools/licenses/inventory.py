@@ -36,6 +36,20 @@ def shipped(target):
     return {(pk[i]["name"], pk[i]["version"]): pk[i] for i in seen - members}
 
 
+NATIVE = """## Bundled native binaries (maintained by hand in `tools/licenses/inventory.py`)
+
+Not Cargo crates, so `cargo metadata` does not see them. Update this table when a pin changes.
+
+| Component | Version / pin | Licence | Ships in | Notices to ship | Source of the claim |
+|---|---|---|---|---|---|
+| Microsoft ONNX Runtime (`libonnxruntime.1.31.0.dylib`; Windows `onnxruntime.dll`, `onnxruntime_providers_shared.dll`) | 1.31.0, archives pinned by sha256 in `tools/ort-fetch/MANIFEST.tsv` (see `docs/release/onnxruntime.md`) | MIT (Copyright Microsoft Corporation) plus third-party components listed in `ThirdPartyNotices.txt` (338,088 bytes in the macOS archive) | release builds, loaded at run time from the app bundle | `onnxruntime/LICENSE` and `onnxruntime/ThirdPartyNotices.txt` from the archive, unmodified | `LICENSE` file in the fetched archive (read 2026-10-18); GitHub licence of `microsoft/onnxruntime`: MIT. The third-party list was not reviewed entry by entry |
+| ONNX Runtime used by dev/CI builds (pyke build downloaded by `ort-sys`) | follows `ort =2.0.0-rc.14` | not shipped | development and CI only | none | `docs/release/onnxruntime.md` |
+| MLX (`libmlx.dylib` 21 MB, `libjaccl.dylib` 2 MB, `mlx.metallib` 216 MB) | PyPI wheel `mlx==0.32.4` today; a pinned source build is the intended release path (`docs/research/mlx-cpp-ffi.md`) | MIT (wheel metadata `License: MIT`, `licenses/LICENSE`); GitHub licence of `ml-explore/mlx` and `mlx-c`: MIT | macOS arm64 builds that enable the MLX backend | MLX `LICENSE` | wheel `METADATA` (read 2026-10-18); the wheel's bundled third-party code was not audited. The libraries link only Apple system frameworks (Metal, Foundation, QuartzCore, Accelerate) and libc++ per `otool -L` |
+
+Model weights and the language model are separate artifacts with their own terms: `docs/research/licensing-review.md`.
+"""
+
+
 def main():
     per = {t: shipped(t) for t in TARGETS}
     allp = {}
@@ -64,7 +78,7 @@ def main():
     lines += ["", "Obligations: MPL-2.0 is file-level copyleft. Linking is fine; if we modify an MPL-licensed file we must publish that file's source. Ship the licence text and notices. See `docs/release/` notes on the compliance screen.", "", "## All licences", ""]
     for l in sorted(by_lic, key=lambda x: (-len(by_lic[x]), x)):
         lines += [f"### {l} ({len(by_lic[l])})", "", ", ".join(by_lic[l]), ""]
-    text = "\n".join(lines)
+    text = "\n".join(lines) + "\n" + NATIVE
     if "--check" in sys.argv:
         sys.exit(0 if OUT.exists() and OUT.read_text() == text else 1)
     OUT.write_text(text)
