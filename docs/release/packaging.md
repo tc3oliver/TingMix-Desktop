@@ -37,6 +37,15 @@ Outputs: `target/release/bundle/macos/TingMix.app`, `target/release/bundle/dmg/T
 
 Applied: `bundle.targets` is `["app", "dmg", "nsis"]` (no MSI/WiX), `bundle.windows.webviewInstallMode` is `embedBootstrapper` (the WebView2 bootstrapper is inside the installer, so an offline first install does not need a download; it only fetches the runtime if missing, so a machine with no network and no WebView2 still fails), `bundle.windows.nsis.installMode` is `currentUser` (no elevation; models and settings are per user). No signing keys are in the config. The file parses with the pinned Tauri 2.12.4 (a macOS build was run with it); the Windows values are unverified until a Windows build.
 
+Fully offline installs: `pnpm bundle:windows:offline` adds `src-tauri/tauri.windows-offline.conf.json`
+(`webviewInstallMode: offlineInstaller`), which embeds the complete WebView2 runtime installer so no download is ever needed.
+Trade-off: the installer grows by roughly 120-130 MB (Microsoft's standalone x64 runtime; check the actual size of the first
+build) versus a few MB for `embedBootstrapper`, so it is opt-in and `pnpm bundle:windows` keeps the embedded bootstrapper.
+Windows 11 ships the WebView2 runtime with the OS, and up-to-date Windows 10 machines usually have it through Microsoft Edge
+updates; on those the runtime installer is skipped either way, so the offline variant only matters for a Windows 10 machine
+without WebView2 and without network. Only the config parse was checked (macOS build with both `--config` files); the size
+figure and the install on a clean offline VM are unverified.
+
 Original suggestions:
 
 Existing: `src-tauri/tauri.ort-windows.conf.json` and `pnpm bundle:windows` (`--bundles nsis`). `tauri.conf.json` has `"targets": "all"`, which would
