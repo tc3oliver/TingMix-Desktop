@@ -1,8 +1,8 @@
 # Desktop app (`src-tauri/`, `src/`)
 
-Status: EXPERIMENTAL. Built and unit-tested. The default backend is `MockBackend`, labelled **"Mock — not ASR"** (banner on
-every tab, backend name in the live footer, history entries and diagnostics); it emits placeholder words, never recognized
-speech. Real backends are reachable only through runtime selection (next section). Pinned versions: Tauri 2.12.4 / tauri-build 2.7.3 / tauri-plugin-dialog 2.8.3,
+Status: EXPERIMENTAL. Built and unit-tested. The default backend is `MockBackend`, labelled **"Mock — not ASR"** by the host
+(shown to the user as **"Demo mode"**: full-width banner on every tab with a "Set up a speech model" button, the engine chip,
+the transcript's own provenance line, history entries and diagnostics); it emits placeholder words, never recognized speech. Real backends are reachable only through runtime selection (next section). Pinned versions: Tauri 2.12.4 / tauri-build 2.7.3 / tauri-plugin-dialog 2.8.3,
 `@tauri-apps/api` 2.12.4, React 19.3.1, Vite 8.3.4, TypeScript 6.0.3, Vitest 5.0.5 (checked on crates.io / npm on 2026-10-18).
 
 ## Layout
@@ -119,6 +119,21 @@ state, which drives the banner, the loading line and the Models list. Rejection 
 Provenance: file jobs, live sessions and history entries carry the label of the backend that produced them; mock results show
 "Mock — not real ASR" next to the transcript, in the history list, and in exports (TXT first line, SRT first cue, file name
 suffix `(MOCK)`). Frontend logic with tests: `features/models/onboard.ts`, `lib/provenance.ts`, `features/export/format.ts`.
+
+## UI structure (task 24, `docs/architecture/ui-ux-brief.md`)
+
+Five tabs (Live, Files, History, Models, Settings; Diagnostics is a collapsible section at the bottom of Settings and polls
+only while open) with the ARIA tabs pattern. The engine chip right of the tabs is the one place that states the engine
+(`lib/engine.ts`): Checking / Demo mode / Loading / failed / `<model> · Experimental` / `<model>`; it opens Models. The banner
+shows in demo mode only. The window is the layout (header fixed, the active panel scrolls inside), Live fills the height.
+Keyboard: Cmd/Ctrl+1..5 tabs, +Enter start/stop, +O choose file, +=/- caption size, Esc dismisses an error or closes the
+licence card (`lib/shortcuts.ts`, tested). Live warns when a recording delivers silence for 3 s or no samples for 2 s and offers
+"Stop and choose another microphone" (`lib/signal.ts`, tested). Captions follow the newest line only while the user is at the
+bottom ("Jump to latest" otherwise); finals sit in a `role="log"` region, partials are never announced. Deletes (history
+entries, models) ask first. A file dropped anywhere shows an overlay and opens Files. The slider in Settings saves once it
+settles and only the newest save may update the screen. Copy is still English source strings (task 25 localises it; the host
+still builds some English prose: `status.message`, operation messages, selection reasons, tray items).
+Not verified: layout and contrast were not looked at on a screen; Tauri's default macOS menu may swallow some shortcuts.
 
 ## Data flow
 

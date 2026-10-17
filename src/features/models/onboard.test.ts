@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { BackendState, ModelOp } from "../../types/protocol";
-import { modelStatus, onboardStage } from "./onboard";
+import { cardStatus, modelStatus, onboardStage } from "./onboard";
 
 const op = (p: Partial<ModelOp>): ModelOp => ({ kind: "import", name: "m1", state: "running", message: null, bytes_done: 0, bytes_total: 0, ...p });
 const backend = (p: { mock: boolean; label: string; reason?: string }): BackendState => ({
@@ -38,5 +38,21 @@ describe("onboarding card", () => {
     expect(modelStatus({ id: "m1", active: false }, real)).toBe("Installed");
     expect(modelStatus({ id: "m1", active: true }, real)).toBe("In use");
     expect(modelStatus({ id: "m1", active: true }, mock)).toContain("Selected, but not in use.");
+  });
+});
+
+describe("model card status line", () => {
+  const m = { id: "m1", active: true };
+  const withReason = (reason: string) => backend({ mock: true, label: "Mock — not ASR", reason });
+  it("says Ready only for the model in use", () => {
+    expect(cardStatus(m, real, null)).toBe("Ready");
+    expect(cardStatus({ id: "m1", active: false }, real, null)).toBe("Not selected");
+  });
+  it("shows a running test and maps the host's reasons to short lines", () => {
+    expect(cardStatus(m, mock, op({ kind: "probe" }))).toBe("Testing on this Mac…");
+    expect(cardStatus(m, withReason("m1 can't be used yet. This model uses an experimental engine. Turn on x."), null)).toContain("Experimental");
+    expect(cardStatus(m, withReason("m1 can't be used yet. This build of TingMix doesn't include the MLX engine."), null)).toBe("Not supported in this build.");
+    expect(cardStatus(m, mock, null)).toBe("Not tested yet.");
+    expect(cardStatus(m, withReason("m1 can't be used yet. The test run on this Mac failed, so the model is not used."), null)).toMatch(/^Test failed\. The test run/);
   });
 });

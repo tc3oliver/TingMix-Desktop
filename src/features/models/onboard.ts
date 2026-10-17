@@ -40,3 +40,18 @@ export function modelStatus(m: { id: string; active: boolean }, backend: Backend
   if (info && !info.mock && info.label.startsWith(m.id)) return "In use";
   return `Selected, but not in use. ${info?.reason ?? ""}`.trim();
 }
+
+/** The one status line on a model card (brief P0-5). Jargon stays out of it; the details are under "Technical details". */
+export function cardStatus(m: { id: string; active: boolean }, backend: BackendState | null, op: ModelOp | null): string {
+  if (op && op.state === "running" && op.kind === "probe" && op.name === m.id) return "Testing on this Mac…";
+  if (!m.active) return "Not selected";
+  const info = backend?.info;
+  if (!info) return "Checking…";
+  if (!info.mock && info.label.startsWith(m.id)) return "Ready";
+  const r = info.reason;
+  if (r.includes("experimental engine")) return "Experimental — turn on experimental engines to use it.";
+  if (r.includes("doesn't include")) return "Not supported in this build.";
+  if (r.includes("hasn't been tested")) return "Not tested yet.";
+  if (r.includes("test run on this Mac failed")) return `Test failed. ${r.replace(/^.*?(The test run)/, "$1")}`;
+  return r.replace(/^.*?can't be used yet\.\s*/, "");
+}

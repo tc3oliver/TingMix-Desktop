@@ -11,7 +11,8 @@ const IDLE: LiveStatus = {
 export function useLive() {
   const [status, setStatus] = useState<LiveStatus>(IDLE);
   const [transcript, setTranscript] = useState<TranscriptState>(emptyTranscript());
-  const [devices, setDevices] = useState<Device[]>([]);
+  /** `null` while the first list is loading, so "no microphone" is never shown for a list that has not arrived. */
+  const [devices, setDevices] = useState<Device[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [mic, setMic] = useState<MicStatus | null>(null);
 

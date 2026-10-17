@@ -86,7 +86,31 @@ fn mlx_import_probe_select_transcribe_live() {
         .unwrap_or_else(|| {
             std::env::temp_dir().join(format!("tingmix-e2e-{}", std::process::id()))
         });
-    let _ = std::fs::remove_dir_all(&dir);
+    // never wipe a directory this test did not create: it must carry our marker (a mistyped TINGMIX_E2E_HOME that points at
+    // the real home, or any other existing directory, is refused)
+    let marker = dir.join(".tingmix-e2e-scratch");
+    if dir.exists() {
+        assert!(
+            marker.is_file(),
+            "refusing to wipe {}: it exists and was not created by this test",
+            dir.display()
+        );
+        assert!(
+            std::env::var_os("HOME")
+                .map(PathBuf::from)
+                .as_ref()
+                .and_then(|h| h.canonicalize().ok())
+                != keep.as_ref().and_then(|k| k.canonicalize().ok()),
+            "TINGMIX_E2E_HOME must not be the real home directory"
+        );
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(
+        &marker,
+        b"scratch directory of the e2e test; safe to delete\n",
+    )
+    .unwrap();
     let models = Arc::new(Models::open(dir.join("models")));
     let rt = Runtimes::default();
     let notify: Notify = Arc::new(|_| {});
