@@ -1,0 +1,1162 @@
+{
+ "command": "cd experiments/macos/mps && uv run python run.py --runs 15",
+ "mps_fallback": "0",
+ "hardware": {
+  "cpu": "Apple M4 Max",
+  "gpu": [
+   "Chipset Model: Apple M4 Max",
+   "Total Number of Cores: 40"
+  ],
+  "ram_GB": 64.0,
+  "os": "macOS-27.0-arm64-arm-64bit",
+  "macos": "27.0"
+ },
+ "versions": {
+  "torch": "2.9.1",
+  "transformers": "5.19.0",
+  "python": "3.12.14"
+ },
+ "artifacts_sha256": {
+  "model.safetensors": "67a06c21d757fdfa0b347a84942097e7bf6315fc4b9d3437b58b008cc5b7e271",
+  "encoder_delta.safetensors": "1b155cfeec560a07b975eea14eee515aa06d75074256989fc510129fab51d9cb",
+  "config.json": "eac5da8ce273202417906279698130b09c810111d75f82882ac323102ceb7431",
+  "tingmix.json": "5b818f0dcd7752539a449f49d834a684518e3feac006ceb929f8d6548d6beb6e",
+  "units.json": "dbc1aba97abeeae49dc7556531a2f670d4dc5f39705b54ca28e84b8de9187756",
+  "lm/lmCN_cv_parl_ascend_ntuml.charlm.json.gz": "c8251c39fd003df0527f074287acd5094f9da476c3bcd0a5eb86a5d6d9cc5a84"
+ },
+ "revisions": {
+  "model": "tc3oliver/TingMix-Large@75071a1260fb21874f150df6ebd53716ac423f13",
+  "encoder": "google/embeddinggemma-2@914f7f89142e33e77833254d9c9b90c3cef7303b"
+ },
+ "oracle_manifest_sha256": "452017f0a965b0dc4d35e0129b2dc05ea5d3db8ce7d38a05276add981c17971e",
+ "tolerance_rel_rms_proposed": {
+  "fp32": 0.001,
+  "fp16": 0.02,
+  "bf16": 0.05
+ },
+ "caveat": "Other agents ran GPU/CPU work concurrently; timings are indicative. loadavg recorded.",
+ "loadavg_start": [
+  7.8212890625,
+  6.7421875,
+  4.462890625
+ ],
+ "loadavg_end": [
+  6.9189453125,
+  6.70166015625,
+  4.6708984375
+ ],
+ "failures": [],
+ "stages": {
+  "fp32": {
+   "zh_08s": {
+    "subsample_conv": {
+     "max_abs": 5.340576171875e-05,
+     "mean_abs": 1.5986479411367327e-06,
+     "rel_rms": 3.9247137806341925e-07,
+     "nan_or_inf": false,
+     "mask_equal": true
+    },
+    "mask5d": {
+     "shape": [
+      1,
+      1,
+      18,
+      12,
+      24
+     ],
+     "equal_to_cpu": true
+    },
+    "rel_pos_enc": {
+     "max_abs": 1.1920928955078125e-07,
+     "mean_abs": 1.811026706377561e-08,
+     "rel_rms": 4.821780308361667e-08,
+     "nan_or_inf": false
+    },
+    "layer0": {
+     "max_abs": 9.1552734375e-05,
+     "mean_abs": 5.819313741994847e-07,
+     "rel_rms": 1.5105653972113942e-07,
+     "nan_or_inf": false
+    },
+    "layers12_output_proj": {
+     "max_abs": 0.0002689361572265625,
+     "mean_abs": 4.617928880179534e-06,
+     "rel_rms": 1.461537863178819e-06,
+     "nan_or_inf": false
+    },
+    "reader_fp32": {
+     "max_abs": 2.09808349609375e-05,
+     "mean_abs": 2.7250321181782056e-06,
+     "rel_rms": 3.92068812971047e-07,
+     "nan_or_inf": false
+    }
+   },
+   "mix_08s": {
+    "subsample_conv": {
+     "max_abs": 4.57763671875e-05,
+     "mean_abs": 1.6347006521755247e-06,
+     "rel_rms": 3.938759789434698e-07,
+     "nan_or_inf": false,
+     "mask_equal": true
+    },
+    "mask5d": {
+     "shape": [
+      1,
+      1,
+      16,
+      12,
+      24
+     ],
+     "equal_to_cpu": true
+    },
+    "rel_pos_enc": {
+     "max_abs": 1.1920928955078125e-07,
+     "mean_abs": 1.811026706377561e-08,
+     "rel_rms": 4.821780308361667e-08,
+     "nan_or_inf": false
+    },
+    "layer0": {
+     "max_abs": 7.62939453125e-05,
+     "mean_abs": 5.790504928882001e-07,
+     "rel_rms": 1.4136961112853896e-07,
+     "nan_or_inf": false
+    },
+    "layers12_output_proj": {
+     "max_abs": 0.0006608963012695312,
+     "mean_abs": 5.301936653268058e-06,
+     "rel_rms": 2.4924886474764207e-06,
+     "nan_or_inf": false
+    },
+    "reader_fp32": {
+     "max_abs": 2.86102294921875e-05,
+     "mean_abs": 3.159702828270383e-06,
+     "rel_rms": 4.068375574206584e-07,
+     "nan_or_inf": false
+    }
+   }
+  },
+  "fp16": {
+   "zh_08s": {
+    "subsample_conv": {
+     "max_abs": 0.0398101806640625,
+     "mean_abs": 0.0016236536903306842,
+     "rel_rms": 0.0004030573763884604,
+     "nan_or_inf": false,
+     "mask_equal": true
+    },
+    "mask5d": {
+     "shape": [
+      1,
+      1,
+      18,
+      12,
+      24
+     ],
+     "equal_to_cpu": true
+    },
+    "rel_pos_enc": {
+     "max_abs": 0.006510183215141296,
+     "mean_abs": 0.0001273632369702682,
+     "rel_rms": 0.00048344515380449593,
+     "nan_or_inf": false
+    },
+    "layer0": {
+     "max_abs": 0.349822998046875,
+     "mean_abs": 0.0012036486295983195,
+     "rel_rms": 0.0005470043397508562,
+     "nan_or_inf": false
+    },
+    "layers12_output_proj": {
+     "max_abs": 0.27593994140625,
+     "mean_abs": 0.005511443596333265,
+     "rel_rms": 0.0016289828345179558,
+     "nan_or_inf": false
+    },
+    "reader_fp32": {
+     "max_abs": 2.09808349609375e-05,
+     "mean_abs": 2.7250321181782056e-06,
+     "rel_rms": 3.92068812971047e-07,
+     "nan_or_inf": false
+    },
+    "reader_fp16": {
+     "max_abs": 0.031061172485351562,
+     "mean_abs": 0.003774714656174183,
+     "rel_rms": 0.0005382648669183254,
+     "nan_or_inf": false
+    }
+   },
+   "mix_08s": {
+    "subsample_conv": {
+     "max_abs": 0.03701019287109375,
+     "mean_abs": 0.0016485763480886817,
+     "rel_rms": 0.0003995925944764167,
+     "nan_or_inf": false,
+     "mask_equal": true
+    },
+    "mask5d": {
+     "shape": [
+      1,
+      1,
+      16,
+      12,
+      24
+     ],
+     "equal_to_cpu": true
+    },
+    "rel_pos_enc": {
+     "max_abs": 0.006510183215141296,
+     "mean_abs": 0.0001273632369702682,
+     "rel_rms": 0.00048344515380449593,
+     "nan_or_inf": false
+    },
+    "layer0": {
+     "max_abs": 0.318145751953125,
+     "mean_abs": 0.0011999394046142697,
+     "rel_rms": 0.0005445090355351567,
+     "nan_or_inf": false
+    },
+    "layers12_output_proj": {
+     "max_abs": 0.3509683609008789,
+     "mean_abs": 0.006022367160767317,
+     "rel_rms": 0.0017853975296020508,
+     "nan_or_inf": false
+    },
+    "reader_fp32": {
+     "max_abs": 2.86102294921875e-05,
+     "mean_abs": 3.159702828270383e-06,
+     "rel_rms": 4.068375574206584e-07,
+     "nan_or_inf": false
+    },
+    "reader_fp16": {
+     "max_abs": 0.0236968994140625,
+     "mean_abs": 0.0038336864672601223,
+     "rel_rms": 0.0004872962017543614,
+     "nan_or_inf": false
+    }
+   }
+  },
+  "bf16": {
+   "zh_08s": {
+    "subsample_conv": {
+     "max_abs": 0.28786468505859375,
+     "mean_abs": 0.0129164420068264,
+     "rel_rms": 0.003185041481629014,
+     "nan_or_inf": false,
+     "mask_equal": true
+    },
+    "mask5d": {
+     "shape": [
+      1,
+      1,
+      18,
+      12,
+      24
+     ],
+     "equal_to_cpu": true
+    },
+    "rel_pos_enc": {
+     "max_abs": 0.04459187388420105,
+     "mean_abs": 0.0009641418000683188,
+     "rel_rms": 0.0038245911709964275,
+     "nan_or_inf": false
+    },
+    "layer0": {
+     "max_abs": 2.3535003662109375,
+     "mean_abs": 0.009488433599472046,
+     "rel_rms": 0.004194372333586216,
+     "nan_or_inf": false
+    },
+    "layers12_output_proj": {
+     "max_abs": 3.2098827362060547,
+     "mean_abs": 0.04589845612645149,
+     "rel_rms": 0.016873523592948914,
+     "nan_or_inf": false
+    },
+    "reader_fp32": {
+     "max_abs": 2.09808349609375e-05,
+     "mean_abs": 2.7250321181782056e-06,
+     "rel_rms": 3.92068812971047e-07,
+     "nan_or_inf": false
+    },
+    "reader_bf16": {
+     "max_abs": 0.30315542221069336,
+     "mean_abs": 0.03202655166387558,
+     "rel_rms": 0.00458189332857728,
+     "nan_or_inf": false
+    }
+   },
+   "mix_08s": {
+    "subsample_conv": {
+     "max_abs": 0.30852508544921875,
+     "mean_abs": 0.013109582476317883,
+     "rel_rms": 0.003183735301718116,
+     "nan_or_inf": false,
+     "mask_equal": true
+    },
+    "mask5d": {
+     "shape": [
+      1,
+      1,
+      16,
+      12,
+      24
+     ],
+     "equal_to_cpu": true
+    },
+    "rel_pos_enc": {
+     "max_abs": 0.04459187388420105,
+     "mean_abs": 0.0009641418000683188,
+     "rel_rms": 0.0038245911709964275,
+     "nan_or_inf": false
+    },
+    "layer0": {
+     "max_abs": 2.552947998046875,
+     "mean_abs": 0.009649816900491714,
+     "rel_rms": 0.004376592114567757,
+     "nan_or_inf": false
+    },
+    "layers12_output_proj": {
+     "max_abs": 4.742781639099121,
+     "mean_abs": 0.05066751688718796,
+     "rel_rms": 0.01883549615740776,
+     "nan_or_inf": false
+    },
+    "reader_fp32": {
+     "max_abs": 2.86102294921875e-05,
+     "mean_abs": 3.159702828270383e-06,
+     "rel_rms": 4.068375574206584e-07,
+     "nan_or_inf": false
+    },
+    "reader_bf16": {
+     "max_abs": 0.19681453704833984,
+     "mean_abs": 0.02612089365720749,
+     "rel_rms": 0.003320554504171014,
+     "nan_or_inf": false
+    }
+   }
+  }
+ },
+ "e2e": {
+  "fp32": {
+   "zh_02s": {
+    "features": {
+     "max_abs": 3.814697265625e-05,
+     "mean_abs": 3.931235823984025e-06,
+     "rel_rms": 9.268444500776241e-07,
+     "nan_or_inf": false
+    },
+    "logits": {
+     "max_abs": 2.002716064453125e-05,
+     "mean_abs": 2.8745655527018243e-06,
+     "rel_rms": 4.302246736642701e-07,
+     "nan_or_inf": false
+    },
+    "greedy": "今天天氣很好",
+    "greedy_equal_cpu": true,
+    "beam_lm": "今天天氣很好",
+    "beam_lm_equal_cpu": true
+   },
+   "en_02s": {
+    "features": {
+     "max_abs": 4.863739013671875e-05,
+     "mean_abs": 4.383804480312392e-06,
+     "rel_rms": 1.0056687642645556e-06,
+     "nan_or_inf": false
+    },
+    "logits": {
+     "max_abs": 3.147125244140625e-05,
+     "mean_abs": 3.895171630574623e-06,
+     "rel_rms": 5.409924597188365e-07,
+     "nan_or_inf": false
+    },
+    "greedy": "good morning everyone",
+    "greedy_equal_cpu": true,
+    "beam_lm": "good morning everyone",
+    "beam_lm_equal_cpu": true
+   },
+   "mix_04s": {
+    "features": {
+     "max_abs": 6.67572021484375e-05,
+     "mean_abs": 4.610515134118032e-06,
+     "rel_rms": 1.0984899745380972e-06,
+     "nan_or_inf": false
+    },
+    "logits": {
+     "max_abs": 4.57763671875e-05,
+     "mean_abs": 3.7293268633220578e-06,
+     "rel_rms": 4.844397949455015e-07,
+     "nan_or_inf": false
+    },
+    "greedy": "今天我們來review這個ai的設計",
+    "greedy_equal_cpu": true,
+    "beam_lm": "今天我們來review這個ai的設計",
+    "beam_lm_equal_cpu": true
+   },
+   "zh_08s": {
+    "features": {
+     "max_abs": 0.0002117156982421875,
+     "mean_abs": 4.54885775980074e-06,
+     "rel_rms": 1.2086782135156682e-06,
+     "nan_or_inf": false
+    },
+    "logits": {
+     "max_abs": 3.4332275390625e-05,
+     "mean_abs": 3.374622110641212e-06,
+     "rel_rms": 4.86574208480306e-07,
+     "nan_or_inf": false
+    },
+    "greedy": "立法院今天下午召開會議討論明年度的中央政府總預算案以及多項重要的民生法案",
+    "greedy_equal_cpu": true,
+    "beam_lm": "立法院今天下午召開會議討論明年度的中央政府總預算案以及多項重要的民生法案",
+    "beam_lm_equal_cpu": true
+   },
+   "en_08s": {
+    "features": {
+     "max_abs": 0.0002193450927734375,
+     "mean_abs": 4.760704541695304e-06,
+     "rel_rms": 1.4209314258550876e-06,
+     "nan_or_inf": false
+    },
+    "logits": {
+     "max_abs": 6.389617919921875e-05,
+     "mean_abs": 4.421125140652293e-06,
+     "rel_rms": 5.677168246620568e-07,
+     "nan_or_inf": false
+    },
+    "greedy": "the quick brown fox jumps over the lazy dog while the weather stays comm and clear all afternoon",
+    "greedy_equal_cpu": true,
+    "beam_lm": "the quick brown fox jumps over the lazy dog while the weather stays comm and clear all afternoon",
+    "beam_lm_equal_cpu": true
+   },
+   "mix_08s": {
+    "features": {
+     "max_abs": 0.0004673004150390625,
+     "mean_abs": 5.430770215753e-06,
+     "rel_rms": 1.9688559405039996e-06,
+     "nan_or_inf": false
+    },
+    "logits": {
+     "max_abs": 6.198883056640625e-05,
+     "mean_abs": 4.0872414501791354e-06,
+     "rel_rms": 5.472900852510065e-07,
+     "nan_or_inf": false
+    },
+    "greedy": "我覺得這個deadline有點太趕了我們要不要先跟pn討論一下sc再決定",
+    "greedy_equal_cpu": true,
+    "beam_lm": "我覺得這個deadline有點太趕了我們要不要先跟pn討論一下sc再決定",
+    "beam_lm_equal_cpu": true
+   },
+   "zh_16s": {
+    "features": {
+     "max_abs": 0.0001544952392578125,
+     "mean_abs": 4.405799700180069e-06,
+     "rel_rms": 1.1100842129962984e-06,
+     "nan_or_inf": false
+    },
+    "logits": {
+     "max_abs": 0.0007877349853515625,
+     "mean_abs": 4.998721124138683e-06,
+     "rel_rms": 1.44165744586644e-06,
+     "nan_or_inf": false
+    },
+    "greedy": "語音辨識系統需要處理不同的口音被警噪音以及說話速度為了讓模型在桌面電腦上即時運作我們必須仔細設計串流架構卻保每一段因訊只處理一次並且在使用著停止說話之後儘快輸出最終結果",
+    "greedy_equal_cpu": true,
+    "beam_lm": "語音辨識系統需要處理不同的口音被警噪音以及說話速度為了讓模型在桌面電腦上即時運作我們必須仔細設計串流架構確保每一段音訊只處理一次並且在使用者停止說話之後儘快輸出最終結果",
+    "beam_lm_equal_cpu": true
+   },
+   "mix_29s": {
+    "features": {
+     "max_abs": 0.00034356117248535156,
+     "mean_abs": 5.518066245713271e-06,
+     "rel_rms": 1.937973138410598e-06,
+     "nan_or_inf": false
+    },
+    "logits": {
+     "max_abs": 4.38690185546875e-05,
+     "mean_abs": 3.892005224770401e-06,
+     "rel_rms": 5.531827582672122e-07,
+     "nan_or_inf": false
+    },
+    "greedy": "大家好今天的meeting主要有三個chpic第一個是上週的releas狀況qa回報了幾個b其中兩個已經fixed了第二個是新的feature規劃我們希望下個sprint可以完成prototype第三個是performance的問題目前在windows上面的latternc還是太高需要再做一些proadfiling跟optimization最後請大家記得更新自己的k狀態謝謝大家",
+    "greedy_equal_cpu": true,
+    "beam_lm": "大家好今天的meeting主要有三個chpic第一個是上週的releas狀況qa回報了幾個b其中兩個已經fixed了第二個是新的feature規劃我們希望下個sprint可以完成prototype第三個是performance的問題目前在windows上面的latternc還是太高需要再做一些proadfiling跟optimization然後請大家記得更新自己的k狀態謝謝大家",
+    "beam_lm_equal_cpu": true
+   }
+  },
+  "fp16": {
+   "zh_02s": {
+    "features": {
+     "max_abs": 0.043964385986328125,
+     "mean_abs": 0.005309747066348791,
+     "rel_rms": 0.0012444048188626766,
+     "nan_or_inf": false
+    },
+    "logits": {
+     "max_abs": 0.014253616333007812,
+     "mean_abs": 0.0021108840592205524,
+     "rel_rms": 0.00031169896828942,
+     "nan_or_inf": false
+    },
+    "greedy": "今天天氣很好",
+    "greedy_equal_cpu": true,
+    "beam_lm": "今天天氣很好",
+    "beam_lm_equal_cpu": true
+   },
+   "en_02s": {
+    "features": {
+     "max_abs": 0.032993316650390625,
+     "mean_abs": 0.004138742107897997,
+     "rel_rms": 0.0009417934925295413,
+     "nan_or_inf": false
+    },
+    "logits": {
+     "max_abs": 0.012734174728393555,
+     "mean_abs": 0.0014184176689013839,
+     "rel_rms": 0.00019893622084055096,
+     "nan_or_inf": false
+    },
+    "greedy": "good morning everyone",
+    "greedy_equal_cpu": true,
+    "beam_lm": "good morning everyone",
+    "beam_lm_equal_cpu": true
+   },
+   "mix_04s": {
+    "features": {
+     "max_abs": 0.08865129947662354,
+     "mean_abs": 0.0056019616313278675,
+     "rel_rms": 0.001362120034173131,
+     "nan_or_inf": false
+    },
+    "logits": {
+     "max_abs": 0.04545116424560547,
+     "mean_abs": 0.0023918705992400646,
+     "rel_rms": 0.0003259455843362957,
+     "nan_or_inf": false
+    },
+    "greedy": "今天我們來review這個ai的設計",
+    "greedy_equal_cpu": true,
+    "beam_lm": "今天我們來review這個ai的設計",
+    "beam_lm_equal_cpu": true
+   },
+   "zh_08s": {
+    "features": {
+     "max_abs": 0.2717270851135254,
+     "mean_abs": 0.005707642529159784,
+     "rel_rms": 0.0016113768797367811,
+     "nan_or_inf": false
+    },
+    "logits": {
+     "max_abs": 0.024715781211853027,
+     "mean_abs": 0.0020359852351248264,
+     "rel_rms": 0.00031039255554787815,
+     "nan_or_inf": false
+    },
+    "greedy": "立法院今天下午召開會議討論明年度的中央政府總預算案以及多項重要的民生法案",
+    "greedy_equal_cpu": true,
+    "beam_lm": "立法院今天下午召開會議討論明年度的中央政府總預算案以及多項重要的民生法案",
+    "beam_lm_equal_cpu": true
+   },
+   "en_08s": {
+    "features": {
+     "max_abs": 0.4992351531982422,
+     "mean_abs": 0.005729330237954855,
+     "rel_rms": 0.002425733022391796,
+     "nan_or_inf": false
+    },
+    "logits": {
+     "max_abs": 0.16965770721435547,
+     "mean_abs": 0.0031215734779834747,
+     "rel_rms": 0.0006472347304224968,
+     "nan_or_inf": false
+    },
+    "greedy": "the quick brown fox jumps over the lazy dog while the weather stays comm and clear all afternoon",
+    "greedy_equal_cpu": true,
+    "beam_lm": "the quick brown fox jumps over the lazy dog while the weather stays comm and clear all afternoon",
+    "beam_lm_equal_cpu": true
+   },
+   "mix_08s": {
+    "features": {
+     "max_abs": 0.3353433609008789,
+     "mean_abs": 0.0059641576372087,
+     "rel_rms": 0.0017354754963889718,
+     "nan_or_inf": false
+    },
+    "logits": {
+     "max_abs": 0.06634807586669922,
+     "mean_abs": 0.002926730317994952,
+     "rel_rms": 0.00043289034510962665,
+     "nan_or_inf": false
+    },
+    "greedy": "我覺得這個deadline有點太趕了我們要不要先跟pn討論一下sc再決定",
+    "greedy_equal_cpu": true,
+    "beam_lm": "我覺得這個deadline有點太趕了我們要不要先跟pn討論一下sc再決定",
+    "beam_lm_equal_cpu": true
+   },
+   "zh_16s": {
+    "features": {
+     "max_abs": 0.12826251983642578,
+     "mean_abs": 0.005282294005155563,
+     "rel_rms": 0.0013257665559649467,
+     "nan_or_inf": false
+    },
+    "logits": {
+     "max_abs": 0.3145723342895508,
+     "mean_abs": 0.0024638064205646515,
+     "rel_rms": 0.0005996152176521719,
+     "nan_or_inf": false
+    },
+    "greedy": "語音辨識系統需要處理不同的口音被警噪音以及說話速度為了讓模型在桌面電腦上即時運作我們必須仔細設計串流架構卻保每一段因訊只處理一次並且在使用著停止說話之後儘快輸出最終結果",
+    "greedy_equal_cpu": true,
+    "beam_lm": "語音辨識系統需要處理不同的口音被警噪音以及說話速度為了讓模型在桌面電腦上即時運作我們必須仔細設計串流架構確保每一段音訊只處理一次並且在使用者停止說話之後儘快輸出最終結果",
+    "beam_lm_equal_cpu": true
+   },
+   "mix_29s": {
+    "features": {
+     "max_abs": 0.23064756393432617,
+     "mean_abs": 0.007628520485013723,
+     "rel_rms": 0.002217862056568265,
+     "nan_or_inf": false
+    },
+    "logits": {
+     "max_abs": 0.41646575927734375,
+     "mean_abs": 0.004713046830147505,
+     "rel_rms": 0.0009225794929079711,
+     "nan_or_inf": false
+    },
+    "greedy": "大家好今天的meeting主要有三個chpic第一個是上週的releas狀況qa回報了幾個b其中兩個已經fixed了第二個是新的feature規劃我們希望下個sprint可以完成prototype第三個是performance的問題目前在windows上面的latternc還是太高需要再做一些proadfiling跟optimization最後請大家記得更新自己的k狀態謝謝大家",
+    "greedy_equal_cpu": true,
+    "beam_lm": "大家好今天的meeting主要有三個chpic第一個是上週的releas狀況qa回報了幾個b其中兩個已經fixed了第二個是新的feature規劃我們希望下個sprint可以完成prototype第三個是performance的問題目前在windows上面的latternc還是太高需要再做一些proadfiling跟optimization然後請大家記得更新自己的k狀態謝謝大家",
+    "beam_lm_equal_cpu": true
+   }
+  },
+  "bf16": {
+   "zh_02s": {
+    "features": {
+     "max_abs": 0.6950464248657227,
+     "mean_abs": 0.04294459894299507,
+     "rel_rms": 0.010351252742111683,
+     "nan_or_inf": false
+    },
+    "logits": {
+     "max_abs": 0.15385150909423828,
+     "mean_abs": 0.0186797883361578,
+     "rel_rms": 0.002843755530193448,
+     "nan_or_inf": false
+    },
+    "greedy": "今天天氣很好",
+    "greedy_equal_cpu": true,
+    "beam_lm": "今天天氣很好",
+    "beam_lm_equal_cpu": true
+   },
+   "en_02s": {
+    "features": {
+     "max_abs": 1.0198407173156738,
+     "mean_abs": 0.04429182782769203,
+     "rel_rms": 0.011229259893298149,
+     "nan_or_inf": false
+    },
+    "logits": {
+     "max_abs": 0.21736598014831543,
+     "mean_abs": 0.017403529956936836,
+     "rel_rms": 0.002489136764779687,
+     "nan_or_inf": false
+    },
+    "greedy": "good morning everyone",
+    "greedy_equal_cpu": true,
+    "beam_lm": "good morning everyone",
+    "beam_lm_equal_cpu": true
+   },
+   "mix_04s": {
+    "features": {
+     "max_abs": 2.522488594055176,
+     "mean_abs": 0.055255431681871414,
+     "rel_rms": 0.016453152522444725,
+     "nan_or_inf": false
+    },
+    "logits": {
+     "max_abs": 0.3398885726928711,
+     "mean_abs": 0.021004091948270798,
+     "rel_rms": 0.002874909434467554,
+     "nan_or_inf": false
+    },
+    "greedy": "今天我們來review這個ai的設計",
+    "greedy_equal_cpu": true,
+    "beam_lm": "今天我們來review這個ai的設計",
+    "beam_lm_equal_cpu": true
+   },
+   "zh_08s": {
+    "features": {
+     "max_abs": 3.6794447898864746,
+     "mean_abs": 0.045484475791454315,
+     "rel_rms": 0.015573964454233646,
+     "nan_or_inf": false
+    },
+    "logits": {
+     "max_abs": 0.7205328345298767,
+     "mean_abs": 0.0169055238366127,
+     "rel_rms": 0.002892480930313468,
+     "nan_or_inf": false
+    },
+    "greedy": "立法院今天下午召開會議討論明年度的中央政府總預算案以及多項重要的民生法案",
+    "greedy_equal_cpu": true,
+    "beam_lm": "立法院今天下午召開會議討論明年度的中央政府總預算案以及多項重要的民生法案",
+    "beam_lm_equal_cpu": true
+   },
+   "en_08s": {
+    "features": {
+     "max_abs": 1.1086101531982422,
+     "mean_abs": 0.04061126708984375,
+     "rel_rms": 0.010642066597938538,
+     "nan_or_inf": false
+    },
+    "logits": {
+     "max_abs": 0.227386474609375,
+     "mean_abs": 0.020189907401800156,
+     "rel_rms": 0.002494438784196973,
+     "nan_or_inf": false
+    },
+    "greedy": "the quick brown fox jumps over the lazy dog while the weather stays comm and clear all afternoon",
+    "greedy_equal_cpu": true,
+    "beam_lm": "the quick brown fox jumps over the lazy dog while the weather stays comm and clear all afternoon",
+    "beam_lm_equal_cpu": true
+   },
+   "mix_08s": {
+    "features": {
+     "max_abs": 4.180281639099121,
+     "mean_abs": 0.052569374442100525,
+     "rel_rms": 0.018121417611837387,
+     "nan_or_inf": false
+    },
+    "logits": {
+     "max_abs": 1.0960931777954102,
+     "mean_abs": 0.030398622155189514,
+     "rel_rms": 0.0047243391163647175,
+     "nan_or_inf": false
+    },
+    "greedy": "我覺得這個deadline有點太趕了我們要不要先跟pn討論一下sc再決定",
+    "greedy_equal_cpu": true,
+    "beam_lm": "我覺得這個deadline有點太趕了我們要不要先跟pn討論一下sc再決定",
+    "beam_lm_equal_cpu": true
+   },
+   "zh_16s": {
+    "features": {
+     "max_abs": 0.7149391174316406,
+     "mean_abs": 0.04104696214199066,
+     "rel_rms": 0.00992486160248518,
+     "nan_or_inf": false
+    },
+    "logits": {
+     "max_abs": 1.5653209686279297,
+     "mean_abs": 0.01829720288515091,
+     "rel_rms": 0.003415349405258894,
+     "nan_or_inf": false
+    },
+    "greedy": "語音辨識系統需要處理不同的口音被警噪音以及說話速度為了讓模型在桌面電腦上即時運作我們必須仔細設計串流架構卻保每一段因訊只處理一次並且在使用著停止說話之後儘快輸出最終結果",
+    "greedy_equal_cpu": true,
+    "beam_lm": "語音辨識系統需要處理不同的口音被警噪音以及說話速度為了讓模型在桌面電腦上即時運作我們必須仔細設計串流架構確保每一段音訊只處理一次並且在使用者停止說話之後儘快輸出最終結果",
+    "beam_lm_equal_cpu": true
+   },
+   "mix_29s": {
+    "features": {
+     "max_abs": 3.5067179203033447,
+     "mean_abs": 0.05772145465016365,
+     "rel_rms": 0.019634999334812164,
+     "nan_or_inf": false
+    },
+    "logits": {
+     "max_abs": 0.7402572631835938,
+     "mean_abs": 0.0275496244430542,
+     "rel_rms": 0.004241858143359423,
+     "nan_or_inf": false
+    },
+    "greedy": "大家好今天的meeting主要有三個chpic第一個是上週的releas狀況qa回報了幾個b其中兩個已經fixed了第二個是新的feature規劃我們希望下個sprint可以完成prototype第三個是performance的問題目前在windows上面的latternc還是太高需要再做一些proadfiling跟optimization最後請大家記得更新自己的k狀態謝謝大家",
+    "greedy_equal_cpu": true,
+    "beam_lm": "大家好今天的meeting主要有三個chpic第一個是上週的releas狀況qa回報了幾個b其中兩個已經fixed了第二個是新的feature規劃我們希望下個sprint可以完成prototype第三個是performance的問題目前在windows上面的latternc還是太高需要再做一些proadfiling跟optimization然後請大家記得更新自己的k狀態謝謝大家",
+    "beam_lm_equal_cpu": true
+   }
+  }
+ },
+ "bench": {
+  "fp32": {
+   "2": {
+    "first_call_s": 0.24273762479424477,
+    "warmup_runs": 3,
+    "runs": 15,
+    "latency_s_fe_cpu": {
+     "p50": 0.0007332907989621162
+    },
+    "latency_s_tower_reader_mps": {
+     "p50": 0.06384025001898408,
+     "p95": 0.06750667477026581,
+     "max": 0.06768616591580212
+    },
+    "latency_s_total_greedy": {
+     "p50": 0.06499645905569196,
+     "p95": 0.06880699968896806,
+     "p99": 0.06907743259333074,
+     "max": 0.06914504081942141
+    },
+    "rtf_p50": 0.03249822952784598,
+    "rtf_p95": 0.03440349984448403,
+    "beam_lm_decode_s_once": 0.007860332960262895,
+    "mps_current_alloc_peak_MB": 1272.545166015625,
+    "mps_driver_alloc_MB": 3298.078125,
+    "rss_MB": 6750.953125
+   },
+   "4": {
+    "first_call_s": 0.24948012502864003,
+    "warmup_runs": 3,
+    "runs": 15,
+    "latency_s_fe_cpu": {
+     "p50": 0.001242874888703227
+    },
+    "latency_s_tower_reader_mps": {
+     "p50": 0.08963141590356827,
+     "p95": 0.1005256839795038,
+     "max": 0.10199358407407999
+    },
+    "latency_s_total_greedy": {
+     "p50": 0.09161974978633225,
+     "p95": 0.10264352054800838,
+     "p99": 0.10365327056031674,
+     "max": 0.10390570806339383
+    },
+    "rtf_p50": 0.022904937446583062,
+    "rtf_p95": 0.025660880137002094,
+    "beam_lm_decode_s_once": 0.016176167177036405,
+    "mps_current_alloc_peak_MB": 1292.76318359375,
+    "mps_driver_alloc_MB": 3292.3125,
+    "rss_MB": 6784.46875
+   },
+   "8": {
+    "first_call_s": 0.45495649985969067,
+    "warmup_runs": 3,
+    "runs": 15,
+    "latency_s_fe_cpu": {
+     "p50": 0.002272374927997589
+    },
+    "latency_s_tower_reader_mps": {
+     "p50": 0.13791166595183313,
+     "p95": 0.1627479707589373,
+     "max": 0.16307408409193158
+    },
+    "latency_s_total_greedy": {
+     "p50": 0.14059595786966383,
+     "p95": 0.1658549455460161,
+     "p99": 0.16626745550893246,
+     "max": 0.16637058299966156
+    },
+    "rtf_p50": 0.01757449473370798,
+    "rtf_p95": 0.020731868193252012,
+    "beam_lm_decode_s_once": 0.02668424998410046,
+    "mps_current_alloc_peak_MB": 1296.632080078125,
+    "mps_driver_alloc_MB": 3292.5625,
+    "rss_MB": 6820.46875
+   },
+   "16": {
+    "first_call_s": 0.526435500010848,
+    "warmup_runs": 3,
+    "runs": 15,
+    "latency_s_fe_cpu": {
+     "p50": 0.0035505839623510838
+    },
+    "latency_s_tower_reader_mps": {
+     "p50": 0.2132364169228822,
+     "p95": 0.25469467940274626,
+     "max": 0.25712312501855195
+    },
+    "latency_s_total_greedy": {
+     "p50": 0.21894783386960626,
+     "p95": 0.2595951956696808,
+     "p99": 0.26099423913285136,
+     "max": 0.261343999998644
+    },
+    "rtf_p50": 0.013684239616850391,
+    "rtf_p95": 0.01622469972935505,
+    "beam_lm_decode_s_once": 0.055145959137007594,
+    "mps_current_alloc_peak_MB": 1365.056884765625,
+    "mps_driver_alloc_MB": 3294.828125,
+    "rss_MB": 6963.03125
+   },
+   "29": {
+    "first_call_s": 0.6184877918567508,
+    "warmup_runs": 3,
+    "runs": 15,
+    "latency_s_fe_cpu": {
+     "p50": 0.007006332976743579
+    },
+    "latency_s_tower_reader_mps": {
+     "p50": 0.3356840410269797,
+     "p95": 0.35313325792085376,
+     "max": 0.35758158285170794
+    },
+    "latency_s_total_greedy": {
+     "p50": 0.3441113329026848,
+     "p95": 0.361401587491855,
+     "p99": 0.36537261749617755,
+     "max": 0.3663653749972582
+    },
+    "rtf_p50": 0.011865908031127062,
+    "rtf_p95": 0.01246212370661569,
+    "beam_lm_decode_s_once": 0.1312991250306368,
+    "mps_current_alloc_peak_MB": 1333.48828125,
+    "mps_driver_alloc_MB": 3299.125,
+    "rss_MB": 6943.359375
+   }
+  },
+  "fp16": {
+   "2": {
+    "first_call_s": 0.1296281658578664,
+    "warmup_runs": 3,
+    "runs": 15,
+    "latency_s_fe_cpu": {
+     "p50": 0.0006954171694815159
+    },
+    "latency_s_tower_reader_mps": {
+     "p50": 0.06985241686925292,
+     "p95": 0.09102944978512824,
+     "max": 0.09158204100094736
+    },
+    "latency_s_total_greedy": {
+     "p50": 0.07101424993015826,
+     "p95": 0.0921912828925997,
+     "p99": 0.09278408945538104,
+     "max": 0.09293229109607637
+    },
+    "rtf_p50": 0.03550712496507913,
+    "rtf_p95": 0.04609564144629985,
+    "beam_lm_decode_s_once": 0.005755916936323047,
+    "mps_current_alloc_peak_MB": 999.041259765625,
+    "mps_driver_alloc_MB": 3301.875,
+    "rss_MB": 7149.828125
+   },
+   "4": {
+    "first_call_s": 0.13349854107946157,
+    "warmup_runs": 3,
+    "runs": 15,
+    "latency_s_fe_cpu": {
+     "p50": 0.001187582965940237
+    },
+    "latency_s_tower_reader_mps": {
+     "p50": 0.08371525001712143,
+     "p95": 0.08625603762920946,
+     "max": 0.08906166697852314
+    },
+    "latency_s_total_greedy": {
+     "p50": 0.08545558294281363,
+     "p95": 0.08808673750609158,
+     "p99": 0.09038364760577679,
+     "max": 0.09095787513069808
+    },
+    "rtf_p50": 0.02136389573570341,
+    "rtf_p95": 0.022021684376522896,
+    "beam_lm_decode_s_once": 0.011912666959688067,
+    "mps_current_alloc_peak_MB": 1007.4990234375,
+    "mps_driver_alloc_MB": 3301.953125,
+    "rss_MB": 7162.515625
+   },
+   "8": {
+    "first_call_s": 0.30374437500722706,
+    "warmup_runs": 3,
+    "runs": 15,
+    "latency_s_fe_cpu": {
+     "p50": 0.0018120829481631517
+    },
+    "latency_s_tower_reader_mps": {
+     "p50": 0.11132129211910069,
+     "p95": 0.11565277513582259,
+     "max": 0.11859254213050008
+    },
+    "latency_s_total_greedy": {
+     "p50": 0.11385174980387092,
+     "p95": 0.11818858736660331,
+     "p99": 0.12062241740059107,
+     "max": 0.12123087490908802
+    },
+    "rtf_p50": 0.014231468725483865,
+    "rtf_p95": 0.014773573420825414,
+    "beam_lm_decode_s_once": 0.022985291900113225,
+    "mps_current_alloc_peak_MB": 1006.129150390625,
+    "mps_driver_alloc_MB": 3302.03125,
+    "rss_MB": 7178.984375
+   },
+   "16": {
+    "first_call_s": 0.35937591711990535,
+    "warmup_runs": 3,
+    "runs": 15,
+    "latency_s_fe_cpu": {
+     "p50": 0.002923708874732256
+    },
+    "latency_s_tower_reader_mps": {
+     "p50": 0.18311212491244078,
+     "p95": 0.18536253767088057,
+     "max": 0.1854612089227885
+    },
+    "latency_s_total_greedy": {
+     "p50": 0.18725545890629292,
+     "p95": 0.18928608747664838,
+     "p99": 0.1894386173831299,
+     "max": 0.18947674985975027
+    },
+    "rtf_p50": 0.011703466181643307,
+    "rtf_p95": 0.011830380467290524,
+    "beam_lm_decode_s_once": 0.04798879218287766,
+    "mps_current_alloc_peak_MB": 1020.339599609375,
+    "mps_driver_alloc_MB": 3304.109375,
+    "rss_MB": 7293.75
+   },
+   "29": {
+    "first_call_s": 0.5179450840223581,
+    "warmup_runs": 3,
+    "runs": 15,
+    "latency_s_fe_cpu": {
+     "p50": 0.007159458938986063
+    },
+    "latency_s_tower_reader_mps": {
+     "p50": 0.33529295795597136,
+     "p95": 0.3441354418871924,
+     "max": 0.34532637521624565
+    },
+    "latency_s_total_greedy": {
+     "p50": 0.3440680829808116,
+     "p95": 0.35310942949727175,
+     "p99": 0.3540192195959389,
+     "max": 0.3542466671206057
+    },
+    "rtf_p50": 0.011864416654510745,
+    "rtf_p95": 0.012176187224043854,
+    "beam_lm_decode_s_once": 0.1308054169639945,
+    "mps_current_alloc_peak_MB": 1091.73974609375,
+    "mps_driver_alloc_MB": 3308.1875,
+    "rss_MB": 7223.25
+   }
+  },
+  "bf16": {
+   "2": {
+    "first_call_s": 0.13662091712467372,
+    "warmup_runs": 3,
+    "runs": 15,
+    "latency_s_fe_cpu": {
+     "p50": 0.0007516669575124979
+    },
+    "latency_s_tower_reader_mps": {
+     "p50": 0.067574666114524,
+     "p95": 0.07161868745461106,
+     "max": 0.07182649988681078
+    },
+    "latency_s_total_greedy": {
+     "p50": 0.06895104213617742,
+     "p95": 0.0729328793939203,
+     "p99": 0.07304947580210865,
+     "max": 0.07307862490415573
+    },
+    "rtf_p50": 0.03447552106808871,
+    "rtf_p95": 0.03646643969696015,
+    "beam_lm_decode_s_once": 0.006108459085226059,
+    "mps_current_alloc_peak_MB": 999.516845703125,
+    "mps_driver_alloc_MB": 3302.9375,
+    "rss_MB": 7387.09375
+   },
+   "4": {
+    "first_call_s": 0.14098691707476974,
+    "warmup_runs": 3,
+    "runs": 15,
+    "latency_s_fe_cpu": {
+     "p50": 0.0012497918214648962
+    },
+    "latency_s_tower_reader_mps": {
+     "p50": 0.08556079096160829,
+     "p95": 0.08748130006715656,
+     "max": 0.08793641696684062
+    },
+    "latency_s_total_greedy": {
+     "p50": 0.08744641696102917,
+     "p95": 0.08947255816310644,
+     "p99": 0.08981971178203821,
+     "max": 0.08990650018677115
+    },
+    "rtf_p50": 0.021861604240257293,
+    "rtf_p95": 0.02236813954077661,
+    "beam_lm_decode_s_once": 0.014104333939030766,
+    "mps_current_alloc_peak_MB": 1000.843505859375,
+    "mps_driver_alloc_MB": 3303.015625,
+    "rss_MB": 7403.140625
+   },
+   "8": {
+    "first_call_s": 0.34157237503677607,
+    "warmup_runs": 3,
+    "runs": 15,
+    "latency_s_fe_cpu": {
+     "p50": 0.0022976670879870653
+    },
+    "latency_s_tower_reader_mps": {
+     "p50": 0.13530745799653232,
+     "p95": 0.1419531168648973,
+     "max": 0.14376279199495912
+    },
+    "latency_s_total_greedy": {
+     "p50": 0.13892495795153081,
+     "p95": 0.14518050441984087,
+     "p99": 0.14684900094289333,
+     "max": 0.14726612507365644
+    },
+    "rtf_p50": 0.017365619743941352,
+    "rtf_p95": 0.01814756305248011,
+    "beam_lm_decode_s_once": 0.03058708319440484,
+    "mps_current_alloc_peak_MB": 1006.776611328125,
+    "mps_driver_alloc_MB": 3303.09375,
+    "rss_MB": 7419.703125
+   },
+   "16": {
+    "first_call_s": 0.4466792498715222,
+    "warmup_runs": 3,
+    "runs": 15,
+    "latency_s_fe_cpu": {
+     "p50": 0.0033292921725660563
+    },
+    "latency_s_tower_reader_mps": {
+     "p50": 0.19618487497791648,
+     "p95": 0.20979412945453077,
+     "max": 0.22076012496836483
+    },
+    "latency_s_total_greedy": {
+     "p50": 0.2008041657973081,
+     "p95": 0.21439735358580944,
+     "p99": 0.22354903714731333,
+     "max": 0.22583695803768933
+    },
+    "rtf_p50": 0.012550260362331755,
+    "rtf_p95": 0.01339983459911309,
+    "beam_lm_decode_s_once": 0.051703917095437646,
+    "mps_current_alloc_peak_MB": 1014.671875,
+    "mps_driver_alloc_MB": 3305.171875,
+    "rss_MB": 7257.421875
+   },
+   "29": {
+    "first_call_s": 0.5096545000560582,
+    "warmup_runs": 3,
+    "runs": 15,
+    "latency_s_fe_cpu": {
+     "p50": 0.0064193329308182
+    },
+    "latency_s_tower_reader_mps": {
+     "p50": 0.3101514170411974,
+     "p95": 0.33563777869567274,
+     "max": 0.34280749992467463
+    },
+    "latency_s_total_greedy": {
+     "p50": 0.31773208314552903,
+     "p95": 0.34383217499125746,
+     "p99": 0.3493914348492399,
+     "max": 0.3507812498137355
+    },
+    "rtf_p50": 0.010956278729156173,
+    "rtf_p95": 0.011856281896250258,
+    "beam_lm_decode_s_once": 0.14251841697841883,
+    "mps_current_alloc_peak_MB": 1040.645751953125,
+    "mps_driver_alloc_MB": 3309.25,
+    "rss_MB": 7201.03125
+   }
+  }
+ }
+}
