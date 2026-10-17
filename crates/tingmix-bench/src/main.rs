@@ -9,6 +9,9 @@ mod run;
 mod source;
 mod stats;
 
+#[cfg(feature = "mlx")]
+mod lazy;
+
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
@@ -19,9 +22,9 @@ use tingmix_streaming::{MockBackend, SessionConfig};
 use probe::{Rec, Sim};
 use run::{RunCfg, RunOut};
 
-const USAGE: &str = "usage: tingmix-bench [--backend mock] [--duration-s 120] [--chunk-ms 20] [--seed 1] [--gap-min 1.0] [--gap-max 4.0]
-  [--noise-dbfs -70] [--clips id,id] [--tail-s 4] [--mock-native] [--mock-delay-ms 0] [--sim-base-ms 0] [--sim-rtf 0]
-  [--artifact PATH] [--scenario NAME] [--soak] --out FILE.json";
+const USAGE: &str = "usage: tingmix-bench [--backend mock|onnx|mlx] [--duration-s 120] [--chunk-ms 20] [--seed 1] [--gap-min 1.0] [--gap-max 4.0]
+  [--noise-dbfs -70] [--clips id,id] [--tail-s 4] [--mock-native] [--tail-partial on|off|live] [--discard-first N] [--mock-delay-ms 0] [--sim-base-ms 0] [--sim-rtf 0]
+  [--artifact PATH] [--model onnx] [--units units.json --dtype f16 --lm charlm.json.gz] [--scenario NAME] [--soak] --out FILE.json";
 
 struct Args(std::collections::HashMap<String, String>);
 
@@ -98,8 +101,15 @@ fn real_main() -> Result<(), String> {
         noise,
         duration_s,
     );
-    let cfg = RunCfg {
+    let mut cfg = RunCfg {
+        discard_first: a.f("discard-first", 0.0)? as usize,
         chunk_ms,
+        tail_partial: match a.s("tail-partial") {
+            None | Some("live") => None,
+            Some("on") => Some(true),
+            Some("off") => Some(false),
+            Some(v) => return Err(format!("--tail-partial {v}: expected on|off|live")),
+        },
         tail_s: a.f("tail-s", 4.0)?,
         sim: Sim {
             base_s: a.f("sim-base-ms", 0.0)? / 1000.0,
@@ -125,7 +135,92 @@ fn real_main() -> Result<(), String> {
             let info = serde_json::json!({ "name": b.info().name, "streaming_native": b.info().streaming_native, "max_window_s": b.info().max_window_s });
             (info, run::run(b, rec, t0, src, &cfg))
         }
-        other => return Err(format!("unknown backend {other:?} (built: mock)")),
+        #[cfg(feature = "onnx")]
+        "onnx" => {
+            // Token ids are printed as numbers: the harness measures compute and scheduling, not text.
+            let model = PathBuf::from(
+                a.s("model")
+                    .ok_or("--model PATH (step-graph .onnx) is required for --backend onnx")?,
+            );
+            artifacts.insert(
+                model.display().to_string(),
+                report::sha256_file(&model).map_err(|e| format!("{}: {e}", model.display()))?,
+            );
+            let dec: tingmix_runtime_onnx::TokenDecoder = std::sync::Arc::new(|ids: &[u32]| {
+                ids.iter().map(u32::to_string).collect::<Vec<_>>().join(" ")
+            });
+            let b =
+                tingmix_runtime_onnx::OnnxSmall::load(&model, a.f("threads", 4.0)? as usize, dec)
+                    .map_err(|e| e.to_string())?;
+            let info = serde_json::json!({ "name": b.info().name, "streaming_native": b.info().streaming_native, "max_window_s": b.info().max_window_s });
+            (info, run::run(b, rec, t0, src, &cfg))
+        }
+        #[cfg(feature = "mlx")]
+        "mlx" => {
+            use lazy::Lazy;
+            use tingmix_core::BackendInfo;
+            use tingmix_runtime_mlx::{Decode, Dtype, MlxLargeBackend};
+            let (art, units) = (
+                PathBuf::from(
+                    a.s("artifact")
+                        .ok_or("--artifact (fp32 safetensors) is required")?,
+                ),
+                PathBuf::from(a.s("units").ok_or("--units units.json is required")?),
+            );
+            let dtype = match a.s("dtype").unwrap_or("f16") {
+                "f32" => Dtype::F32,
+                "f16" => Dtype::F16,
+                "bf16" => Dtype::Bf16,
+                d => return Err(format!("--dtype {d}: expected f32|f16|bf16")),
+            };
+            let lm_path = a.s("lm").map(PathBuf::from);
+            let info = BackendInfo {
+                name: "tingmix-large-mlx".into(),
+                sample_rate: 16_000,
+                max_window_s: 29.5,
+                streaming_native: false,
+            };
+            // MLX streams are per thread: build (and warm) the model on the inference thread, on its first call.
+            let make = move || -> Result<MlxLargeBackend, String> {
+                let decode = match &lm_path {
+                    Some(p) => Decode::BeamLm(
+                        Box::new(tingmix_decoder::CharLm::load(p).map_err(|e| e.to_string())?),
+                        tingmix_decoder::BeamConfig::default(),
+                    ),
+                    None => Decode::Greedy,
+                };
+                let mut b =
+                    MlxLargeBackend::new(&art, &units, dtype, decode).map_err(|e| e.to_string())?;
+                b.transcribe_batch(&[&vec![0.0f32; 16_000]])
+                    .map_err(|e| e.to_string())?;
+                Ok(b)
+            };
+            let desc = serde_json::json!({ "name": info.name, "streaming_native": false, "max_window_s": 29.5, "dtype": a.s("dtype").unwrap_or("f16"),
+                "decode": if a.s("lm").is_some() { "beam+lm (alpha 0.35 beta 1.5 beam 16 defaults)" } else { "greedy" },
+                "note": "model loaded on the first inference call, so the first utterance includes load time and is excluded from the distributions (discard_first >= 1)" });
+            cfg.discard_first = cfg.discard_first.max(1);
+            (
+                desc,
+                run::run(
+                    Lazy {
+                        info,
+                        make: Some(make),
+                        inner: None,
+                    },
+                    rec,
+                    t0,
+                    src,
+                    &cfg,
+                ),
+            )
+        }
+        other => {
+            return Err(format!(
+                "unknown backend {other:?} (built in: mock{}{})",
+                if cfg!(feature = "onnx") { ", onnx" } else { "" },
+                if cfg!(feature = "mlx") { ", mlx" } else { "" }
+            ))
+        }
     };
     let silence_s = cfg.session.silence_ms / 1000.0;
     let checks = soak.then(|| report::soak_checks(&out));
@@ -138,7 +233,7 @@ fn real_main() -> Result<(), String> {
         env: report::env(),
         config: serde_json::json!({ "duration_s": duration_s, "chunk_ms": chunk_ms, "sim_base_ms": cfg.sim.base_s * 1000.0, "sim_rtf": cfg.sim.rtf,
             "gap_s": [a.f("gap-min", 1.0)?, a.f("gap-max", 4.0)?], "noise_dbfs": noise, "seed": a.f("seed", 1.0)?,
-            "session": format!("{:?}", cfg.session) }),
+            "tail_partial": a.s("tail-partial").unwrap_or("live"), "session": format!("{:?}", cfg.session) }),
         note: "Wall-clock real-time replay. Times are inference-side (audio in -> event received); UI render time is not included. \
                Mock backends recognise nothing and emit text even for silence, so mock first-partial latency is optimistic: with --backend mock these numbers characterise the harness, scheduler and queue only. \
                Other processes ran on the machine; see env. Gates apply to real backends only.",
@@ -182,6 +277,8 @@ mod tests {
         let t0 = Instant::now();
         let rec = Rec::new(t0);
         let cfg = RunCfg {
+            discard_first: 0,
+            tail_partial: None,
             chunk_ms: 20,
             tail_s: 2.5,
             sim: Sim {

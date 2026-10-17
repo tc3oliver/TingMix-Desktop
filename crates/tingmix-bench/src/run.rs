@@ -15,7 +15,11 @@ use crate::source::{Source, SR};
 use crate::stats::{dist, Dist};
 
 pub struct RunCfg {
+    /// Utterances at the start excluded from the latency distributions (cold-load warm-up). They stay in the table.
+    pub discard_first: usize,
     pub chunk_ms: u64,
+    /// `None`: `SessionWorker::spawn` (live policy, tail partial on). `Some(b)`: `spawn_with` and exactly this setting.
+    pub tail_partial: Option<bool>,
     pub tail_s: f64,
     pub sim: Sim,
     pub session: SessionConfig,
@@ -145,7 +149,16 @@ pub fn run<B: AsrBackend + 'static>(
         rec: rec.clone(),
         sim: cfg.sim,
     };
-    let mut worker = SessionWorker::spawn(timed, &cfg.session);
+    let mut worker = match cfg.tail_partial {
+        None => SessionWorker::spawn(timed, &cfg.session),
+        Some(t) => SessionWorker::spawn_with(
+            timed,
+            &SessionConfig {
+                tail_partial: t,
+                ..cfg.session.clone()
+            },
+        ),
+    };
     let chunk = SR * cfg.chunk_ms as usize / 1000;
     let (mut sys, pid) = (System::new(), Pid::from_u32(std::process::id()));
     let (mut samples, mut lateness): (Vec<Sample>, Vec<f64>) = Default::default();
@@ -238,7 +251,15 @@ pub fn run<B: AsrBackend + 'static>(
         .collect();
     let calls = rec.calls.lock().unwrap().clone();
     let busy_s: f64 = calls.iter().map(|c| c.dur_s).sum();
-    let col = |f: fn(&UttRow) -> Option<f64>| dist(&rows.iter().filter_map(f).collect::<Vec<_>>());
+    let col = |f: fn(&UttRow) -> Option<f64>| {
+        dist(
+            &rows
+                .iter()
+                .skip(cfg.discard_first)
+                .filter_map(f)
+                .collect::<Vec<_>>(),
+        )
+    };
     RunOut {
         wall_s,
         audio_s,

@@ -14,3 +14,11 @@ serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 sha2 = "0.11.0"
 sysinfo = { version = "0.36.1", default-features = false, features = ["system"] }
+tingmix-runtime-onnx = { path = "../tingmix-runtime-onnx", optional = true }
+tingmix-runtime-mlx = { path = "../tingmix-runtime-mlx", optional = true }
+tingmix-decoder = { path = "../tingmix-decoder", optional = true }
+
+[features]
+# Real backends. Off by default so the harness builds without ONNX Runtime / MLX.
+onnx = ["dep:tingmix-runtime-onnx"]
+mlx = ["dep:tingmix-runtime-mlx", "dep:tingmix-decoder"]
