@@ -39,14 +39,40 @@ A selected backend that fails to load makes Start / file import fail with the er
 | `onnx-cpu` | `tingmix-runtime-onnx` (`load-dynamic`) | EXPERIMENTAL; no trained Small checkpoint exists, so no signed manifest for it yet | bundled ONNX Runtime 1.31.0; model component `.onnx` + `units.json` |
 | `mlx` | `tingmix-runtime-mlx`, cargo feature `mlx` (off by default) | EXPERIMENTAL; slot only | Apple silicon; `model` (fp32 safetensors), `tokenizer/units.json`, `lm` components |
 
-The `mlx` slot (`--features mlx`, which also enables the crate's `probe` feature) uses `MlxLargeBackend::new(model, units.json,
-Dtype::F32, Decode::BeamLm(...))` and, for the compatibility probe, `MlxProbeTarget` in a child process
-(`tingmix-mlx-worker`, expected next to the app binary), so a Metal abort cannot take the app down. The MLX version and
-device used for the probe record come from `tingmix_runtime_mlx::runtime_info()` (the linked libmlx). It type-checks and
-passes clippy, but only against the crate's stub: no `MLX_PREFIX` was set here, so the native path was never built or run in
-the app. Not done: bundling `libmlx.dylib`, `libjaccl.dylib` and `mlx.metallib` into `Contents/Frameworks` with an
-`@executable_path` rpath and the worker binary (layout tested in `docs/research/mlx-cpp-ffi.md`; belongs with the packaging
-task), and the signing of those libraries.
+### MLX Large in the bundle (`tools/bundle-mlx.sh [debug|release]`)
+
+Builds the app with `--features mlx` against `MLX_PREFIX` (default: the wheel in `experiments/macos/mlx/.venv`) and bundles
+`Contents/MacOS/tingmix-mlx-worker` (a Tauri sidecar, rpath rewritten) plus `Contents/Frameworks/{libmlx.dylib, libjaccl.dylib,
+mlx.metallib}`. Both executables carry only the rpath `@executable_path/../Frameworks`; `otool -L` shows `@rpath/libmlx.dylib`
+and no absolute path (`TINGMIX_MLX_DEV_RPATH=1` adds the wheel path for `cargo test` builds only). Debug bundle: 327 MiB
+(Frameworks 227 MiB, of which the metallib is 204 MiB, binaries 57 MiB, resources 44 MiB). Not signed with a real identity;
+`codesign -s -` ad hoc only, hardened runtime and notarization untested.
+
+The backend is built **on its own thread** (`Dyn::spawn`) and every call is forwarded to it: MLX streams are thread-local, and
+a model loaded on one thread and decoded on another failed with `There is no Stream(gpu, 1) in current thread` (found by the
+live part of the end-to-end test). Build errors therefore still surface at Start / file import.
+
+Importing a package (folder or zip) now shows the licence step first: the signed manifest inside the package is verified, the
+licences are listed, and `models_install` with the ticked ids records them and imports.
+
+**End-to-end test** (`src-tauri/src/e2e.rs`, ignored unless `TINGMIX_E2E_MLX_PACKAGE` is set): offline import with licence
+acceptance of `tingmix-large-mlx-fp32` -> activate -> selection refuses (experimental off; then no probe yet) -> probe in the
+worker -> selection picks `mlx` (RTF 0.073) -> file transcription of `mix_08s.wav` equals the oracle beam+LM text -> live session
+on the replayed wav gives 6 partials and 1 final with the same text. Run on 2026-10-18 from the bundled `.app`
+(`Contents/MacOS/e2e-test`, the test binary copied next to the app binary so the bundled libraries are used) with
+`sandbox-exec (deny network*)`, 131 s (the import re-hashes 1.4 GB). The package folder is the manifest plus the files it lists
+(`$MODEL_CACHE/tingmix-large-mlx-package` here, assembled from `experiments/macos/mlx/out`, the pinned TingMix-Large
+release files and `crates/tingmix-models/fixtures/tingmix-large-mlx-fp32.signed.json`; the manifest is signed with the dev key).
+
+    tools/bundle-mlx.sh debug
+    MLX_PREFIX=... TINGMIX_MLX_DEV_RPATH=1 cargo test -p tingmix-app --features mlx --no-run
+    cp target/debug/deps/tingmix_app_lib-<hash> <app>/Contents/MacOS/e2e-test
+    cd / && TINGMIX_E2E_MLX_PACKAGE=<package> TINGMIX_MLX_WORKER=<app>/Contents/MacOS/tingmix-mlx-worker \
+      sandbox-exec -f nonet.sb <app>/Contents/MacOS/e2e-test --ignored mlx_import --nocapture
+
+What this does not show: the GUI path (the test calls the same host functions the commands call, not the webview), real
+microphone audio through MLX, behaviour with the sidecar after real signing, or anything about real-speech accuracy
+(fixtures are synthetic TTS).
 
 ## ONNX Runtime bundle
 

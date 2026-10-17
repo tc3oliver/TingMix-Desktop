@@ -447,13 +447,14 @@ pub async fn models_overview(state: State<'_, AppState>) -> Result<ModelsOvervie
     Ok(o)
 }
 
-/// `kind` is `folder` or `zip`; the dialog is opened here, so the frontend never names a path.
+/// `kind` is `folder` or `zip`; the dialog is opened here, so the frontend never names a path. The signed manifest in the
+/// chosen package is verified and its licences returned; `models_install` with the returned token imports it.
 #[tauri::command]
 pub async fn models_import(
     app: AppHandle,
     state: State<'_, AppState>,
     kind: String,
-) -> Result<bool, String> {
+) -> Result<Option<PendingInstall>, String> {
     let dialog = app.dialog().file().set_title("Choose a model package");
     let picked = match kind.as_str() {
         "folder" => dialog.blocking_pick_folder(),
@@ -462,16 +463,13 @@ pub async fn models_import(
             .blocking_pick_file(),
         other => return Err(format!("unknown import kind {other:?}")),
     };
-    let Some(p) = picked else { return Ok(false) };
+    let Some(p) = picked else { return Ok(None) };
     let path = p.into_path().map_err(|e| e.to_string())?;
     state
         .models
-        .import(path, kind == "zip", models_notify(&app))
-        .map_err(|e| {
-            state.note_error(format!("model import: {e}"));
-            e
-        })?;
-    Ok(true)
+        .begin_import(path, kind == "zip", state.next_id("install"))
+        .map(Some)
+        .inspect_err(|e| state.note_error(format!("model import: {e}")))
 }
 
 /// Pick a signed manifest, verify its signature and return the licences to accept. Nothing is downloaded yet.

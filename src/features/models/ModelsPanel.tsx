@@ -39,8 +39,8 @@ export function ModelsPanel() {
     await reload();
   };
 
-  const beginInstall = () => act(async () => {
-    const p = await api.modelsBeginInstall();
+  const begin = (f: () => Promise<PendingInstall | null>) => act(async () => {
+    const p = await f();
     setPending(p);
     setAccepted(p ? p.licenses.filter((l) => l.accepted).map((l) => l.id) : []);
   });
@@ -66,9 +66,9 @@ export function ModelsPanel() {
       )}
 
       <div className="row toolbar">
-        <button onClick={beginInstall} disabled={running || !o?.registry_available}>Install from signed manifest…</button>
-        <button onClick={() => act(() => api.modelsImport("folder"))} disabled={running || !o?.registry_available}>Import folder…</button>
-        <button onClick={() => act(() => api.modelsImport("zip"))} disabled={running || !o?.registry_available}>Import zip…</button>
+        <button onClick={() => begin(api.modelsBeginInstall)} disabled={running || !o?.registry_available}>Install from signed manifest…</button>
+        <button onClick={() => begin(() => api.modelsBeginImport("folder"))} disabled={running || !o?.registry_available}>Import folder…</button>
+        <button onClick={() => begin(() => api.modelsBeginImport("zip"))} disabled={running || !o?.registry_available}>Import zip…</button>
         <button onClick={() => act(() => api.modelsRollback().then((id) => setNote(`Rolled back to ${id}`)))} disabled={running || !o?.installed.some((m) => m.previous)}>Roll back</button>
       </div>
 
@@ -91,7 +91,7 @@ export function ModelsPanel() {
             </label>
           ))}
           <div className="row">
-            <button className="primary" disabled={!canInstall || running} onClick={confirmInstall}>Download and verify</button>
+            <button className="primary" disabled={!canInstall || running} onClick={confirmInstall}>Accept licences and install</button>
             <button onClick={() => setPending(null)}>Cancel</button>
           </div>
         </article>

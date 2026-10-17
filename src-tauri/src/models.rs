@@ -101,9 +101,12 @@ pub struct Models {
     registry: Result<Registry, String>,
     root: PathBuf,
     caps: Capabilities,
-    pending: Mutex<HashMap<String, VerifiedManifest>>,
+    pending: Mutex<HashMap<String, Pending>>,
     op: Mutex<Option<Op>>,
 }
+
+/// A verified manifest awaiting the licence decision, and the folder/zip to import it from (`None` = download).
+type Pending = (VerifiedManifest, Option<(PathBuf, bool)>);
 
 pub type Notify = Arc<dyn Fn(OpView) + Send + Sync>;
 
@@ -192,16 +195,63 @@ impl Models {
 
     /// Parse and verify a signed manifest file and report what the user must accept. Nothing is downloaded yet.
     pub fn begin_install(&self, bytes: &[u8], token: String) -> Result<PendingInstall, String> {
-        let reg = self.reg()?;
-        let m = reg.verifier().parse(bytes).map_err(|e| e.to_string())?;
-        let mf = m.manifest();
-        mf.validate(false).map_err(|e| e.to_string())?;
-        if let Some(f) = mf.files.iter().find(|f| f.url.is_empty()) {
+        let m = self
+            .reg()?
+            .verifier()
+            .parse(bytes)
+            .map_err(|e| e.to_string())?;
+        if let Some(f) = m.manifest().files.iter().find(|f| f.url.is_empty()) {
             return Err(format!(
                 "{} has no download URL: this version can only be imported from a folder or zip",
                 f.path
             ));
         }
+        self.pending_for(m, token, None)
+    }
+
+    /// Same for an offline import: the signed manifest is read from the folder or zip the user chose, so the licence
+    /// step happens before anything is copied. `install` then imports from that source.
+    pub fn begin_import(
+        &self,
+        path: PathBuf,
+        zip: bool,
+        token: String,
+    ) -> Result<PendingInstall, String> {
+        let bytes = if zip {
+            let mut z =
+                zip::ZipArchive::new(std::fs::File::open(&path).map_err(|e| e.to_string())?)
+                    .map_err(|e| e.to_string())?;
+            let mut b = Vec::new();
+            std::io::Read::read_to_end(
+                &mut std::io::Read::take(
+                    z.by_name(tingmix_models::store::MANIFEST_FILE)
+                        .map_err(|e| e.to_string())?,
+                    1 << 20,
+                ),
+                &mut b,
+            )
+            .map_err(|e| e.to_string())?;
+            b
+        } else {
+            read_manifest_file(&path.join(tingmix_models::store::MANIFEST_FILE))?
+        };
+        let m = self
+            .reg()?
+            .verifier()
+            .parse(&bytes)
+            .map_err(|e| e.to_string())?;
+        self.pending_for(m, token, Some((path, zip)))
+    }
+
+    fn pending_for(
+        &self,
+        m: VerifiedManifest,
+        token: String,
+        source: Option<(PathBuf, bool)>,
+    ) -> Result<PendingInstall, String> {
+        let reg = self.reg()?;
+        let mf = m.manifest();
+        mf.validate(false).map_err(|e| e.to_string())?;
         let missing = reg.missing_acceptances(mf);
         let out = PendingInstall {
             token: token.clone(),
@@ -225,7 +275,7 @@ impl Models {
                 })
                 .collect(),
         };
-        self.pending.lock().unwrap().insert(token, m);
+        self.pending.lock().unwrap().insert(token, (m, source));
         Ok(out)
     }
 
@@ -236,7 +286,7 @@ impl Models {
         accepted: &[String],
         notify: Notify,
     ) -> Result<(), String> {
-        let m = self
+        let (m, source) = self
             .pending
             .lock()
             .unwrap()
@@ -248,7 +298,12 @@ impl Models {
         if let Some(l) = missing.iter().find(|l| !accepted.contains(l)) {
             return Err(format!("licence {l:?} must be accepted before installing"));
         }
-        let cancel = self.start_op("download", &m.manifest().id, notify.clone())?;
+        let kind = if source.is_some() {
+            "import"
+        } else {
+            "download"
+        };
+        let cancel = self.start_op(kind, &m.manifest().id, notify.clone())?;
         for l in &missing {
             if let Err(e) = reg.record_acceptance(&m, l) {
                 self.finish_op(Err(e.to_string()), &notify);
@@ -257,6 +312,9 @@ impl Models {
         }
         self.pending.lock().unwrap().remove(token);
         let this = self.clone();
+        if let Some((path, zip)) = source {
+            return this.spawn_import(path, zip, notify);
+        }
         std::thread::Builder::new()
             .name("tingmix-model-download".into())
             .spawn(move || {
@@ -280,18 +338,14 @@ impl Models {
     }
 
     /// Verified import of a prepared version folder or zip (offline path; also the only path for import-only files).
-    pub fn import(
-        self: &Arc<Self>,
+    /// The operation was already started by `install`.
+    fn spawn_import(
+        self: Arc<Self>,
         path: PathBuf,
         zip: bool,
         notify: Notify,
     ) -> Result<(), String> {
-        self.reg()?;
-        let name = path
-            .file_name()
-            .map_or_else(|| "model".into(), |n| n.to_string_lossy().into_owned());
-        let _cancel = self.start_op("import", &name, notify.clone())?;
-        let this = self.clone();
+        let this = self;
         std::thread::Builder::new()
             .name("tingmix-model-import".into())
             .spawn(move || {

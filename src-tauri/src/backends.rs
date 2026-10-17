@@ -6,6 +6,7 @@
 //! so they are registered as eligible only while "experimental backends" is switched on in Settings. A real backend
 //! that fails to load is an error, never a silent switch to the mock.
 
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -34,24 +35,185 @@ fn status_word(backend: &str) -> &'static str {
     }
 }
 
-/// Boxed backend that is itself an `AsrBackend`, so it can go into `SessionWorker` / `StreamingSession`.
-pub struct Dyn(Box<dyn AsrBackend>);
+/// A backend usable from any thread. Real backends are built and kept on one dedicated thread: MLX streams are
+/// thread-local ("There is no Stream(gpu, 1) in current thread" when a model loaded on one thread decodes on another), so
+/// the model never moves. Calls are forwarded over a channel; the mock runs in place.
+pub struct Dyn {
+    info: BackendInfo,
+    inner: Inner,
+}
+
+enum Inner {
+    Local(Box<dyn AsrBackend>),
+    Remote(Remote),
+}
+
+type Reply<T> = std::sync::mpsc::Sender<Result<T, BackendError>>;
+
+enum Req {
+    Batch(Vec<Vec<f32>>, Reply<Vec<String>>),
+    NewStream(Reply<u64>),
+    Accept(u64, Vec<f32>, Reply<String>),
+    Finalize(u64, Reply<String>),
+    Close(u64),
+}
+
+struct Remote {
+    tx: std::sync::mpsc::Sender<Req>,
+    thread: Option<std::thread::JoinHandle<()>>,
+}
+
+fn gone() -> BackendError {
+    BackendError::Inference("the inference thread stopped".into())
+}
+
+impl Remote {
+    fn call<T>(&self, f: impl FnOnce(Reply<T>) -> Req) -> Result<T, BackendError> {
+        let (rtx, rrx) = std::sync::mpsc::channel();
+        self.tx.send(f(rtx)).map_err(|_| gone())?;
+        rrx.recv().map_err(|_| gone())?
+    }
+}
 
 impl Dyn {
     pub fn mock() -> Self {
-        Dyn(Box::new(MockBackend::new(false)))
+        let b = MockBackend::new(false);
+        Dyn {
+            info: b.info().clone(),
+            inner: Inner::Local(Box::new(b)),
+        }
+    }
+
+    /// Runs `build` on a new thread, which then owns the backend. A build error is returned here, not at the first decode.
+    pub fn spawn(
+        build: impl FnOnce() -> Result<Box<dyn AsrBackend>, String> + Send + 'static,
+    ) -> Result<Self, String> {
+        let (tx, rx) = std::sync::mpsc::channel::<Req>();
+        let (ready_tx, ready_rx) = std::sync::mpsc::channel();
+        let thread = std::thread::Builder::new()
+            .name("tingmix-backend".into())
+            .spawn(move || {
+                let mut backend = match build() {
+                    Ok(b) => b,
+                    Err(e) => return drop(ready_tx.send(Err(e))),
+                };
+                let _ = ready_tx.send(Ok(backend.info().clone()));
+                let mut streams: HashMap<u64, Box<dyn AsrStream>> = HashMap::new();
+                let mut next = 0u64;
+                while let Ok(req) = rx.recv() {
+                    match req {
+                        Req::Batch(wavs, r) => {
+                            let refs: Vec<&[f32]> = wavs.iter().map(Vec::as_slice).collect();
+                            let _ = r.send(backend.transcribe_batch(&refs));
+                        }
+                        Req::NewStream(r) => {
+                            let _ = r.send(backend.new_stream().map(|s| {
+                                next += 1;
+                                streams.insert(next, s);
+                                next
+                            }));
+                        }
+                        Req::Accept(id, pcm, r) => {
+                            let _ = r.send(
+                                streams
+                                    .get_mut(&id)
+                                    .ok_or_else(gone)
+                                    .and_then(|s| s.accept(&pcm)),
+                            );
+                        }
+                        Req::Finalize(id, r) => {
+                            let _ = r.send(
+                                streams
+                                    .get_mut(&id)
+                                    .ok_or_else(gone)
+                                    .and_then(|s| s.finalize()),
+                            );
+                        }
+                        Req::Close(id) => drop(streams.remove(&id)),
+                    }
+                }
+            })
+            .map_err(|e| e.to_string())?;
+        match ready_rx.recv() {
+            Ok(Ok(info)) => Ok(Dyn {
+                info,
+                inner: Inner::Remote(Remote {
+                    tx,
+                    thread: Some(thread),
+                }),
+            }),
+            Ok(Err(e)) => {
+                let _ = thread.join();
+                Err(e)
+            }
+            Err(_) => Err("the backend thread died while loading".into()),
+        }
+    }
+}
+
+impl Drop for Dyn {
+    fn drop(&mut self) {
+        if let Inner::Remote(r) = &mut self.inner {
+            let (dead, _) = std::sync::mpsc::channel();
+            drop(std::mem::replace(&mut r.tx, dead)); // closes the request channel, ending the thread's loop
+            if let Some(t) = r.thread.take() {
+                let _ = t.join();
+            }
+        }
+    }
+}
+
+struct RemoteStream {
+    tx: std::sync::mpsc::Sender<Req>,
+    id: u64,
+}
+
+impl AsrStream for RemoteStream {
+    fn accept(&mut self, pcm: &[f32]) -> Result<String, BackendError> {
+        let (rtx, rrx) = std::sync::mpsc::channel();
+        self.tx
+            .send(Req::Accept(self.id, pcm.to_vec(), rtx))
+            .map_err(|_| gone())?;
+        rrx.recv().map_err(|_| gone())?
+    }
+    fn finalize(&mut self) -> Result<String, BackendError> {
+        let (rtx, rrx) = std::sync::mpsc::channel();
+        self.tx
+            .send(Req::Finalize(self.id, rtx))
+            .map_err(|_| gone())?;
+        rrx.recv().map_err(|_| gone())?
+    }
+}
+
+impl Drop for RemoteStream {
+    fn drop(&mut self) {
+        let _ = self.tx.send(Req::Close(self.id));
     }
 }
 
 impl AsrBackend for Dyn {
     fn info(&self) -> &BackendInfo {
-        self.0.info()
+        &self.info
     }
     fn transcribe_batch(&mut self, wavs: &[&[f32]]) -> Result<Vec<String>, BackendError> {
-        self.0.transcribe_batch(wavs)
+        match &mut self.inner {
+            Inner::Local(b) => b.transcribe_batch(wavs),
+            Inner::Remote(r) => {
+                r.call(|t| Req::Batch(wavs.iter().map(|w| w.to_vec()).collect(), t))
+            }
+        }
     }
     fn new_stream(&mut self) -> Result<Box<dyn AsrStream>, BackendError> {
-        self.0.new_stream()
+        match &mut self.inner {
+            Inner::Local(b) => b.new_stream(),
+            Inner::Remote(r) => {
+                let id = r.call(Req::NewStream)?;
+                Ok(Box::new(RemoteStream {
+                    tx: r.tx.clone(),
+                    id,
+                }))
+            }
+        }
     }
 }
 
@@ -241,7 +403,8 @@ pub fn resolve(models: &Models, experimental_ok: bool, rt: &Runtimes) -> Result<
         });
     };
     let model = models.reg()?.open_model(&id).map_err(|e| e.to_string())?;
-    let backend = build(&model, &backend).map_err(|e| format!("could not load {id}: {e}"))?;
+    let backend = Dyn::spawn(move || build(&model, &backend))
+        .map_err(|e| format!("could not load {id}: {e}"))?;
     Ok(Resolved {
         backend,
         label: i.label,
@@ -265,7 +428,7 @@ fn component(
 }
 
 /// Construct the backend for an installed version. The ONNX Runtime library must already be set (`start-up`).
-pub fn build(model: &InstalledModel, backend: &str) -> Result<Dyn, String> {
+pub fn build(model: &InstalledModel, backend: &str) -> Result<Box<dyn AsrBackend>, String> {
     match backend {
         ONNX => {
             let graph = model
@@ -290,18 +453,21 @@ pub fn build(model: &InstalledModel, backend: &str) -> Result<Dyn, String> {
                 decode,
             )
             .map_err(|e| e.to_string())?;
-            Ok(Dyn(Box::new(b)))
+            Ok(Box::new(b))
         }
         other => Err(format!("backend {other} is not available in this build")),
     }
 }
 
-fn onnx_backend(graph: &std::path::Path, units_json: &std::path::Path) -> Result<Dyn, String> {
+fn onnx_backend(
+    graph: &std::path::Path,
+    units_json: &std::path::Path,
+) -> Result<Box<dyn AsrBackend>, String> {
     let vocab =
         tingmix_decoder::Vocab::from_units_json(units_json, true).map_err(|e| e.to_string())?;
     let decode: tingmix_runtime_onnx::TokenDecoder = Arc::new(move |ids| vocab.decode(ids));
     let b = tingmix_runtime_onnx::OnnxSmall::load(graph, 1, decode).map_err(|e| e.to_string())?;
-    Ok(Dyn(Box::new(b)))
+    Ok(Box::new(b))
 }
 
 // ---- compatibility probe ------------------------------------------------------------------------------------------
@@ -309,7 +475,7 @@ fn onnx_backend(graph: &std::path::Path, units_json: &std::path::Path) -> Result
 struct AppProbe<'a> {
     backend: &'static str,
     rt: &'a Runtimes,
-    loaded: Option<(String, Dyn)>,
+    loaded: Option<(String, Box<dyn AsrBackend>)>,
 }
 
 impl ProbeTarget for AppProbe<'_> {
@@ -387,7 +553,11 @@ fn probe_mlx(
     fx: &ProbeFixture,
 ) -> Option<Result<tingmix_models::probe::ProbeRecord, String>> {
     use tingmix_runtime_mlx::{probe::MlxProbeTarget, Dtype};
-    Some(match MlxProbeTarget::sibling_worker() {
+    // TINGMIX_MLX_WORKER overrides the sibling lookup (tests, development)
+    let worker = std::env::var_os("TINGMIX_MLX_WORKER")
+        .map(|p| Ok(p.into()))
+        .unwrap_or_else(MlxProbeTarget::sibling_worker);
+    Some(match worker {
         Ok(exe) => run_probe(
             root,
             &mut MlxProbeTarget::new(exe, Dtype::F32, true),
@@ -475,6 +645,60 @@ mod tests {
             std::env::temp_dir().join(format!("tingmix-backends-{tag}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         (Models::open(dir.join("models")), dir)
+    }
+
+    /// Like MLX: fails when used on a thread other than the one that built it.
+    struct ThreadBound {
+        info: BackendInfo,
+        born: std::thread::ThreadId,
+    }
+
+    impl ThreadBound {
+        fn check(&self) -> Result<(), BackendError> {
+            (std::thread::current().id() == self.born)
+                .then_some(())
+                .ok_or(BackendError::Inference("wrong thread".into()))
+        }
+    }
+
+    impl AsrBackend for ThreadBound {
+        fn info(&self) -> &BackendInfo {
+            &self.info
+        }
+        fn transcribe_batch(&mut self, wavs: &[&[f32]]) -> Result<Vec<String>, BackendError> {
+            self.check()?;
+            Ok(wavs.iter().map(|w| w.len().to_string()).collect())
+        }
+        fn new_stream(&mut self) -> Result<Box<dyn AsrStream>, BackendError> {
+            self.check()?;
+            MockBackend::new(true).new_stream()
+        }
+    }
+
+    #[test]
+    fn spawned_backend_stays_on_its_own_thread_and_load_errors_surface_at_spawn() {
+        let build = || {
+            let b = MockBackend::new(true);
+            Ok(Box::new(ThreadBound {
+                info: b.info().clone(),
+                born: std::thread::current().id(),
+            }) as Box<dyn AsrBackend>)
+        };
+        let mut d = Dyn::spawn(build).unwrap();
+        assert!(d.info().streaming_native);
+        assert_eq!(d.transcribe_batch(&[&[0.0; 5]]).unwrap(), ["5"]);
+        // moved to another thread (as SessionWorker does): still served by the owner thread
+        let mut stream_text = std::thread::spawn(move || {
+            assert_eq!(d.transcribe_batch(&[&[0.0; 7]]).unwrap(), ["7"]);
+            let mut s = d.new_stream().unwrap();
+            s.accept(&[0.0; 16_000]).unwrap()
+        })
+        .join()
+        .unwrap();
+        stream_text.truncate(2);
+        assert_eq!(stream_text, "w1");
+        let err = Dyn::spawn(|| Err("no such model".into())).err().unwrap();
+        assert_eq!(err, "no such model");
     }
 
     #[test]

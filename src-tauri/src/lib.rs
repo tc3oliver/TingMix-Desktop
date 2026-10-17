@@ -3,6 +3,8 @@
 mod backends;
 mod commands;
 mod dto;
+#[cfg(test)]
+mod e2e;
 mod files;
 mod live;
 mod models;
