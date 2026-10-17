@@ -22,7 +22,8 @@ fn root() -> PathBuf {
 fn audio(seconds: usize) -> Vec<f32> {
     let mut all = Vec::new();
     for f in ["mix_29s", "zh_16s", "en_08s", "zh_08s"].iter().cycle() {
-        let mut r = hound::WavReader::open(root().join(format!("tests/fixtures/audio/{f}.wav"))).unwrap();
+        let mut r =
+            hound::WavReader::open(root().join(format!("tests/fixtures/audio/{f}.wav"))).unwrap();
         all.extend(r.samples::<i16>().map(|s| f32::from(s.unwrap()) / 32768.0));
         if all.len() >= seconds * 16_000 {
             break;
@@ -36,7 +37,11 @@ fn peak_rss_mb() -> f64 {
     let mut u: libc::rusage = unsafe { std::mem::zeroed() };
     unsafe { libc::getrusage(libc::RUSAGE_SELF, &mut u) };
     // macOS reports bytes, Linux kilobytes
-    let bytes = if cfg!(target_os = "macos") { u.ru_maxrss as f64 } else { u.ru_maxrss as f64 * 1024.0 };
+    let bytes = if cfg!(target_os = "macos") {
+        u.ru_maxrss as f64
+    } else {
+        u.ru_maxrss as f64 * 1024.0
+    };
     bytes / 1e6
 }
 
@@ -81,23 +86,44 @@ fn single(model: &Path, threads: usize, chunk_ms: usize, seconds: usize) {
 }
 
 fn sh(cmd: &str, args: &[&str]) -> String {
-    Command::new(cmd).args(args).output().map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned()).unwrap_or_default()
+    Command::new(cmd)
+        .args(args)
+        .output()
+        .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
+        .unwrap_or_default()
 }
 
 fn main() {
     let a: Vec<String> = std::env::args().collect();
     if a.get(1).map(String::as_str) == Some("--single") {
-        single(Path::new(&a[2]), a[3].parse().unwrap(), a[4].parse().unwrap(), a[5].parse().unwrap());
+        single(
+            Path::new(&a[2]),
+            a[3].parse().unwrap(),
+            a[4].parse().unwrap(),
+            a[5].parse().unwrap(),
+        );
         return;
     }
     let (model, out) = (&a[1], &a[2]);
-    let label = a.get(3).cloned().unwrap_or_else(|| "pipeline-only (random-init weights)".into());
+    let label = a
+        .get(3)
+        .cloned()
+        .unwrap_or_else(|| "pipeline-only (random-init weights)".into());
     let seconds: usize = a.get(4).map_or(60, |s| s.parse().unwrap());
     let exe = std::env::current_exe().unwrap();
     let mut rows = Vec::new();
     for t in THREADS {
         for c in CHUNKS_MS {
-            let o = Command::new(&exe).args(["--single", model, &t.to_string(), &c.to_string(), &seconds.to_string()]).output().unwrap();
+            let o = Command::new(&exe)
+                .args([
+                    "--single",
+                    model,
+                    &t.to_string(),
+                    &c.to_string(),
+                    &seconds.to_string(),
+                ])
+                .output()
+                .unwrap();
             assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
             let line = String::from_utf8_lossy(&o.stdout).trim().to_owned();
             println!("{line}");

@@ -1,0 +1,3 @@
+# platform	url	archive_sha256	(sha256 from the GitHub release asset digest of microsoft/onnxruntime v1.31.0; the script verifies the download against it)
+macos-arm64	https://github.com/microsoft/onnxruntime/releases/download/v1.31.0/onnxruntime-osx-arm64-1.31.0.tgz	1031b36dd3bdaa8d976a6130d9cf2a05e9be320b93ae804f8427b91dc3432afc
+windows-x64	https://github.com/microsoft/onnxruntime/releases/download/v1.31.0/onnxruntime-win-x64-1.31.0.zip	3958d8a44984160692c1b4ffd0de3cb48f8c39f9d34bb31e433db06e30b82195

@@ -14,3 +14,4 @@ __pycache__/
 experiments/**/out/
 !tests/fixtures/**/*.npy
 tools/**/out/
+vendor/

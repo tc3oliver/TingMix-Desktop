@@ -1,4 +1,5 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 use std::sync::{Arc, Mutex};
 
 use ort::session::Session;
@@ -17,6 +18,39 @@ pub enum Error {
 
 fn ort_err(e: impl std::fmt::Display) -> Error {
     Error::Ort(e.to_string())
+}
+
+static LIBRARY: OnceLock<PathBuf> = OnceLock::new();
+
+/// Where to load the ONNX Runtime shared library from. Only used by builds with the `load-dynamic`
+/// feature (release bundles); call it once before the first model load. Fallbacks, in order:
+/// `TINGMIX_ORT_DYLIB`, `ORT_DYLIB_PATH`. Ignored by `download-binaries` builds, which link ORT.
+pub fn set_runtime_library(path: impl Into<PathBuf>) {
+    let _ = LIBRARY.set(path.into());
+}
+
+#[cfg(feature = "load-dynamic")]
+fn environment() -> Result<ort::environment::Environment, Error> {
+    let path = LIBRARY
+        .get()
+        .cloned()
+        .or_else(|| ["TINGMIX_ORT_DYLIB", "ORT_DYLIB_PATH"].iter().find_map(|k| std::env::var_os(k).filter(|v| !v.is_empty()).map(PathBuf::from)))
+        .ok_or_else(|| Error::Ort("no ONNX Runtime library configured: call set_runtime_library or set TINGMIX_ORT_DYLIB".into()))?;
+    if !path.is_absolute() {
+        return Err(Error::Ort(format!(
+            "ONNX Runtime library path must be absolute: {}",
+            path.display()
+        )));
+    }
+    ort::init_from(&path)
+        .map_err(|e| Error::Ort(e.to_string()))?
+        .build()
+        .map_err(ort_err)
+}
+
+#[cfg(not(feature = "load-dynamic"))]
+fn environment() -> Result<ort::environment::Environment, Error> {
+    ort::init().build().map_err(ort_err)
 }
 
 /// Streaming state carried between steps: last normalized mel frame, last conv1 frame, GRU hidden.
@@ -39,7 +73,7 @@ pub struct StepModel {
 impl StepModel {
     /// `intra_threads`: ORT intra-op thread count (the whole inference runs on the caller's thread otherwise).
     pub fn load(path: &Path, intra_threads: usize) -> Result<Self, Error> {
-        let env = ort::init().build().map_err(ort_err)?;
+        let env = environment()?;
         let session = Session::builder(&env)
             .map_err(ort_err)?
             .with_intra_threads(intra_threads)
