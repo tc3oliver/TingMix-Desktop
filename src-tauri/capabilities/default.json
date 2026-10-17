@@ -22,6 +22,14 @@
     "allow-history-load",
     "allow-history-delete",
     "allow-diagnostics",
-    "allow-models-overview"
+    "allow-models-overview",
+    "allow-models-import",
+    "allow-models-begin-install",
+    "allow-models-install",
+    "allow-models-cancel",
+    "allow-models-activate",
+    "allow-models-rollback",
+    "allow-models-remove",
+    "allow-models-verify"
   ]
 }

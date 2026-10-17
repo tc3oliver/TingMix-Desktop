@@ -9,6 +9,7 @@ use tauri_plugin_dialog::DialogExt;
 use crate::dto::*;
 use crate::files;
 use crate::live::{Live, Persist, Sink};
+use crate::models::{ModelsOverview, PendingInstall};
 use crate::state::{AppState, Job};
 
 pub const LIVE_EVENT: &str = "tingmix://live";
@@ -385,10 +386,99 @@ pub async fn diagnostics(state: State<'_, AppState>) -> Result<Diagnostics, Stri
     })
 }
 
-#[tauri::command]
-pub async fn models_overview() -> Result<ModelsOverview, String> {
-    Ok(ModelsOverview {
-        registry_available: false,
-        note: "The model registry is not connected to this build yet. Transcription uses the mock backend, which is not ASR.".into(),
+pub const MODELS_EVENT: &str = "tingmix://models";
+
+fn models_notify(app: &AppHandle) -> crate::models::Notify {
+    let app = app.clone();
+    Arc::new(move |v| {
+        let _ = app.emit(MODELS_EVENT, v);
     })
+}
+
+#[tauri::command]
+pub async fn models_overview(state: State<'_, AppState>) -> Result<ModelsOverview, String> {
+    Ok(state.models.overview())
+}
+
+/// `kind` is `folder` or `zip`; the dialog is opened here, so the frontend never names a path.
+#[tauri::command]
+pub async fn models_import(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    kind: String,
+) -> Result<bool, String> {
+    let dialog = app.dialog().file().set_title("Choose a model package");
+    let picked = match kind.as_str() {
+        "folder" => dialog.blocking_pick_folder(),
+        "zip" => dialog
+            .add_filter("Model archive", &["zip"])
+            .blocking_pick_file(),
+        other => return Err(format!("unknown import kind {other:?}")),
+    };
+    let Some(p) = picked else { return Ok(false) };
+    let path = p.into_path().map_err(|e| e.to_string())?;
+    state
+        .models
+        .import(path, kind == "zip", models_notify(&app))
+        .map_err(|e| {
+            state.note_error(format!("model import: {e}"));
+            e
+        })?;
+    Ok(true)
+}
+
+/// Pick a signed manifest, verify its signature and return the licences to accept. Nothing is downloaded yet.
+#[tauri::command]
+pub async fn models_begin_install(
+    app: AppHandle,
+    state: State<'_, AppState>,
+) -> Result<Option<PendingInstall>, String> {
+    let picked = app
+        .dialog()
+        .file()
+        .set_title("Choose a signed model manifest")
+        .add_filter("Signed manifest", &["json"])
+        .blocking_pick_file();
+    let Some(p) = picked else { return Ok(None) };
+    let bytes = crate::models::read_manifest_file(&p.into_path().map_err(|e| e.to_string())?)?;
+    state
+        .models
+        .begin_install(&bytes, state.next_id("install"))
+        .map(Some)
+}
+
+#[tauri::command]
+pub async fn models_install(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    token: String,
+    accepted: Vec<String>,
+) -> Result<(), String> {
+    state.models.install(&token, &accepted, models_notify(&app))
+}
+
+#[tauri::command]
+pub async fn models_cancel(state: State<'_, AppState>) -> Result<(), String> {
+    state.models.cancel();
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn models_activate(state: State<'_, AppState>, id: String) -> Result<(), String> {
+    state.models.activate(&id)
+}
+
+#[tauri::command]
+pub async fn models_rollback(state: State<'_, AppState>) -> Result<String, String> {
+    state.models.rollback()
+}
+
+#[tauri::command]
+pub async fn models_remove(state: State<'_, AppState>, id: String) -> Result<(), String> {
+    state.models.remove(&id)
+}
+
+#[tauri::command]
+pub async fn models_verify(state: State<'_, AppState>, id: String) -> Result<(), String> {
+    state.models.verify(&id)
 }

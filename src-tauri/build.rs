@@ -16,6 +16,14 @@ const COMMANDS: &[&str] = &[
     "history_delete",
     "diagnostics",
     "models_overview",
+    "models_import",
+    "models_begin_install",
+    "models_install",
+    "models_cancel",
+    "models_activate",
+    "models_rollback",
+    "models_remove",
+    "models_verify",
 ];
 
 fn main() {

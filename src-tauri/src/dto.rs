@@ -170,10 +170,3 @@ pub struct Diagnostics {
     pub data_dir: String,
     pub recent_errors: Vec<String>,
 }
-
-/// The model panel's view. `registry_available` is false until `tingmix-models` is wired into the host.
-#[derive(Debug, Clone, Serialize)]
-pub struct ModelsOverview {
-    pub registry_available: bool,
-    pub note: String,
-}

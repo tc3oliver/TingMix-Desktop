@@ -11,7 +11,7 @@ name = "tingmix_app_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
-tauri-build = "=2.7.3"
+tauri-build = { version = "=2.7.3", features = [] }
 
 [dependencies]
 tauri = { version = "=2.12.4", features = ["tray-icon"] }
@@ -22,6 +22,7 @@ thiserror = "2.0.21"
 tingmix-core = { path = "../crates/tingmix-core" }
 tingmix-audio = { path = "../crates/tingmix-audio" }
 tingmix-streaming = { path = "../crates/tingmix-streaming" }
+tingmix-models = { path = "../crates/tingmix-models" }
 
 [dev-dependencies]
 hound = "3.5.1"

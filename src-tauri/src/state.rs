@@ -7,6 +7,7 @@ use tingmix_core::Reducer;
 
 use crate::dto::{FileRef, JobState, JobView};
 use crate::live::{Live, Shared};
+use crate::models::Models;
 use crate::store::Store;
 
 pub struct Job {
@@ -33,6 +34,7 @@ impl Job {
 
 pub struct AppState {
     pub store: Store,
+    pub models: Arc<Models>,
     pub live: Mutex<Option<Live>>,
     /// The latest session, kept after stop so the transcript is preserved and a reloaded window can recover it.
     pub last: Mutex<Option<Arc<Shared>>>,
@@ -44,9 +46,10 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub fn new(store: Store) -> Self {
+    pub fn new(store: Store, models: Models) -> Self {
         Self {
             store,
+            models: Arc::new(models),
             live: Mutex::default(),
             last: Mutex::default(),
             jobs: Mutex::default(),

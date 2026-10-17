@@ -446,4 +446,27 @@ mod tests {
         .unwrap();
         assert!(err.contains("denied"));
     }
+
+    /// Real microphone through the real pump, for a human or CI box with an input device:
+    /// `cargo test -p tingmix-app -- --ignored mic_smoke --nocapture`
+    #[test]
+    #[ignore = "needs a microphone and OS permission"]
+    fn mic_smoke() {
+        let sink: Sink = Arc::new(|_| {});
+        let persist: Persist = Arc::new(|_, _| {});
+        let mut live =
+            Live::start_mic("live-smoke".into(), None, sink, persist).expect("open microphone");
+        std::thread::sleep(Duration::from_secs(3));
+        live.stop();
+        let st = live.shared.status();
+        println!(
+            "device {:?}: {} samples, level {:.1} dBFS, state {:?}",
+            st.device, st.samples_in, st.level_db, st.state
+        );
+        assert!(
+            st.samples_in > 16_000,
+            "microphone delivered {} samples",
+            st.samples_in
+        );
+    }
 }

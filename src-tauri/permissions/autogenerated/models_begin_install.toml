@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-models-begin-install"
+description = "Enables the models_begin_install command without any pre-configured scope."
+commands.allow = ["models_begin_install"]
+
+[[permission]]
+identifier = "deny-models-begin-install"
+description = "Denies the models_begin_install command without any pre-configured scope."
+commands.deny = ["models_begin_install"]

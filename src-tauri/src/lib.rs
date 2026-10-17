@@ -4,6 +4,7 @@ mod commands;
 mod dto;
 mod files;
 mod live;
+mod models;
 mod state;
 mod store;
 
@@ -34,7 +35,8 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let store = Store::new(app.path().app_config_dir()?, app.path().app_data_dir()?);
-            app.manage(AppState::new(store));
+            let models = models::Models::open(app.path().app_data_dir()?.join("models"));
+            app.manage(AppState::new(store, models));
 
             let menu = Menu::with_items(
                 app,
@@ -118,6 +120,14 @@ pub fn run() {
             commands::history_delete,
             commands::diagnostics,
             commands::models_overview,
+            commands::models_import,
+            commands::models_begin_install,
+            commands::models_install,
+            commands::models_cancel,
+            commands::models_activate,
+            commands::models_rollback,
+            commands::models_remove,
+            commands::models_verify,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");
