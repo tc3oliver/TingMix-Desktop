@@ -1,0 +1,14 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.14, pytest-9.1.1, pluggy-1.7.0 -- <repo>/experiments/audit/.venv/bin/python
+rootdir: <scratch>/tingmix-audit/tingmix
+configfile: pyproject.toml
+plugins: anyio-4.15.1
+collecting ... collected 5 items
+
+../../../../../scratch/tingmix-audit/tingmix/tests/test_small.py::test_logmel_frames PASSED [ 20%]
+../../../../../scratch/tingmix-audit/tingmix/tests/test_small.py::test_stream_equals_offline[160] PASSED [ 40%]
+../../../../../scratch/tingmix-audit/tingmix/tests/test_small.py::test_stream_equals_offline[777] PASSED [ 60%]
+../../../../../scratch/tingmix-audit/tingmix/tests/test_small.py::test_stream_equals_offline[4000] PASSED [ 80%]
+../../../../../scratch/tingmix-audit/tingmix/tests/test_small.py::test_session_native_path PASSED [100%]
+
+============================== 5 passed in 0.52s ===============================

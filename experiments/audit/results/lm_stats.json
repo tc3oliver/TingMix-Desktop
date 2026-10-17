@@ -1,0 +1,33 @@
+{
+ "file": "lmCN_cv_parl_ascend_ntuml.charlm.json.gz",
+ "sha256": "c8251c39fd003df0527f074287acd5094f9da476c3bcd0a5eb86a5d6d9cc5a84",
+ "gz_bytes": 113932911,
+ "json_bytes": 698197123,
+ "format": "eg2-charlm-kn/1",
+ "order": 5,
+ "D": 0.75,
+ "special_codepoints": [
+  2,
+  3,
+  4
+ ],
+ "entries_per_order": [
+  4595,
+  561669,
+  3193287,
+  7541286,
+  11317606
+ ],
+ "total_entries": 22618443,
+ "unigram_vocab": 4595,
+ "count_max_per_order": [
+  2729,
+  1737,
+  1286,
+  906,
+  28087
+ ],
+ "count_values_all_int": true,
+ "load_seconds": 15.4,
+ "python_peak_rss_mb": 5974.0
+}

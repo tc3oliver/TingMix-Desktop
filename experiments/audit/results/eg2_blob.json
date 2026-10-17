@@ -1,0 +1,20 @@
+{
+ "path": "$HF_HOME/hub/models--google--embeddinggemma-2/snapshots/914f7f89142e33e77833254d9c9b90c3cef7303b/model.safetensors",
+ "bytes": 1488915288,
+ "sha256": "197a32965d4b1105faf060417baa899e193fb73cd401f42ec9295234d5553d79",
+ "sha256_matches_hub_lfs_oid": true,
+ "header_bytes": 171296,
+ "data_start": 171304,
+ "audio_tower_byte_range_in_data": [
+  0,
+  609650176
+ ],
+ "audio_tower_bytes": 609650176,
+ "audio_tower_tensor_bytes_sum": 609650176,
+ "other_tensors_overlapping_range": [],
+ "n_clip_scalars": 480,
+ "clip_all_finite": true,
+ "clip_min": -212.0,
+ "clip_max": 211.0,
+ "clip_abs_min_nonzero": 5.78125
+}

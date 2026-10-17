@@ -1,0 +1,13 @@
+Raw outputs of experiments/audit/*.py, generated 2026-10-17 on Mac Studio (Apple M4 Max, 64 GB), macOS 27.0, Python 3.12, torch 2.9.1,
+transformers 5.19.0 (uv.lock). Run from experiments/audit with HF_HOME=$HF_HOME:
+
+  uv sync
+  uv run python st_headers.py                      -> header_*.json   (HTTP range reads of the safetensors headers, no weights)
+  uv run python gemma4_shapes.py                   -> gemma4_shapes.json (random weights from pinned config; real header comparison)
+  uv run python eg2_blob_check.py                  -> eg2_blob.json   (downloads google/embeddinggemma-2 @ 914f7f8 model.safetensors, 1,488,915,288 bytes,
+                                                      sha256 197a32965d4b1105faf060417baa899e193fb73cd401f42ec9295234d5553d79)
+  uv run python lm_stats.py <lmCN_cv_parl_ascend_ntuml.charlm.json.gz>   -> lm_stats.json (sha256 c8251c39fd003df0527f074287acd5094f9da476c3bcd0a5eb86a5d6d9cc5a84)
+  uv run python small_stream_audit.py              -> small_stream_audit.json (random weights; two FAIL lines are upstream defects, not script errors)
+  uv run pytest -p no:cacheprovider -v <tingmix clone>/tests/test_small.py   -> upstream_test_small.txt
+
+Source pins: docs/research/PINNED.md. The scripts write to out/ (gitignored); the files here are copies of the small ones.

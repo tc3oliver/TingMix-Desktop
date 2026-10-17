@@ -1,0 +1,260 @@
+{
+ "torch": "2.9.1",
+ "checks": {
+  "frame_count_stream_equals_closed_form": {
+   "pass": true,
+   "checked": 2607
+  },
+  "frame_count_offline_equals_closed_form_when_it_runs": {
+   "pass": true,
+   "mismatches": []
+  },
+  "offline_forward_runs_for_every_length_ge_1": {
+   "pass": false,
+   "crashing_lengths": "991 lengths, max 991",
+   "error": "RuntimeError"
+  },
+  "stream_equals_offline_prod_size_all_chunkings": {
+   "pass": true,
+   "worst_diff": 1.9073486328125e-06
+  },
+  "sensitivity_gru_reset_is_detected": {
+   "pass": true,
+   "max_abs_diff_without_carry": 0.05512428283691406
+  },
+  "offline_prefix_stable": {
+   "pass": true,
+   "prefix_frames": 74,
+   "max_abs_diff": 0.0
+  },
+  "batch_padding_invariant": {
+   "pass": true,
+   "diffs": [
+    1.9073486328125e-06,
+    1.9073486328125e-06
+   ]
+  },
+  "finalize_drops_tail_up_to_40ms": {
+   "pass": true,
+   "max_uncovered_samples": 639,
+   "ms": 39.9375
+  },
+  "min_audio_for_first_frame": {
+   "pass": true,
+   "samples": 992
+  },
+  "ctc_collapse_across_chunks": {
+   "pass": true,
+   "boundaries_with_equal_ids": 423,
+   "note": "random weights give mostly non-blank repeats; real blank/repeat behaviour is unmeasured"
+  },
+  "stream_logp_retained_unbounded": {
+   "pass": true,
+   "mb_per_hour": 1809,
+   "note": "Stream.logp keeps every frame (diagnostics); a port must not copy this"
+  },
+  "transcribe_batch_survives_audio_shorter_than_992_samples": {
+   "pass": false,
+   "results": {
+    "0": "RuntimeError: Calculated padded input size per channel: (1). Kernel size: (3). Kernel size can",
+    "100": "RuntimeError: Calculated padded input size per channel: (1). Kernel size: (3). Kernel size can",
+    "511": "RuntimeError: Calculated padded input size per channel: (1). Kernel size: (3). Kernel size can",
+    "512": "RuntimeError: Calculated padded input size per channel: (1). Kernel size: (3). Kernel size can",
+    "700": "RuntimeError: Calculated padded input size per channel: (1). Kernel size: (3). Kernel size can",
+    "991": "RuntimeError: Calculated padded input size per channel: (1). Kernel size: (3). Kernel size can",
+    "992": "ok",
+    "1119": "ok",
+    "1120": "ok",
+    "4000": "ok"
+   }
+  },
+  "stft_window_centred_in_512_frame": {
+   "pass": true,
+   "window_offset": 56,
+   "note": "frame t = samples [t*160, t*160+512); Hann(400, periodic) multiplies samples [t*160+56, t*160+456)"
+  }
+ },
+ "offline_forward_crash_samples": {
+  "count": 991,
+  "min": 1,
+  "max": 991,
+  "error": "RuntimeError"
+ },
+ "stream_vs_offline_prod_size": {
+  "1": {
+   "frames": [
+    49,
+    49
+   ],
+   "max_abs_diff": 1.9073486328125e-06,
+   "argmax_equal": true
+  },
+  "7": {
+   "frames": [
+    174,
+    174
+   ],
+   "max_abs_diff": 1.9073486328125e-06,
+   "argmax_equal": true
+  },
+  "159": {
+   "frames": [
+    174,
+    174
+   ],
+   "max_abs_diff": 1.9073486328125e-06,
+   "argmax_equal": true
+  },
+  "160": {
+   "frames": [
+    174,
+    174
+   ],
+   "max_abs_diff": 1.9073486328125e-06,
+   "argmax_equal": true
+  },
+  "161": {
+   "frames": [
+    174,
+    174
+   ],
+   "max_abs_diff": 1.9073486328125e-06,
+   "argmax_equal": true
+  },
+  "511": {
+   "frames": [
+    174,
+    174
+   ],
+   "max_abs_diff": 1.9073486328125e-06,
+   "argmax_equal": true
+  },
+  "512": {
+   "frames": [
+    174,
+    174
+   ],
+   "max_abs_diff": 1.9073486328125e-06,
+   "argmax_equal": true
+  },
+  "513": {
+   "frames": [
+    174,
+    174
+   ],
+   "max_abs_diff": 1.9073486328125e-06,
+   "argmax_equal": true
+  },
+  "639": {
+   "frames": [
+    174,
+    174
+   ],
+   "max_abs_diff": 1.9073486328125e-06,
+   "argmax_equal": true
+  },
+  "640": {
+   "frames": [
+    174,
+    174
+   ],
+   "max_abs_diff": 1.9073486328125e-06,
+   "argmax_equal": true
+  },
+  "641": {
+   "frames": [
+    174,
+    174
+   ],
+   "max_abs_diff": 1.9073486328125e-06,
+   "argmax_equal": true
+  },
+  "1600": {
+   "frames": [
+    174,
+    174
+   ],
+   "max_abs_diff": 1.9073486328125e-06,
+   "argmax_equal": true
+  },
+  "16000": {
+   "frames": [
+    174,
+    174
+   ],
+   "max_abs_diff": 0.0,
+   "argmax_equal": true
+  },
+  "random": {
+   "frames": [
+    174,
+    174
+   ],
+   "max_abs_diff": 1.9073486328125e-06,
+   "argmax_equal": true
+  },
+  "whole": {
+   "frames": [
+    174,
+    174
+   ],
+   "max_abs_diff": 0.0,
+   "argmax_equal": true
+  }
+ },
+ "tail_uncovered_samples": {
+  "max": 639,
+  "max_ms": 39.9375,
+  "min": 0
+ },
+ "first_output_after_samples": 992,
+ "stream_growth": {
+  "frames_kept": 174,
+  "bytes_per_frame": 20100,
+  "mb_per_hour_at_25fps": 1809.0
+ },
+ "decode_us_per_accept": [
+  [
+   10,
+   4.477920010685921
+  ],
+  [
+   60,
+   25.657920632511377
+  ],
+  [
+   300,
+   135.80249855294824
+  ]
+ ],
+ "transcribe_batch_short_single": {
+  "0": "RuntimeError: Calculated padded input size per channel: (1). Kernel size: (3). Kernel size can",
+  "100": "RuntimeError: Calculated padded input size per channel: (1). Kernel size: (3). Kernel size can",
+  "511": "RuntimeError: Calculated padded input size per channel: (1). Kernel size: (3). Kernel size can",
+  "512": "RuntimeError: Calculated padded input size per channel: (1). Kernel size: (3). Kernel size can",
+  "700": "RuntimeError: Calculated padded input size per channel: (1). Kernel size: (3). Kernel size can",
+  "991": "RuntimeError: Calculated padded input size per channel: (1). Kernel size: (3). Kernel size can",
+  "992": "ok",
+  "1119": "ok",
+  "1120": "ok",
+  "4000": "ok"
+ },
+ "transcribe_batch_short_mixed": "ok",
+ "frontend": {
+  "window": "torch.hann_window(400) periodic",
+  "n_fft": 512,
+  "hop": 160,
+  "center": false,
+  "power": "abs^2",
+  "floor": 1e-06,
+  "mel_scale": "HTK (docstring says Slaney-style)",
+  "fb_shape": [
+   80,
+   257
+  ],
+  "fb_row_sum_min_max": [
+   0.0272810161113739,
+   0.038931507617235184
+  ]
+ }
+}

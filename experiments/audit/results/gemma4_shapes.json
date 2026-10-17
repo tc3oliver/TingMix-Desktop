@@ -1,0 +1,265 @@
+{
+ "torch": "2.9.1",
+ "class": "Gemma4AudioModel",
+ "params": 304824608,
+ "buffers_persistent": 480,
+ "missing_in_module": [],
+ "extra_in_module": [],
+ "shape_mismatch": [],
+ "n_tensors_header": 751,
+ "shape_traces": {
+  "1.0": {
+   "samples": 16000,
+   "input_features": [
+    1,
+    99,
+    128
+   ],
+   "mask_true": 99,
+   "last_hidden_state": [
+    1,
+    25,
+    1536
+   ],
+   "out_mask_true": 25,
+   "stages": []
+  },
+  "3.0": {
+   "samples": 48000,
+   "input_features": [
+    1,
+    299,
+    128
+   ],
+   "mask_true": 299,
+   "last_hidden_state": [
+    1,
+    75,
+    1536
+   ],
+   "out_mask_true": 75,
+   "stages": []
+  },
+  "29.5": {
+   "samples": 472000,
+   "input_features": [
+    1,
+    2950,
+    128
+   ],
+   "mask_true": 2949,
+   "last_hidden_state": [
+    1,
+    738,
+    1536
+   ],
+   "out_mask_true": 738,
+   "stages": [
+    [
+     "subsample_conv_projection.layer0",
+     [
+      [
+       1,
+       1,
+       2950,
+       128
+      ],
+      [
+       1,
+       2950
+      ]
+     ],
+     [
+      1,
+      128,
+      1475,
+      64
+     ]
+    ],
+    [
+     "subsample_conv_projection.layer1",
+     [
+      [
+       1,
+       128,
+       1475,
+       64
+      ],
+      [
+       1,
+       1475
+      ]
+     ],
+     [
+      1,
+      32,
+      738,
+      32
+     ]
+    ],
+    [
+     "subsample_conv_projection.input_proj_linear",
+     [
+      [
+       1,
+       738,
+       1024
+      ]
+     ],
+     [
+      1,
+      738,
+      1024
+     ]
+    ],
+    [
+     "layers.0.feed_forward1",
+     [
+      [
+       1,
+       738,
+       1024
+      ]
+     ],
+     [
+      1,
+      738,
+      1024
+     ]
+    ],
+    [
+     "layers.0.self_attn",
+     [],
+     [
+      1,
+      738,
+      1024
+     ]
+    ],
+    [
+     "layers.0.lconv1d",
+     [
+      [
+       1,
+       738,
+       1024
+      ]
+     ],
+     [
+      1,
+      738,
+      1024
+     ]
+    ],
+    [
+     "layers.0.feed_forward2",
+     [
+      [
+       1,
+       738,
+       1024
+      ]
+     ],
+     [
+      1,
+      738,
+      1024
+     ]
+    ],
+    [
+     "layers.0",
+     [
+      [
+       1,
+       738,
+       1024
+      ]
+     ],
+     [
+      1,
+      738,
+      1024
+     ]
+    ],
+    [
+     "layers.11",
+     [
+      [
+       1,
+       738,
+       1024
+      ]
+     ],
+     [
+      1,
+      738,
+      1024
+     ]
+    ],
+    [
+     "output_proj",
+     [
+      [
+       1,
+       738,
+       1024
+      ]
+     ],
+     [
+      1,
+      738,
+      1536
+     ]
+    ]
+   ]
+  },
+  "30.0": {
+   "samples": 480000,
+   "input_features": [
+    1,
+    2999,
+    128
+   ],
+   "mask_true": 2999,
+   "last_hidden_state": [
+    1,
+    750,
+    1536
+   ],
+   "out_mask_true": 750,
+   "stages": []
+  },
+  "35.0": {
+   "samples": 560000,
+   "input_features": [
+    1,
+    2999,
+    128
+   ],
+   "mask_true": 2999,
+   "last_hidden_state": [
+    1,
+    750,
+    1536
+   ],
+   "out_mask_true": 750,
+   "stages": []
+  }
+ },
+ "frame_formula_violations": [],
+ "perturb_mel_frame_to_output_frames": {
+  "200": [
+   50,
+   99
+  ],
+  "201": [
+   50,
+   99
+  ],
+  "203": [
+   50,
+   99
+  ]
+ },
+ "output_frames_for_400_mel": 100
+}
