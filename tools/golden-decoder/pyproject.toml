@@ -1,0 +1,21 @@
+[project]
+name = "golden-decoder"
+version = "0.1.0"
+description = "Generates tests/fixtures/decoder from the embed2asr reference decoder"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "embed2asr @ git+https://github.com/tc3oliver/embed2asr@b58275785501c084610b1570f1a446a31da5f933",
+    "numpy==2.3.4",
+    "torch==2.9.1",
+    "sentencepiece==0.2.1",
+]
+
+[tool.uv]
+# embed2asr lists transformers/scipy/... for its encoder; the decoder modules import only numpy, torch and sentencepiece
+override-dependencies = [
+    "transformers; python_version < '0'",
+    "soundfile; python_version < '0'",
+    "scipy; python_version < '0'",
+    "safetensors; python_version < '0'",
+    "huggingface_hub; python_version < '0'",
+]

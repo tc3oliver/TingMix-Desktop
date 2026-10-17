@@ -1,0 +1,14 @@
+[package]
+name = "tingmix-decoder"
+description = "CTC greedy and LM prefix beam decoding, bit-compatible with the embed2asr reference"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+# default backend of flate2 is slow on the 700 MB LM stream; zlib-rs is the fast pure-Rust one
+flate2 = { version = "=1.1.10", default-features = false, features = ["zlib-rs"] }
+serde = { version = "=1.0.229", features = ["derive"] }
+# float_roundtrip: the default parser is off by an ulp for some f64, which breaks exact fixture comparison
+serde_json = { version = "=1.0.154", features = ["float_roundtrip"] }
