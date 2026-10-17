@@ -12,6 +12,7 @@ machine during all runs.
 | `mock-2min-tail-off.json` | same command after a831f25 with `--tail-partial off` | P50/P95 1.38/2.85 s |
 | `mock-2min-live.json` | same, live policy (`SessionWorker::spawn`, tail partial on) | P50/P95 0.81/2.29 s |
 | `mlx-f32-150s-tail-off.json`, `mlx-f32-150s-tail-live.json` | real `MlxLargeBackend`, fp32 artifact, beam+LM, 150 s, 20 ms chunks | see below |
+| `onnx-small-60s.json` | TingMix-Small step graph `tools/small-export/out/prod.onnx`, 60 s, native streaming | PIPELINE ONLY: seeded random weights (no Small checkpoint exists), so text is meaningless; compute RTF 0.043, final from speech end P50 0.79 s |
 
 Mock runs characterise the harness, scheduler and queue only (the mock emits text even for silence, so its first-partial
 numbers are optimistic). The 0.8 s floor of "final from speech end" is the VAD hang (0.2 s) plus `silence_ms` (0.6 s).

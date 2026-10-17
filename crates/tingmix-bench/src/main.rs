@@ -101,6 +101,7 @@ fn real_main() -> Result<(), String> {
         noise,
         duration_s,
     );
+    #[allow(unused_mut)] // only the mlx arm adjusts it
     let mut cfg = RunCfg {
         discard_first: a.f("discard-first", 0.0)? as usize,
         chunk_ms,
