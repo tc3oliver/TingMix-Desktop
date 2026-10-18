@@ -33,6 +33,7 @@ fn audio(seconds: usize) -> Vec<f32> {
     all
 }
 
+#[cfg(unix)]
 fn peak_rss_mb() -> f64 {
     let mut u: libc::rusage = unsafe { std::mem::zeroed() };
     unsafe { libc::getrusage(libc::RUSAGE_SELF, &mut u) };
@@ -43,6 +44,29 @@ fn peak_rss_mb() -> f64 {
         u.ru_maxrss as f64 * 1024.0
     };
     bytes / 1e6
+}
+
+#[cfg(windows)]
+fn peak_rss_mb() -> f64 {
+    #[repr(C)]
+    struct Counters {
+        cb: u32,
+        page_fault_count: u32,
+        peak_working_set_size: usize,
+        rest: [usize; 7],
+    }
+    extern "system" {
+        fn GetCurrentProcess() -> isize;
+        fn K32GetProcessMemoryInfo(process: isize, counters: *mut Counters, cb: u32) -> i32;
+    }
+    let mut c = Counters {
+        cb: std::mem::size_of::<Counters>() as u32,
+        page_fault_count: 0,
+        peak_working_set_size: 0,
+        rest: [0; 7],
+    };
+    unsafe { K32GetProcessMemoryInfo(GetCurrentProcess(), &mut c, c.cb) };
+    c.peak_working_set_size as f64 / 1e6 // peak working set
 }
 
 fn pct(sorted: &[f64], p: f64) -> f64 {
@@ -93,6 +117,63 @@ fn sh(cmd: &str, args: &[&str]) -> String {
         .unwrap_or_default()
 }
 
+fn ps(script: &str) -> String {
+    sh(
+        "powershell",
+        &["-NoProfile", "-NonInteractive", "-Command", script],
+    )
+}
+
+fn sha256(path: &str) -> String {
+    if cfg!(windows) {
+        ps(&format!(
+            "(Get-FileHash -Algorithm SHA256 -LiteralPath '{path}').Hash.ToLower()"
+        ))
+    } else {
+        sh("shasum", &["-a", "256", path])
+            .split_whitespace()
+            .next()
+            .unwrap_or("")
+            .to_owned()
+    }
+}
+
+/// (cpu, logical cpus, memory bytes, os)
+fn hardware() -> (String, String, String, String) {
+    if cfg!(windows) {
+        (
+            ps("(Get-CimInstance Win32_Processor | Select-Object -First 1).Name"),
+            ps("[Environment]::ProcessorCount"),
+            ps("(Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory"),
+            ps("(Get-CimInstance Win32_OperatingSystem | ForEach-Object { $_.Caption + ' ' + $_.Version })"),
+        )
+    } else {
+        (
+            sh("sysctl", &["-n", "machdep.cpu.brand_string"]),
+            sh("sysctl", &["-n", "hw.ncpu"]),
+            sh("sysctl", &["-n", "hw.memsize"]),
+            sh("sw_vers", &["-productVersion"]),
+        )
+    }
+}
+
+/// Which ONNX Runtime the numbers came from.
+fn ort_label() -> String {
+    match std::env::var("TINGMIX_ORT_DYLIB").or_else(|_| std::env::var("ORT_DYLIB_PATH")) {
+        Ok(p) if !p.is_empty() => format!(
+            "load-dynamic: {p} ({})",
+            if cfg!(windows) {
+                ps(&format!(
+                    "(Get-Item -LiteralPath '{p}').VersionInfo.ProductVersion"
+                ))
+            } else {
+                String::new()
+            }
+        ),
+        _ => "1.31.0 (ort 2.0.0-rc.14 prebuilt, CPU EP)".into(),
+    }
+}
+
 fn main() {
     let a: Vec<String> = std::env::args().collect();
     if a.get(1).map(String::as_str) == Some("--single") {
@@ -130,14 +211,12 @@ fn main() {
             rows.push(line);
         }
     }
+    let (cpu, ncpu, mem, os) = hardware();
     let doc = format!(
-        "{{\n \"label\":{label:?},\n \"command\":{:?},\n \"model\":{model:?},\n \"model_sha256\":{:?},\n \"onnxruntime\":\"1.31.0 (ort 2.0.0-rc.14 prebuilt, CPU EP)\",\n \"hardware\":{{\"cpu\":{:?},\"logical_cpus\":{:?},\"memory_bytes\":{:?},\"os\":{:?}}},\n \"results\":[\n  {}\n ]\n}}\n",
+        "{{\n \"label\":{label:?},\n \"command\":{:?},\n \"model\":{model:?},\n \"model_sha256\":{:?},\n \"onnxruntime\":{:?},\n \"hardware\":{{\"cpu\":{cpu:?},\"logical_cpus\":{ncpu:?},\"memory_bytes\":{mem:?},\"os\":{os:?}}},\n \"results\":[\n  {}\n ]\n}}\n",
         a.join(" "),
-        sh("shasum", &["-a", "256", model]).split_whitespace().next().unwrap_or(""),
-        sh("sysctl", &["-n", "machdep.cpu.brand_string"]),
-        sh("sysctl", &["-n", "hw.ncpu"]),
-        sh("sysctl", &["-n", "hw.memsize"]),
-        sh("sw_vers", &["-productVersion"]),
+        sha256(model),
+        ort_label(),
         rows.join(",\n  ")
     );
     std::fs::write(out, doc).unwrap();
