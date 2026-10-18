@@ -14,7 +14,7 @@ describe("format", () => {
     expect(basename("C:\\Users\\me\\notes.srt")).toBe("notes.srt");
   });
   it("turns model ids into readable names", () => {
-    expect(friendlyName("tingmix-large-mlx-fp32-r75071a1")).toBe("TingMix Large MLX fp32");
-    expect(friendlyName("tingmix-small-onnx-cpu-int8")).toBe("TingMix Small ONNX CPU int8");
+    expect(friendlyName("tingmix-large-mlx-fp32-r75071a1")).toBe("TingMix Large");
+    expect(friendlyName("tingmix-small-onnx-cpu-int8")).toBe("TingMix Small");
   });
 });

@@ -14,10 +14,10 @@ describe("engine chip", () => {
   it("covers every state of the brief", () => {
     expect(engineChip(null, t)).toMatchObject({ text: "Checking engine…", tone: "neutral" });
     expect(engineChip(bs({ mock: true }), t)).toMatchObject({ text: "Demo mode", tone: "warn" });
-    expect(engineChip(bs({ mock: false, label: "tingmix-large-mlx-fp32-r75071a1 (mlx) — EXPERIMENTAL", experimental: true, loading: true }), t)).toMatchObject({ text: "Loading TingMix Large MLX fp32…", tone: "neutral" });
+    expect(engineChip(bs({ mock: false, label: "tingmix-large-mlx-fp32-r75071a1 (mlx) — EXPERIMENTAL", experimental: true, loading: true }), t)).toMatchObject({ text: "Loading TingMix Large…", tone: "neutral" });
     expect(engineChip(bs({ mock: false, error: "boom" }), t)).toMatchObject({ text: "Engine failed to load", tone: "danger", title: "boom" });
     // the experimental status is for Advanced and Diagnostics: the chip shows just the model
-    expect(engineChip(bs({ mock: false, label: "tingmix-large-mlx-fp32-r75071a1 (mlx) — EXPERIMENTAL", experimental: true }), t)).toMatchObject({ text: "TingMix Large MLX fp32", tone: "neutral" });
+    expect(engineChip(bs({ mock: false, label: "tingmix-large-mlx-fp32-r75071a1 (mlx) — EXPERIMENTAL", experimental: true }), t)).toMatchObject({ text: "TingMix Large", tone: "neutral" });
     expect(engineChip(bs({ mock: false, label: "m1 (mlx) — VALIDATED" }), t)).toMatchObject({ text: "M1", tone: "neutral" });
   });
   it("speaks Traditional Chinese when asked to", () => {

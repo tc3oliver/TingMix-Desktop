@@ -7,7 +7,7 @@ const t = translator("en");
 
 describe("labels shown to users", () => {
   it("name the model without its status word or engine", () => {
-    expect(labelText("tingmix-large-mlx-fp32-r75071a1 (mlx) — EXPERIMENTAL", t)).toBe("TingMix Large MLX fp32");
+    expect(labelText("tingmix-large-mlx-fp32-r75071a1 (mlx) — EXPERIMENTAL", t)).toBe("TingMix Large");
     expect(labelText("Mock — not ASR", t)).toBe("Demo mode");
   });
   it("show download sizes in decimal gigabytes", () => {
