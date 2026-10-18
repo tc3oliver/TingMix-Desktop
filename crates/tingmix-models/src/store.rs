@@ -140,8 +140,18 @@ impl Registry {
             .iter()
             .find(|l| l.id == license_id)
             .ok_or_else(|| Error::Invalid(format!("no licence {license_id:?} in manifest")))?;
-        let body = format!("{{\"license\":{:?},\"name\":{:?},\"url\":{:?},\"manifest\":{:?},\"accepted_unix\":{}}}\n", l.id, l.name, l.url, m.manifest().id,
-            std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0));
+        let body = serde_json::json!({
+            "license": l.id,
+            "name": l.name,
+            "url": l.url,
+            "manifest": m.manifest().id,
+            "accepted_unix": std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_secs())
+                .unwrap_or(0),
+        })
+        .to_string()
+            + "\n";
         write_atomic(
             &self
                 .root

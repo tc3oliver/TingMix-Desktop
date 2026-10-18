@@ -701,3 +701,14 @@ fn changed_licence_url_is_asked_again() {
     let changed = signed(&raw);
     assert_eq!(reg.missing_acceptances(changed.manifest()), ["model-terms"]);
 }
+
+#[test]
+fn acceptance_survives_a_url_that_needs_json_escaping() {
+    let dir = tempfile::tempdir().unwrap();
+    let reg = registry(dir.path());
+    let mut raw = manifest("v1", "http://127.0.0.1:1", 1);
+    raw.licenses[0].url = "https://example.invalid/t\u{7}\"q\\é".into();
+    let m = signed(&raw);
+    accept(&reg, &m);
+    assert!(reg.missing_acceptances(m.manifest()).is_empty());
+}
