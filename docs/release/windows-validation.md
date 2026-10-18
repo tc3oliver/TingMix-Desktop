@@ -13,6 +13,8 @@ numbers are **pipeline-only** (seeded random-init weights, no TingMix-Small chec
 | Installed app loads `onnxruntime.dll` from its install directory | NOT VERIFIED in the app: ORT is loaded lazily and no model is installed, so the dll was not loaded at start-up (see below) |
 | CPU streaming performance of a Small-shaped model | EXPERIMENTAL (random weights, this PC only; no real checkpoint, so no acceptance gate is decided) |
 | GPU execution providers | EXPERIMENTAL probe through ORT Python wheels, not through the Rust/`ort` path |
+| Real first run on Windows: published catalog -> 1.4 GB ONNX download -> verify -> activate -> probe in `tingmix-onnx-worker` -> transcribe `mix_08s` equal to the oracle (11ccbd9, release build, native) | VERIFIED (2026-10-18) |
+| NSIS installer from `pnpm bundle:windows` contains the worker sidecar and the pinned `onnxruntime.dll` | VERIFIED (installed silently per user; app GUI not launched) |
 | Windows ML catalog EPs, microphone capture, UI, signing, SmartScreen, clean-VM install | NOT DONE |
 
 ## Machine and installed toolchain
@@ -119,6 +121,31 @@ The installed `tingmix-app.exe` was started once from
   (the user's other WebView2 apps) was unchanged (19 before and after);
 - the run created `C:\Users\User\AppData\Roaming\app.tingmix.desktop` and `...\Local\app.tingmix.desktop` (app and WebView2 data).
   Uninstall: `C:\Users\User\AppData\Local\TingMix\uninstall.exe` (registry entry under HKCU); the data folders stay unless removed by hand.
+
+## Real first run on Windows (task 35, 2026-10-18)
+
+Native Windows process, release build of the `tingmix-app` lib tests at 11ccbd9 (`cargo test --release -p tingmix-app --lib --
+--ignored real_first_run`), scratch registry under `C:\Users\User\src\scratch-home` (removed afterwards), published catalog
+`https://huggingface.co/tc3oliver/TingMix-Desktop/resolve/main/catalog.json`, the windows/x86_64 entry
+`tingmix-large-onnx-fp32-r75071a1` (release-signed), the pinned Microsoft `onnxruntime.dll` through `TINGMIX_ORT_DYLIB`, and the
+`tingmix-onnx-worker.exe` probe child (`TINGMIX_ONNX_WORKER`):
+
+| Stage | Time |
+|---|---|
+| catalog fetched and signature-verified | 0.3 s |
+| 1,424,405,665 bytes downloaded, hash-verified, committed, activated, probed (about 15 MB/s on this link) | 98.9 s |
+| model + char LM loaded in the app process (CPU provider, beam search) | 7.6 s |
+| `mix_08s.wav` (8 s) transcribed | 2.7 s |
+
+Text: `我覺得這個deadline有點太趕了我們要不要先跟pn討論一下sc再決定`, identical to the oracle and to the macOS MLX result. The
+licences were accepted by the test (the user's tick). This is a file transcription; the live path, microphone and UI were not run.
+
+NSIS: `pnpm bundle:windows` (stages the worker with `tools/stage-onnx-worker.sh`, builds the NSIS installer) produced
+`TingMix_0.1.0_x64-setup.exe`, 11.43 MiB (11,986,980 bytes), unsigned. A silent per-user install (`/S`, exit 0) over the earlier
+validation install put `tingmix-onnx-worker.exe` (1.77 MB) next to `tingmix-app.exe`, and `onnxruntime\onnxruntime.dll` with
+sha256 `0c42dc4e...f4c` (equal to the pinned file, Authenticode Valid, Microsoft Corporation). Running the installed worker
+without arguments prints its usage line. The app itself was not launched this time. The PC keeps this newer install in
+`C:\Users\User\AppData\Local\TingMix`.
 
 ## What is not done and exact manual steps for the user
 

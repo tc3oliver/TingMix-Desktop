@@ -330,7 +330,7 @@ fn real_first_run_download_probe_transcribe() {
             _ => std::thread::sleep(Duration::from_millis(500)),
         }
     }
-    stamp("downloaded, verified, activated and tested on this Mac");
+    stamp("downloaded, verified, activated and tested on this computer");
 
     let info = backends::info(&models, &rt);
     assert!(!info.mock && info.usable, "{}", info.label);
