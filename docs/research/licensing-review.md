@@ -19,7 +19,12 @@ before the corresponding distribution step; the Desktop must not ship or downloa
 
 Owner decision (2026-10-18): whether TingMix-Large may be used commercially or must stay non-commercial is out of scope for this project and is
 not pursued or escalated. E1-E3 stay in this document only as recorded source facts and attribution requirements (sections 2-3); nothing below
-depends on an answer to them. The app's licence display, attribution and the no-mirror default are unchanged.
+depends on an answer to them. The app's licence display and attribution are unchanged.
+
+Owner decision (2026-10-18): the converted package (modified Google audio tower with the TingMix-Large LoRA merged, reader, vocabulary and
+LM) is redistributed by the owner on the Hugging Face repo `tc3oliver/TingMix-Desktop` so the app can download it on first run. This
+replaces the earlier no-mirror default. The repo carries the Apache-2.0 licence, a NOTICE with the "modified" statement and the Gemma
+Prohibited Use Policy link, and the data-licence facts above, with no commercial-use promise.
 
 Recommended default: the Desktop is distributed **without model weights**; models are fetched by the
 user from the original Hub repositories at pinned revisions after a licence screen (no mirrors, no offline bundles distributed
