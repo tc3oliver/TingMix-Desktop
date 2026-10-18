@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { makeI18n, translator } from "../../i18n";
 import type { BackendState, ModelOp } from "../../types/protocol";
-import { cardStatus, etaSeconds, etaText, onboardStage, pushSample } from "./onboard";
+import { cardStatus, etaSeconds, etaText, isFinishing, onboardStage, pushSample } from "./onboard";
 
 const t = translator("en");
 const tz = translator("zh-TW");
@@ -78,5 +78,20 @@ describe("download rate and time left", () => {
     expect(etaText(30, n("en"), t)).toBe("less than a minute");
     expect(etaText(190, n("en"), t)).toBe("3 minutes");
     expect(etaText(190, n("zh-TW"), tz)).toBe("3 分鐘");
+  });
+});
+
+describe("isFinishing", () => {
+  const done = op({ kind: "download", state: "done" });
+  it("spins while a finished download is not yet usable", () => {
+    expect(isFinishing(done, false, null, false)).toBe(true);
+  });
+  it("does not spin forever once the check reports a problem", () => {
+    expect(isFinishing(done, false, { state: "problem", reason: "x" }, false)).toBe(false);
+    expect(isFinishing(op({ state: "running" }), false, { state: "problem", reason: "x" }, false)).toBe(false);
+  });
+  it("is off while downloading and once usable", () => {
+    expect(isFinishing(op({ state: "running" }), false, null, true)).toBe(false);
+    expect(isFinishing(done, true, null, false)).toBe(false);
   });
 });

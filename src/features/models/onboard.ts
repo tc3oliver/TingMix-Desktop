@@ -1,6 +1,6 @@
 import type { Translate } from "../../i18n";
 import { hostCode, hostText, reasonText } from "../../i18n/host";
-import type { BackendState, ModelOp } from "../../types/protocol";
+import type { BackendState, ModelOp, SetupView } from "../../types/protocol";
 import { friendlyName } from "../../lib/format";
 
 export type Phase = "working" | "ready" | "problem";
@@ -79,4 +79,11 @@ export function etaSeconds(samples: RateSample[], total: number): number | null 
 /** "about 3 minutes" is coarse on purpose: a second-by-second countdown would be noise. */
 export function etaText(seconds: number, n: (base: string, count: number) => string, t: Translate): string {
   return seconds < 60 ? t("setup.under_minute") : n("setup.minutes", Math.round(seconds / 60));
+}
+
+/** The setup screen's "verifying and testing" step. Not while the check says the install is in a problem state: a finished
+ * install that cannot be used would otherwise show the spinner forever. */
+export function isFinishing(op: ModelOp | null, usable: boolean, view: SetupView | null, downloading: boolean): boolean {
+  if (downloading || view?.state === "problem") return false;
+  return op?.state === "running" || (op?.state === "done" && op.kind !== "probe" && !usable);
 }

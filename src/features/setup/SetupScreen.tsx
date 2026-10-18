@@ -4,7 +4,7 @@ import { hostText, reasonText } from "../../i18n/host";
 import { licenceName } from "../../lib/licence";
 import { api, errorText, onBackend, onModelOp } from "../../lib/api";
 import type { BackendState, ModelOp, SetupView } from "../../types/protocol";
-import { etaSeconds, etaText, pushSample, type RateSample } from "../models/onboard";
+import { etaSeconds, etaText, isFinishing, pushSample, type RateSample } from "../models/onboard";
 
 interface Props {
   backend: BackendState | null;
@@ -94,7 +94,7 @@ export function SetupScreen({ backend, onOpenModels, onView, first = false }: Pr
   const usable = backend?.info.usable ?? false;
   const downloading = op?.state === "running" && op.kind === "download" && !(op.bytes_total > 0 && op.bytes_done >= op.bytes_total);
   // verifying, activating and testing are one step for the user
-  const finishing = !downloading && ((op?.state === "running") || (op?.state === "done" && op.kind !== "probe" && !usable));
+  const finishing = isFinishing(op, usable, view, downloading);
   const interrupted = (op?.state === "failed" || op?.state === "cancelled") && op.kind !== "probe" ? op.state : null;
 
   let body;
