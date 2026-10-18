@@ -36,7 +36,7 @@ A selected backend that fails to load makes Start / file import fail with the er
 
 | Backend id | Crate | Status | Needs |
 |---|---|---|---|
-| `onnx-cpu` | `tingmix-runtime-onnx` (`load-dynamic`) | EXPERIMENTAL; no trained Small checkpoint exists, so no signed manifest for it yet | bundled ONNX Runtime 1.31.0; model component `.onnx` + `units.json` |
+| `onnx-cpu` | `tingmix-runtime-onnx` (`load-dynamic`) | EXPERIMENTAL. Family `tingmix-large` -> `OnnxLarge` (CPU provider, beam+LM, up to 8 threads; probed in the `tingmix-onnx-worker` child); other families -> the Small step graph (no trained checkpoint exists) | bundled ONNX Runtime 1.31.0; components `model` (`.onnx`), `tokenizer/units.json`, `lm` |
 | `mlx` | `tingmix-runtime-mlx`, cargo feature `mlx` (off by default) | EXPERIMENTAL; slot only | Apple silicon; `model` (fp32 safetensors), `tokenizer/units.json`, `lm` components |
 
 ### MLX Large in the bundle (`tools/bundle-mlx.sh [debug|release]`)
@@ -126,6 +126,25 @@ use a loopback server and a throwaway key (`setup.rs` tests, `tingmix-models/tes
 Live sessions use `SessionConfig::live_recommended()` (adaptive VAD, confidence suppression); file jobs keep `default()`. A
 suppressed segment ends with an **empty final**: the UI treats it as "remove this caption" (the reducer keeps the segment
 closed but `finalsOf` never returns it, so there is no blank row and no stale partial) and the history drops it before saving.
+
+### ONNX Large on Windows (task 33)
+
+`backends::build` picks `OnnxLarge` when the manifest's backend is `onnx-cpu` and its family is `tingmix-large`. The app sets
+`TINGMIX_ORT_DYLIB` (the bundled library) in its own environment at start-up so the probe child inherits it; the runtime version
+is the one the library reports about itself (`tingmix_runtime_onnx::runtime_version()`), which is also what the worker records,
+so stored probes stay valid. The worker (`tingmix-onnx-worker`) ships as a Tauri sidecar: `tools/stage-onnx-worker.sh` builds it
+without downloading ONNX Runtime and stages `src-tauri/binaries/tingmix-onnx-worker-<triple>[.exe]`, which
+`tauri.ort-windows.conf.json` lists as `externalBin`; `pnpm bundle:windows` runs both. One backend is loaded at a time. The 6 GiB
+RAM floor is a field of the signed manifest. Not run here: the Windows NSIS bundle, the sidecar on Windows, and the Large ONNX
+package through the app on Windows (macOS only compiled and unit-tested the wiring).
+
+### Real first run on macOS (2026-10-18)
+
+`e2e::real_first_run_download_probe_transcribe` (ignored; `TINGMIX_E2E_REAL_FIRST_RUN=1`, `--features mlx`) ran the whole flow
+against the published catalog in a scratch HOME on the Mac (debug test build, 1 Gbit-class home network): catalog fetched and
+signature-verified 0.5 s; 1,422,282,069 bytes downloaded, hash-verified, activated and tested 25.9 s in total; model and LM
+loaded 21.8 s (unoptimised LM load in a debug build); `mix_08s.wav` transcribed in 3.7 s to exactly the oracle text. The
+licences were accepted by the test, as the user's tick would.
 
 ## Model onboarding and live state
 

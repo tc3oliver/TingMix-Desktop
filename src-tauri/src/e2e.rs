@@ -73,12 +73,9 @@ fn join(parts: Vec<String>) -> String {
     }
 }
 
-#[test]
-#[ignore = "needs the MLX package folder, a --features mlx build with MLX_PREFIX, and ~2 GB of RAM"]
-fn mlx_import_probe_select_transcribe_live() {
-    let package =
-        PathBuf::from(std::env::var("TINGMIX_E2E_MLX_PACKAGE").expect("TINGMIX_E2E_MLX_PACKAGE"));
-    // TINGMIX_E2E_HOME keeps the registry where an app run with HOME=<it> finds it (used to check preloading by hand)
+/// The directory a test registry lives in. `TINGMIX_E2E_HOME` places it where an app run with HOME=<it> would look
+/// (`<home>/Library/Application Support/app.tingmix.desktop`), otherwise it is a temp directory.
+fn scratch_dir() -> (PathBuf, Option<PathBuf>) {
     let keep = std::env::var_os("TINGMIX_E2E_HOME").map(PathBuf::from);
     let dir = keep
         .as_ref()
@@ -111,6 +108,15 @@ fn mlx_import_probe_select_transcribe_live() {
         b"scratch directory of the e2e test; safe to delete\n",
     )
     .unwrap();
+    (dir, keep)
+}
+
+#[test]
+#[ignore = "needs the MLX package folder, a --features mlx build with MLX_PREFIX, and ~2 GB of RAM"]
+fn mlx_import_probe_select_transcribe_live() {
+    let package =
+        PathBuf::from(std::env::var("TINGMIX_E2E_MLX_PACKAGE").expect("TINGMIX_E2E_MLX_PACKAGE"));
+    let (dir, keep) = scratch_dir();
     let models = Arc::new(Models::open(dir.join("models")));
     let rt = Runtimes::default();
     let notify: Notify = Arc::new(|_| {});
@@ -243,6 +249,115 @@ fn mlx_import_probe_select_transcribe_live() {
     );
     assert!(n_partial > 0 && !snap.finals.is_empty());
     assert!(snap.finals.iter().any(|f| !f.text.is_empty()));
+    if keep.is_none() {
+        let _ = std::fs::remove_dir_all(dir);
+    }
+}
+
+/// The real first-run flow against the published catalog: fetch, accept the licences (what the user's tick does), download
+/// about 1.4 GB, verify, activate, test, select and transcribe `mix_08s.wav`. Prints a timing line per stage.
+/// Needs the network, `--features mlx`, MLX_PREFIX, TINGMIX_MLX_WORKER and TINGMIX_E2E_REAL_FIRST_RUN=1.
+#[test]
+#[ignore = "downloads ~1.4 GB from the published catalog; needs a --features mlx build"]
+fn real_first_run_download_probe_transcribe() {
+    assert_eq!(
+        std::env::var("TINGMIX_E2E_REAL_FIRST_RUN").as_deref(),
+        Ok("1"),
+        "set TINGMIX_E2E_REAL_FIRST_RUN=1"
+    );
+    let (dir, keep) = scratch_dir();
+    let models = Arc::new(Models::open(dir.join("models"))); // embedded keys: the release key signs the catalog
+    let rt = Runtimes::default();
+    let t0 = Instant::now();
+    let stamp = |what: &str| println!("[{:7.1}s] {what}", t0.elapsed().as_secs_f64());
+
+    let cfg = crate::setup::Catalog {
+        url: crate::setup::catalog_url(),
+        allow_loopback_http: false,
+    };
+    let view = crate::setup::check(&models, &rt, &cfg, "first-run".into());
+    let crate::setup::SetupView::Download { pending } = view else {
+        panic!("expected a download offer, got {view:?}")
+    };
+    stamp(&format!(
+        "catalog fetched and verified: {} ({} bytes to download)",
+        pending.id, pending.download_bytes
+    ));
+
+    let required: Vec<String> = pending
+        .licenses
+        .iter()
+        .filter(|l| l.acceptance_required && !l.accepted)
+        .map(|l| l.id.clone())
+        .collect();
+    let last = Arc::new(Mutex::new((0u64, 0u64)));
+    let l2 = last.clone();
+    let (m2, rt2) = (models.clone(), rt.clone());
+    let on_op: Notify = Arc::new(move |v| {
+        if v.kind == "download" && v.state == "running" {
+            *l2.lock().unwrap() = (v.bytes_done, v.bytes_total);
+        }
+        if v.state == "done" && v.kind == "download" {
+            backends::onboard_core(&m2, &rt2, &v.name, Arc::new(|_| {})).expect("onboard");
+        }
+    });
+    models
+        .install("first-run", &required, on_op)
+        .expect("start download");
+    let mut next_report = 0u64;
+    loop {
+        let op = models.overview().op.expect("operation started");
+        let (done, total) = *last.lock().unwrap();
+        if done >= next_report && total > 0 {
+            stamp(&format!(
+                "download {:.0}% ({} of {} MB)",
+                done as f64 * 100.0 / total as f64,
+                done >> 20,
+                total >> 20
+            ));
+            next_report = done + (200 << 20);
+        }
+        match (op.kind.as_str(), op.state.as_str()) {
+            ("probe", "done") => break,
+            (_, "failed" | "cancelled") => panic!("{} {}: {:?}", op.kind, op.state, op.message),
+            _ if t0.elapsed() > Duration::from_secs(3600) => panic!("timed out in {}", op.kind),
+            _ => std::thread::sleep(Duration::from_millis(500)),
+        }
+    }
+    stamp("downloaded, verified, activated and tested on this Mac");
+
+    let info = backends::info(&models, &rt);
+    assert!(!info.mock && info.usable, "{}", info.label);
+    let expected: serde_json::Value = serde_json::from_slice(
+        &std::fs::read(root().join("tests/fixtures/large/expected_texts.json")).unwrap(),
+    )
+    .unwrap();
+    let want = expected["clips"]["mix_08s"]["beam_lm"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let t_load = Instant::now();
+    let resolved = backends::resolve(&models, &rt).expect("load the downloaded model");
+    stamp(&format!(
+        "model and LM loaded in {:.1}s",
+        t_load.elapsed().as_secs_f64()
+    ));
+    let mut reducer = Reducer::new();
+    let t_run = Instant::now();
+    let out = crate::files::run(
+        &root().join("tests/fixtures/audio/mix_08s.wav"),
+        resolved.backend,
+        &AtomicBool::new(false),
+        &mut reducer,
+        &mut |_| {},
+    );
+    assert_eq!(out.state, JobState::Done, "{:?}", out.message);
+    let got = join(reducer.finals().map(|f| f.text.clone()).collect());
+    stamp(&format!(
+        "mix_08s transcribed in {:.1}s: {got}",
+        t_run.elapsed().as_secs_f64()
+    ));
+    assert_eq!(got, want);
     if keep.is_none() {
         let _ = std::fs::remove_dir_all(dir);
     }

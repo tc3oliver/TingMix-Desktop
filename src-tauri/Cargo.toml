@@ -29,7 +29,7 @@ tingmix-streaming = { path = "../crates/tingmix-streaming" }
 tingmix-models = { path = "../crates/tingmix-models" }
 tingmix-decoder = { path = "../crates/tingmix-decoder" }
 # ONNX Runtime is loaded at run time from the bundled library (docs/release/onnxruntime.md): nothing is fetched at build time
-tingmix-runtime-onnx = { path = "../crates/tingmix-runtime-onnx", default-features = false, features = ["load-dynamic"] }
+tingmix-runtime-onnx = { path = "../crates/tingmix-runtime-onnx", default-features = false, features = ["load-dynamic", "probe"] }
 tingmix-runtime-mlx = { path = "../crates/tingmix-runtime-mlx", optional = true }
 tauri-plugin-updater = "=2.14.0"
 sys-locale = "=0.3.2"

@@ -224,11 +224,21 @@ pub struct Runtimes {
 }
 
 impl Runtimes {
+    /// The version string the bundled library reports about itself, the same one the probe worker records, so a stored
+    /// probe stays valid. Read once per process.
     fn ort_version(&self) -> Option<String> {
+        static VERSION: std::sync::OnceLock<Option<String>> = std::sync::OnceLock::new();
         self.ort_library
             .as_ref()
             .filter(|p| p.is_file())
-            .map(|_| ORT_VERSION.to_string())
+            .and_then(|_| {
+                VERSION
+                    .get_or_init(|| {
+                        tingmix_runtime_onnx::runtime_version()
+                            .or_else(|| Some(ORT_VERSION.to_string()))
+                    })
+                    .clone()
+            })
     }
 }
 
@@ -533,7 +543,12 @@ pub fn build(model: &InstalledModel, backend: &str) -> Result<Box<dyn AsrBackend
                 .find(|f| f.path.ends_with(".onnx"))
                 .map(|f| model.dir.join(&f.path))
                 .ok_or("manifest lists no .onnx file")?;
-            onnx_backend(&graph, &component(model, "tokenizer", Some("units.json"))?)
+            let units = component(model, "tokenizer", Some("units.json"))?;
+            if is_large(model) {
+                onnx_large_backend(&graph, &units, &component(model, "lm", None)?)
+            } else {
+                onnx_backend(&graph, &units)
+            }
         }
         #[cfg(all(feature = "mlx", target_os = "macos", target_arch = "aarch64"))]
         MLX => {
@@ -552,6 +567,30 @@ pub fn build(model: &InstalledModel, backend: &str) -> Result<Box<dyn AsrBackend
         }
         other => Err(format!("backend {other} is not available in this build")),
     }
+}
+
+/// TingMix-Large ships as an ONNX graph under the same backend id as Small; the family tells them apart.
+fn is_large(model: &InstalledModel) -> bool {
+    model.manifest.family == "tingmix-large"
+}
+
+/// Large on ONNX Runtime, CPU provider, with the character LM (beam search). One copy only: it holds about 2 to 2.5 GB.
+fn onnx_large_backend(
+    graph: &std::path::Path,
+    units_json: &std::path::Path,
+    lm: &std::path::Path,
+) -> Result<Box<dyn AsrBackend>, String> {
+    use tingmix_runtime_onnx::{Decode, OnnxLarge, Provider};
+    let lm = tingmix_decoder::CharLm::load(lm).map_err(|e| e.to_string())?;
+    let decode = Decode::BeamLm(Box::new(lm), tingmix_decoder::BeamConfig::default());
+    let b = OnnxLarge::load(graph, units_json, decode, Provider::Cpu, onnx_threads())
+        .map_err(|e| e.to_string())?;
+    Ok(Box::new(b))
+}
+
+/// Intra-op threads for the CPU provider: all cores up to 8 (the measured sweet spot in docs/research/large-onnx.md).
+fn onnx_threads() -> usize {
+    std::thread::available_parallelism().map_or(4, |n| n.get().min(8))
 }
 
 fn onnx_backend(
@@ -856,6 +895,34 @@ fn probe_mlx(
     None
 }
 
+/// The Large ONNX graph is probed in a child (`tingmix-onnx-worker`, next to the app executable), so an ONNX Runtime or driver
+/// crash cannot take the app down. The child inherits `TINGMIX_ORT_DYLIB`, which the app sets at start-up.
+fn probe_onnx_large(
+    root: &std::path::Path,
+    model: &InstalledModel,
+    fx: &ProbeFixture,
+) -> Option<Result<tingmix_models::probe::ProbeRecord, String>> {
+    use tingmix_runtime_onnx::{probe::OnnxProbeTarget, Provider};
+    if !is_large(model) {
+        return None;
+    }
+    // TINGMIX_ONNX_WORKER overrides the sibling lookup (tests, development)
+    let worker = std::env::var_os("TINGMIX_ONNX_WORKER")
+        .map(|p| Ok(p.into()))
+        .unwrap_or_else(OnnxProbeTarget::sibling_worker);
+    Some(match worker {
+        Ok(exe) => run_probe(
+            root,
+            &mut OnnxProbeTarget::new(exe, Provider::Cpu, onnx_threads(), true),
+            model,
+            fx,
+            2,
+        )
+        .map_err(|e| e.to_string()),
+        Err(e) => Err(format!("ONNX probe worker unavailable: {e}")),
+    })
+}
+
 /// A probe result describes a backend on this machine; a build that does not contain the backend (or cannot load its
 /// runtime) has nothing to measure. It must report that and must not write a record: `run_probe` persists failures too, and
 /// would replace a good record written by a build that has the engine (the registry is shared between builds).
@@ -909,10 +976,10 @@ pub fn start_probe(
                         sample_rate: 16_000,
                         expected_text: expected,
                     };
-                    let rec = (if backend == MLX {
-                        probe_mlx(reg.root(), &model, &fx)
-                    } else {
-                        None
+                    let rec = (match backend {
+                        MLX => probe_mlx(reg.root(), &model, &fx),
+                        ONNX => probe_onnx_large(reg.root(), &model, &fx),
+                        _ => None,
                     })
                     .unwrap_or_else(|| {
                         let mut t = AppProbe {

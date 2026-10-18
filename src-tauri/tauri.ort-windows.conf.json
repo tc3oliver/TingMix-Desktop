@@ -5,6 +5,9 @@
       "../vendor/onnxruntime/windows-x64/lib/onnxruntime_providers_shared.dll": "onnxruntime/onnxruntime_providers_shared.dll",
       "../vendor/onnxruntime/windows-x64/LICENSE": "onnxruntime/LICENSE",
       "../vendor/onnxruntime/windows-x64/ThirdPartyNotices.txt": "onnxruntime/ThirdPartyNotices.txt"
-    }
+    },
+    "externalBin": [
+      "binaries/tingmix-onnx-worker"
+    ]
   }
 }
