@@ -685,5 +685,5 @@ fn shipped_mlx_manifest_has_provenance_and_licence_acceptance() {
         .iter()
         .find(|l| l.id == "google-embeddinggemma-2")
         .unwrap();
-    assert!(g.acceptance_required && g.notes.contains("licensing-review.md"));
+    assert!(g.acceptance_required && g.notes.contains("Prohibited Use Policy"));
 }

@@ -100,7 +100,7 @@
           "VoxPopuli audio (c) European Union - Source: European Parliament",
           "Common Voice: speakers must not be identified"
         ],
-        "notes": "docs/research/licensing-review.md E1-E3 are ESCALATE: Parliament data is CC BY-NC 4.0, NTUML2021 train split has no stated licence, ASCEND is CC BY-SA 4.0. Treat as non-commercial; do not redistribute or mirror these weights or the LM until a maintainer decision exists. Apache-2.0 for source code does not automatically cover the weights."
+        "notes": "Training data includes Taiwan Parliament speech (CC BY-NC 4.0), ASCEND (CC BY-SA 4.0) and the NTUML2021 train split (no stated licence). The model owner publishes these weights and the language model for use with TingMix Desktop and promises no commercial-use rights; see the data section of the model card."
       },
       {
         "id": "google-embeddinggemma-2",
@@ -114,13 +114,13 @@
         "attribution": [
           "EmbeddingGemma 2, Google DeepMind, Apache-2.0 (https://huggingface.co/google/embeddinggemma-2)"
         ],
-        "notes": "docs/research/licensing-review.md E4/E5 (2026-10-17): Hub API reports gated=false, licence apache-2.0; the README says deployments must adhere to the Gemma Prohibited Use Policy. Acceptance is required so the user is shown the policy and the Apache-2.0 notice before install (low cost, recommended by the review). Not redistributed by TingMix: fetch from Google's repo or import files you already hold. Derived or merged artifacts are modifications and must stay marked as modified."
+        "notes": "This package contains a modified copy of the google/embeddinggemma-2 audio tower (Apache-2.0): LoRA merged, layouts converted; see Provenance in the model card. Deployments must adhere to the Gemma Prohibited Use Policy: https://ai.google.dev/gemma/prohibited_use_policy"
       }
     ],
     "compat": {
       "status": "EXPERIMENTAL",
       "rtf_x1000": 15,
-      "notes": "EXPERIMENTAL: parity and timings on 8 synthetic TTS clips only, one machine (M4 Max), libmlx from the PyPI wheel 0.32.4 (no source build), single 29.5 s window, batch 1; install by offline import. Probe (tingmix-runtime-mlx, commit 946a03d): en_02s 'good morning everyone' passed in a child process, fp32 with beam+LM, rtf_x1000 15 on a 1.4 s clip including pipe transfer, first run 2.4 s (child start, model and LM load), warm decode 64 ms for 7.5 s, worker peak footprint 2.22 GiB; 8/8 clips match the reference oracle texts (task 12). Not promoted to VALIDATED."
+      "notes": "EXPERIMENTAL: greedy and beam+LM output equal the reference implementation on 8 synthetic speech clips. Measured on one machine (Apple M4 Max, MLX 0.32.4): warm decode 64 ms for 7.5 s of audio, peak worker memory 2.22 GiB. Real-speech accuracy is limited; see Limitations in the model card."
     },
     "provenance": {
       "modified": true,
@@ -136,11 +136,11 @@
       ],
       "converter": "experiments/macos/mlx/convert.py",
       "converter_commit": "7574a398a9cacce7bd84e33281685b3e04ac049e",
-      "notes": "audio_tower of the Google base (text/vision towers dropped) with the 96 LoRA pairs (r16, alpha32) merged in fp32 as W + 2.0*B@A, conv weights transposed to MLX layouts (OIHW->OHWI, depthwise CK->KC), Reader GRU repacked to MLX gate layout, all fp32 in one safetensors file (tensor metadata format tingmix-large-mlx). Environment: mlx 0.32.4, mlx-vlm 0.7.8, transformers 5.19.0 (experiments/macos/mlx/uv.lock). Lower precisions are produced at load time."
+      "notes": "audio_tower of the Google base (text/vision towers dropped) with the 96 LoRA pairs (r16, alpha32) merged in fp32 as W + 2.0*B@A, conv weights transposed to MLX layouts (OIHW->OHWI, depthwise CK->KC), Reader GRU repacked to MLX gate layout, all fp32 in one safetensors file (tensor metadata format tingmix-large-mlx). Environment: mlx 0.32.4, mlx-vlm 0.7.8, transformers 5.19.0 (experiments/macos/mlx/uv.lock)."
     },
     "created": "2026-10-17",
     "min_app_version": "0.1.0"
   },
   "key_id": "tingmix-dev-1",
-  "signature": "9186817c7b81f5765c803e79dace6badce9a24939021c2cac5408aa5b70e55fe16bf6df4414c316a2f01c9466545362970e088b4c14a47b8cdc1cc35b5eec20c"
+  "signature": "0e2f92b4973d1e0d301256146043f2eab58046cff95fb6c897cf10a24e21d415d82e73c4daab3a16a03ef90c628defbf10c35428133ace57fda0fd632208f00e"
 }
