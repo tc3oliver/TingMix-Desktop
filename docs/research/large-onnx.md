@@ -72,6 +72,33 @@ means a final adds no extra decode, so CPU is workable here (a slower CPU than a
 recommended: slower than CPU at 29.5 s, partly on the CPU EP. CUDA is **opt-in**: 10x faster at 29.5 s, but only after the probe passes
 (`onnx-cuda` has its own probe record) and only where the CUDA libraries exist; shipping them (1.6 GB) is a product decision, not a default.
 
+## fp16 variant, VRAM and RAM (added after the owner asked for them)
+
+`uv run python to_fp16.py` converts the fp32 graph with ONNX Runtime's `float16.convert_float_to_float16` (graph inputs and outputs stay fp32;
+655 580 718 bytes, sha256 `ae31039f...c118b`, half the size; the RMSNorm pre-scale of the export keeps activations of ~300 finite). Gate (fp16 holds
+parity): the Rust backend with the fp16 graph reproduces the oracle texts **8/8, greedy and beam+LM, on CPU, DirectML and CUDA**. Logits are of course
+less exact: ORT CPU rel-L2 1.7e-4 to 1.7e-3 (ids 100 % on the 9 chunks, `parity.py`); on the Windows GPUs (`benchmarks/windows/large-onnx-eps-fp16-*.json`) CUDA 4.7e-3 worst
+(ids 100 %), DirectML 4.2e-3 worst with one chunk at 99.8 % id agreement (the text still equals the oracle). That is eight real-looking clips, not an accuracy
+study: a CER/WER comparison on real speech is needed before fp16 is the shipped default.
+
+Windows PC, Rust `bench_large` (one backend with beam+LM, 8 threads, Microsoft ORT 1.31.0 for CPU, wheel DLLs for DirectML 1.24 / CUDA 1.31.0).
+RAM = peak working set of the process; VRAM = peak "GPU Process Memory" dedicated usage of that process (Windows performance counter, sampled every ~150 ms;
+nvidia-smi's total agreed within 1 MiB for CUDA and DirectML, so DirectML ran on the RTX, not on the iGPU). Raw: `benchmarks/windows/large-onnx-mem-*.json`, `large-onnx-vram.txt`.
+
+| Graph | Provider | model 7.5 s p50 | model 29.5 s p50 / p95 | wav to text 29.5 s (beam+LM) | peak RAM | peak VRAM |
+|---|---|---|---|---|---|---|
+| fp32 | CPU | 254 ms | 803 / 818 ms | 953 ms | 2.34 GB | - |
+| fp32 | DirectML | 42 ms | 1199 / 1403 ms | 1302 ms | 2.20 GB | 1.55 GiB (+61 MiB shared) |
+| fp32 | CUDA | 30 ms | 85 / 87 ms | 221 ms | 2.44 GB | 2.32 GiB (+62 MiB shared) |
+| fp16 | CPU | 276 ms | 934 / 972 ms | 1086 ms | 2.80 GB | - |
+| fp16 | DirectML | 34 ms | 1193 / 1250 ms | 1310 ms | 1.65 GB | 0.88 GiB |
+| fp16 | CUDA | 24 ms | 61 / 63 ms | 200 ms | 2.01 GB | 1.32 GiB |
+
+Reading it: fp16 halves the weights and the VRAM (CUDA 2.3 to 1.3 GiB, DirectML 1.55 to 0.88 GiB) and speeds CUDA up by about 30 % (61 vs 85 ms at 29.5 s), but it is
+slower on the CPU (the CPU EP computes in fp32 anyway) and does not fix DirectML's 29.5 s window. The GPU had 10.4 GiB already in use by other software when measured
+(about 5.9 of 16 GiB free), so even fp32 fits with margin. The 16 GB card is no constraint for this model; CUDA's real cost is the 1.6 GB of NVIDIA runtime libraries.
+The default provider stays **CPU with the fp32 graph** (exact, no extra files). If a CUDA path is ever shipped, fp16 is the candidate (smaller, faster) once real-speech WER confirms it.
+
 ## Probe and signed manifest
 
 `OnnxProbeTarget` (feature `probe`) runs the graph in a child process, `tingmix-onnx-worker`, so a driver or runtime crash cannot take the

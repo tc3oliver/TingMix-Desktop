@@ -1,0 +1,47 @@
+{
+  "command": "C:\\Users\\User\\src\\tingmix-desktop\\target\\ort-dynamic\\release\\examples\\bench_large.exe C:\\Users\\User\\src\\tingmix-desktop\\experiments\\windows\\large-onnx\\out\\tingmix-large-fp16.onnx C:\\Users\\User\\data\\tingmix-large C:\\Users\\User\\tm\\large2-fp16-cpu.json cpu 8",
+  "cpu": "AMD Ryzen 7 9700X 8-Core Processor",
+  "model_sha256": "ae31039f7a26bdf9d4d288c6eb4209449fcee4b51577744fbbfc59512cec118b",
+  "note_memory": "peak_rss_mb = peak resident/working set of this process, which holds ONE backend (beam+LM, the production decode)",
+  "ort_library": "C:\\Users\\User\\src\\tingmix-desktop\\vendor\\onnxruntime\\windows-x64\\lib\\onnxruntime.dll",
+  "peak_rss_mb": 2799.39072,
+  "provider": "Cpu",
+  "results": {
+    "29.5s": {
+      "audio_s": 29.5,
+      "mel_plus_model": {
+        "min_ms": 889.7464,
+        "n": 10,
+        "p50_ms": 933.5647,
+        "p95_ms": 971.5213
+      },
+      "rtf_p50_beam_lm": 0.036815369491525425,
+      "rtf_p50_model": 0.03164626101694915,
+      "wav_to_text_beam_lm": {
+        "min_ms": 1058.3637999999999,
+        "n": 10,
+        "p50_ms": 1086.0534,
+        "p95_ms": 1113.9358
+      }
+    },
+    "8s": {
+      "audio_s": 7.5191875,
+      "mel_plus_model": {
+        "min_ms": 242.1928,
+        "n": 10,
+        "p50_ms": 276.0203,
+        "p95_ms": 292.7184
+      },
+      "rtf_p50_beam_lm": 0.04256360145294953,
+      "rtf_p50_model": 0.036708793337046054,
+      "wav_to_text_beam_lm": {
+        "min_ms": 286.30870000000004,
+        "n": 10,
+        "p50_ms": 320.0437,
+        "p95_ms": 329.6754
+      }
+    }
+  },
+  "threads": 8,
+  "what": "OnnxLarge wav->text latency (Rust Gemma4 mel + ORT + Rust CTC decode), fixtures mix_08s and the first 29.5 s of mix_29s"
+}

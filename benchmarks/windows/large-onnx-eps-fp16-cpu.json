@@ -1,0 +1,116 @@
+{
+ "what": "TingMix-Large mel->logits ONNX, per execution provider",
+ "model": "experiments\\windows\\large-onnx\\out\\tingmix-large-fp16.onnx",
+ "onnxruntime": "1.31.0",
+ "threads": 8,
+ "platform": "Windows-11-10.0.26200-SP0",
+ "python": "3.12.11",
+ "rows": [
+  {
+   "provider": "AzureExecutionProvider",
+   "skipped": "not a candidate for this study (Azure: remote; TensorRT: needs libraries not installed)"
+  },
+  {
+   "provider": "CPUExecutionProvider",
+   "strict_no_cpu_fallback": true,
+   "session_create_s": 5.13,
+   "active_providers": [
+    "CPUExecutionProvider"
+   ],
+   "parity": [
+    {
+     "clip": "en_02s",
+     "chunk": 0,
+     "frames": 140,
+     "max_abs": 0.010885238647460938,
+     "rel_l2": 0.00019786406483035535,
+     "id_agreement": 1.0
+    },
+    {
+     "clip": "en_08s",
+     "chunk": 0,
+     "frames": 514,
+     "max_abs": 0.017073631286621094,
+     "rel_l2": 0.00018459516286384314,
+     "id_agreement": 1.0
+    },
+    {
+     "clip": "mix_04s",
+     "chunk": 0,
+     "frames": 354,
+     "max_abs": 0.01099538803100586,
+     "rel_l2": 0.0001631887280382216,
+     "id_agreement": 1.0
+    },
+    {
+     "clip": "mix_08s",
+     "chunk": 0,
+     "frames": 751,
+     "max_abs": 0.024877548217773438,
+     "rel_l2": 0.00024873207439668477,
+     "id_agreement": 1.0
+    },
+    {
+     "clip": "mix_29s",
+     "chunk": 0,
+     "frames": 2949,
+     "max_abs": 0.07420873641967773,
+     "rel_l2": 0.00022201270621735603,
+     "id_agreement": 1.0
+    },
+    {
+     "clip": "mix_29s",
+     "chunk": 1,
+     "frames": 513,
+     "max_abs": 0.9732875823974609,
+     "rel_l2": 0.0016941946232691407,
+     "id_agreement": 1.0
+    },
+    {
+     "clip": "zh_02s",
+     "chunk": 0,
+     "frames": 170,
+     "max_abs": 0.00899958610534668,
+     "rel_l2": 0.00018469967471901327,
+     "id_agreement": 1.0
+    },
+    {
+     "clip": "zh_08s",
+     "chunk": 0,
+     "frames": 859,
+     "max_abs": 0.022703170776367188,
+     "rel_l2": 0.00020824564853683114,
+     "id_agreement": 1.0
+    },
+    {
+     "clip": "zh_16s",
+     "chunk": 0,
+     "frames": 2041,
+     "max_abs": 0.030179977416992188,
+     "rel_l2": 0.00018825811275746673,
+     "id_agreement": 1.0
+    }
+   ],
+   "worst_rel_l2": 0.0016941946232691407,
+   "min_id_agreement": 1.0,
+   "latency": {
+    "8s": {
+     "frames": 751,
+     "audio_s": 7.51,
+     "p50_ms": 278.2097500166856,
+     "p95_ms": 288.45893501711544,
+     "min_ms": 261.4698999677785,
+     "rtf_p50": 0.03704523968264788
+    },
+    "29.5s": {
+     "frames": 2949,
+     "audio_s": 29.49,
+     "p50_ms": 896.8346000183374,
+     "p95_ms": 951.068125013262,
+     "min_ms": 836.5944999968633,
+     "rtf_p50": 0.030411481858878854
+    }
+   }
+  }
+ ]
+}

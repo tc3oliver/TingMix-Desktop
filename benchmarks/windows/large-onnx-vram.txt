@@ -1,0 +1,20 @@
+=== bench fp32-cpu
+exit ; nvidia-smi total used before 10411 MiB, max during 10411 MiB (delta 0 MiB)
+=== bench fp32-directml
+exit ; nvidia-smi total used before 10411 MiB, max during 12002 MiB (delta 1591 MiB)
+  per-process dedicated usage luid_0x00000000_0x00016cb9_phys_0: 1,592 MiB
+  per-process shared usage luid_0x00000000_0x00016cb9_phys_0: 61 MiB
+=== bench fp32-cuda
+exit ; nvidia-smi total used before 10411 MiB, max during 12789 MiB (delta 2378 MiB)
+  per-process dedicated usage luid_0x00000000_0x00016cb9_phys_0: 2,379 MiB
+  per-process shared usage luid_0x00000000_0x00016cb9_phys_0: 62 MiB
+=== bench fp16-directml
+exit ; nvidia-smi total used before 10411 MiB, max during 11313 MiB (delta 902 MiB)
+  per-process dedicated usage luid_0x00000000_0x00016cb9_phys_0: 903 MiB
+  per-process shared usage luid_0x00000000_0x00016cb9_phys_0: 60 MiB
+=== bench fp16-cuda
+exit ; nvidia-smi total used before 10411 MiB, max during 11765 MiB (delta 1354 MiB)
+  per-process dedicated usage luid_0x00000000_0x00016cb9_phys_0: 1,355 MiB
+  per-process shared usage luid_0x00000000_0x00016cb9_phys_0: 62 MiB
+=== bench fp16-cpu
+exit ; nvidia-smi total used before 10411 MiB, max during 10411 MiB (delta 0 MiB)

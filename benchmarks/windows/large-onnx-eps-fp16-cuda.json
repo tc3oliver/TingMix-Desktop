@@ -1,0 +1,220 @@
+{
+ "what": "TingMix-Large mel->logits ONNX, per execution provider",
+ "model": "experiments\\windows\\large-onnx\\out\\tingmix-large-fp16.onnx",
+ "onnxruntime": "1.31.0",
+ "threads": 8,
+ "platform": "Windows-11-10.0.26200-SP0",
+ "python": "3.12.11",
+ "rows": [
+  {
+   "provider": "TensorrtExecutionProvider",
+   "skipped": "not a candidate for this study (Azure: remote; TensorRT: needs libraries not installed)"
+  },
+  {
+   "provider": "CUDAExecutionProvider",
+   "strict_error": "[ONNXRuntimeError] : 1 : FAIL : This session contains graph nodes that are assigned to the default CPU EP, but fallback to CPU EP has been explicitly disabled by the user.",
+   "strict_no_cpu_fallback": false,
+   "session_create_s": 4.37,
+   "active_providers": [
+    "CUDAExecutionProvider",
+    "CPUExecutionProvider"
+   ],
+   "parity": [
+    {
+     "clip": "en_02s",
+     "chunk": 0,
+     "frames": 140,
+     "max_abs": 0.07406234741210938,
+     "rel_l2": 0.0012709131697192788,
+     "id_agreement": 1.0
+    },
+    {
+     "clip": "en_08s",
+     "chunk": 0,
+     "frames": 514,
+     "max_abs": 0.14381790161132812,
+     "rel_l2": 0.0021652146242558956,
+     "id_agreement": 1.0
+    },
+    {
+     "clip": "mix_04s",
+     "chunk": 0,
+     "frames": 354,
+     "max_abs": 0.3637104034423828,
+     "rel_l2": 0.0023672236129641533,
+     "id_agreement": 1.0
+    },
+    {
+     "clip": "mix_08s",
+     "chunk": 0,
+     "frames": 751,
+     "max_abs": 0.15573406219482422,
+     "rel_l2": 0.0017007350688800216,
+     "id_agreement": 1.0
+    },
+    {
+     "clip": "mix_29s",
+     "chunk": 0,
+     "frames": 2949,
+     "max_abs": 0.3331279754638672,
+     "rel_l2": 0.0020965812727808952,
+     "id_agreement": 1.0
+    },
+    {
+     "clip": "mix_29s",
+     "chunk": 1,
+     "frames": 513,
+     "max_abs": 1.7160682678222656,
+     "rel_l2": 0.004723291844129562,
+     "id_agreement": 1.0
+    },
+    {
+     "clip": "zh_02s",
+     "chunk": 0,
+     "frames": 170,
+     "max_abs": 0.1314992904663086,
+     "rel_l2": 0.0024504882749170065,
+     "id_agreement": 1.0
+    },
+    {
+     "clip": "zh_08s",
+     "chunk": 0,
+     "frames": 859,
+     "max_abs": 0.18017196655273438,
+     "rel_l2": 0.0021486717741936445,
+     "id_agreement": 1.0
+    },
+    {
+     "clip": "zh_16s",
+     "chunk": 0,
+     "frames": 2041,
+     "max_abs": 1.845677375793457,
+     "rel_l2": 0.003785090520977974,
+     "id_agreement": 1.0
+    }
+   ],
+   "worst_rel_l2": 0.004723291844129562,
+   "min_id_agreement": 1.0,
+   "latency": {
+    "8s": {
+     "frames": 751,
+     "audio_s": 7.51,
+     "p50_ms": 22.04309997614473,
+     "p95_ms": 29.10782501276116,
+     "min_ms": 19.61630000732839,
+     "rtf_p50": 0.002935166441563879
+    },
+    "29.5s": {
+     "frames": 2949,
+     "audio_s": 29.49,
+     "p50_ms": 49.66889999923296,
+     "p95_ms": 54.33503500826191,
+     "min_ms": 48.6496000085026,
+     "rtf_p50": 0.001684262461825465
+    }
+   }
+  },
+  {
+   "provider": "CPUExecutionProvider",
+   "strict_no_cpu_fallback": true,
+   "session_create_s": 5.31,
+   "active_providers": [
+    "CPUExecutionProvider"
+   ],
+   "parity": [
+    {
+     "clip": "en_02s",
+     "chunk": 0,
+     "frames": 140,
+     "max_abs": 0.010885238647460938,
+     "rel_l2": 0.00019786406483035535,
+     "id_agreement": 1.0
+    },
+    {
+     "clip": "en_08s",
+     "chunk": 0,
+     "frames": 514,
+     "max_abs": 0.017073631286621094,
+     "rel_l2": 0.00018459516286384314,
+     "id_agreement": 1.0
+    },
+    {
+     "clip": "mix_04s",
+     "chunk": 0,
+     "frames": 354,
+     "max_abs": 0.01099538803100586,
+     "rel_l2": 0.0001631887280382216,
+     "id_agreement": 1.0
+    },
+    {
+     "clip": "mix_08s",
+     "chunk": 0,
+     "frames": 751,
+     "max_abs": 0.024877548217773438,
+     "rel_l2": 0.00024873207439668477,
+     "id_agreement": 1.0
+    },
+    {
+     "clip": "mix_29s",
+     "chunk": 0,
+     "frames": 2949,
+     "max_abs": 0.07420873641967773,
+     "rel_l2": 0.00022201270621735603,
+     "id_agreement": 1.0
+    },
+    {
+     "clip": "mix_29s",
+     "chunk": 1,
+     "frames": 513,
+     "max_abs": 0.9732875823974609,
+     "rel_l2": 0.0016941946232691407,
+     "id_agreement": 1.0
+    },
+    {
+     "clip": "zh_02s",
+     "chunk": 0,
+     "frames": 170,
+     "max_abs": 0.00899958610534668,
+     "rel_l2": 0.00018469967471901327,
+     "id_agreement": 1.0
+    },
+    {
+     "clip": "zh_08s",
+     "chunk": 0,
+     "frames": 859,
+     "max_abs": 0.022703170776367188,
+     "rel_l2": 0.00020824564853683114,
+     "id_agreement": 1.0
+    },
+    {
+     "clip": "zh_16s",
+     "chunk": 0,
+     "frames": 2041,
+     "max_abs": 0.030179977416992188,
+     "rel_l2": 0.00018825811275746673,
+     "id_agreement": 1.0
+    }
+   ],
+   "worst_rel_l2": 0.0016941946232691407,
+   "min_id_agreement": 1.0,
+   "latency": {
+    "8s": {
+     "frames": 751,
+     "audio_s": 7.51,
+     "p50_ms": 269.50350002152845,
+     "p95_ms": 301.4289999846369,
+     "min_ms": 248.35830001393333,
+     "rtf_p50": 0.03588595206678142
+    },
+    "29.5s": {
+     "frames": 2949,
+     "audio_s": 29.49,
+     "p50_ms": 889.0888000023551,
+     "p95_ms": 893.4888250107178,
+     "min_ms": 845.3463000478223,
+     "rtf_p50": 0.030148823330022216
+    }
+   }
+  }
+ ]
+}
