@@ -9,7 +9,7 @@ import soundfile as sf
 ROOT = Path(__file__).resolve().parents[3]
 OUT = Path(__file__).resolve().parent / "out"
 FIX = ROOT / "tests" / "fixtures" / "audio"
-HF = Path(os.environ.get("HF_HOME", "$HF_HOME")) / "hub"
+HF = Path(os.environ.get("HF_HOME", os.path.expanduser("~/.cache/huggingface"))) / "hub"
 LARGE_REV = "75071a1260fb21874f150df6ebd53716ac423f13"
 BASE_REV = "914f7f89142e33e77833254d9c9b90c3cef7303b"
 LARGE_DIR = HF / "models--tc3oliver--TingMix-Large" / "snapshots" / LARGE_REV

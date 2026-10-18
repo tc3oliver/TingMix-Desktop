@@ -10,7 +10,7 @@ import numpy as np
 import soundfile as sf
 import torch
 
-os.environ.setdefault("HF_HOME", "$HF_HOME")
+os.environ.setdefault("HF_HOME", os.path.expanduser("~/.cache/huggingface"))
 
 REPO = Path(__file__).resolve().parents[3]
 REF = REPO / "experiments/macos/reference/out"  # CPU fp32 oracle dumps (mel, logits per 29.5 s chunk)

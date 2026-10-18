@@ -10,7 +10,7 @@ import numpy as np
 import soundfile as sf
 import torch
 
-os.environ.setdefault("HF_HOME", "$HF_HOME")
+os.environ.setdefault("HF_HOME", os.path.expanduser("~/.cache/huggingface"))
 
 REPO = Path(__file__).resolve().parents[3]
 OUT = Path(__file__).resolve().parent / "out"
