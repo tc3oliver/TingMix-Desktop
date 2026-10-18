@@ -113,7 +113,6 @@ pub async fn live_start(
         }
         Err(e) => {
             state.note_error(format!("live start failed: {e}"));
-            backends::release_and_preload(&app);
             Err(e)
         }
     }
@@ -126,7 +125,7 @@ pub async fn live_stop(app: AppHandle, state: State<'_, AppState>) -> Result<Liv
         live.stop();
         let status = live.shared.status();
         drop(live); // releases the backend before the next one is preloaded
-        backends::release_and_preload(&app);
+        backends::preload(&app);
         return Ok(status);
     }
     Ok(state
@@ -213,14 +212,10 @@ pub async fn file_start(
         },
     ));
     let jid = job_id.clone();
-    let app2 = app.clone();
     std::thread::Builder::new()
         .name("tingmix-file".into())
         .spawn(move || run_job(app, jid, name, path, cancel, resolved))
-        .map_err(|e| {
-            backends::release_and_preload(&app2);
-            crate::coded::system(e)
-        })?;
+        .map_err(crate::coded::system)?;
     Ok(JobStarted {
         job_id,
         backend: backend_label,
@@ -285,7 +280,7 @@ fn run_job(
         j.audio_s = outcome.audio_s;
         j.message = outcome.message.clone();
     }
-    backends::release_and_preload(&app); // the backend moved into the job and is released; load the next one now
+    backends::preload(&app); // the backend moved into the job and is released; load the next one now
     match outcome.state {
         JobState::Done => {
             send(FileBody::Done {

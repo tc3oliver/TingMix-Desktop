@@ -41,6 +41,17 @@ fn status_word(backend: &str) -> &'static str {
 pub struct Dyn {
     info: BackendInfo,
     inner: Inner,
+    /// Set by `take`: counts this backend as held by a session or job until it is dropped, however that session ends.
+    held: Option<Held>,
+}
+
+struct Held(std::sync::Arc<std::sync::Mutex<u32>>);
+
+impl Drop for Held {
+    fn drop(&mut self) {
+        let mut n = self.0.lock().unwrap();
+        *n = n.saturating_sub(1);
+    }
 }
 
 enum Inner {
@@ -81,6 +92,7 @@ impl Dyn {
         Dyn {
             info: b.info().clone(),
             inner: Inner::Local(Box::new(b)),
+            held: None,
         }
     }
 
@@ -141,6 +153,7 @@ impl Dyn {
                     tx,
                     thread: Some(thread),
                 }),
+                held: None,
             }),
             Ok(Err(e)) => {
                 let _ = thread.join();
@@ -698,8 +711,8 @@ enum WarmState {
 pub struct Warm {
     slot: std::sync::Mutex<WarmState>,
     cv: std::sync::Condvar,
-    /// Backends handed out by `take` and not yet released by `release_and_preload` (a live session or file job holds each).
-    taken: std::sync::Mutex<u32>,
+    /// Backends handed out by `take` and still alive in a live session or file job (see `Held`).
+    taken: std::sync::Arc<std::sync::Mutex<u32>>,
 }
 
 impl Default for Warm {
@@ -707,7 +720,7 @@ impl Default for Warm {
         Self {
             slot: std::sync::Mutex::new(WarmState::Empty),
             cv: std::sync::Condvar::new(),
-            taken: std::sync::Mutex::new(0),
+            taken: Default::default(),
         }
     }
 }
@@ -776,6 +789,7 @@ pub fn preload(app: &tauri::AppHandle) {
     use tauri::Manager;
     let st = app.state::<crate::state::AppState>();
     if *st.warm.taken.lock().unwrap() > 0 {
+        publish(app);
         return; // a session or job holds a copy; loading a second Large now would double the memory
     }
     let d = decide(&st.models, &st.runtimes);
@@ -850,26 +864,11 @@ pub fn onboard_core(
 /// otherwise a fresh load. A preload failure is reported once and then retried fresh.
 pub fn take(app: &tauri::AppHandle) -> Result<Resolved, String> {
     use tauri::Manager;
-    let r = take_inner(app);
-    if r.is_ok() {
-        *app.state::<crate::state::AppState>()
-            .warm
-            .taken
-            .lock()
-            .unwrap() += 1;
-    }
-    r
-}
-
-/// The session or job that `take` served has ended (or never started): allow preloading again and preload.
-pub fn release_and_preload(app: &tauri::AppHandle) {
-    use tauri::Manager;
-    {
-        let st = app.state::<crate::state::AppState>();
-        let mut n = st.warm.taken.lock().unwrap();
-        *n = n.saturating_sub(1);
-    }
-    preload(app);
+    let mut r = take_inner(app)?;
+    let taken = &app.state::<crate::state::AppState>().warm.taken;
+    *taken.lock().unwrap() += 1;
+    r.backend.held = Some(Held(taken.clone()));
+    Ok(r)
 }
 
 fn take_inner(app: &tauri::AppHandle) -> Result<Resolved, String> {
@@ -1185,6 +1184,15 @@ mod tests {
         assert_eq!(stream_text, "w1");
         let err = Dyn::spawn(|| Err("no such model".into())).err().unwrap();
         assert_eq!(err, "no such model");
+    }
+
+    #[test]
+    fn a_taken_backend_is_released_whenever_it_is_dropped() {
+        let n = std::sync::Arc::new(std::sync::Mutex::new(1u32));
+        let mut d = Dyn::mock();
+        d.held = Some(Held(n.clone()));
+        drop(d); // a session that ended by itself (mic unplugged) drops its backend without any caller noticing
+        assert_eq!(*n.lock().unwrap(), 0);
     }
 
     #[test]
