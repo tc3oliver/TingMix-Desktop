@@ -40,7 +40,7 @@ export function hostText(raw: string | null | undefined, t: Translate = currentI
   }
   const base = `host.${p.code}`;
   const key = (p.params?.mlx === true && `${base}_mlx` in en ? `${base}_mlx` : base) as Key;
-  return key in en ? t(key, params) : (p.text ?? raw);
+  return key in en ? t(key, params) : t("host.unknown"); // never the host's English, never a raw detail
 }
 
 /** Like `hostText`, but for "<model> can't be used yet. <why> …" it returns only the why: cards and banners already name the model. */

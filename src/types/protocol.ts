@@ -40,6 +40,8 @@ export interface LiveStatus {
   backend: string;
   coalesced_partials: number;
   message: string | null;
+  /** True only when the latest session ran on the placeholder engine (debug builds). */
+  demo: boolean;
 }
 
 export type LiveMsg =

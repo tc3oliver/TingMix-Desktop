@@ -4,8 +4,8 @@ import { exportNote, isMock, MOCK_NOTE } from "./provenance";
 describe("provenance", () => {
   it("treats the host's mock label (and an unknown label) as mock", () => {
     expect(isMock("Mock — not ASR")).toBe(true);
-    expect(isMock("")).toBe(true);
-    expect(isMock(null)).toBe(true);
+    expect(isMock("")).toBe(false); // nothing has run yet: nothing to warn about
+    expect(isMock(null)).toBe(false);
   });
   it("does not mark a real backend as mock", () => {
     expect(isMock("tingmix-large-mlx-fp32-r75071a1 (mlx) — EXPERIMENTAL")).toBe(false);

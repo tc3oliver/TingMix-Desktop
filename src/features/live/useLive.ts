@@ -5,7 +5,7 @@ import { applySessionEvent, applySnapshot, emptyTranscript, type TranscriptState
 
 const IDLE: LiveStatus = {
   state: "idle", session_id: null, elapsed_s: 0, samples_in: 0, overflow_samples: 0,
-  level_db: -120, device: "", backend: "", coalesced_partials: 0, message: null,
+  level_db: -120, device: "", backend: "", coalesced_partials: 0, message: null, demo: false,
 };
 
 export function useLive() {

@@ -1,8 +1,8 @@
 import { friendlyName } from "./format";
 import type { Translate } from "../i18n";
 
-/** The host labels placeholder output "Mock — not ASR"; anything else names the model and its status. */
-export const isMock = (label: string | null | undefined): boolean => !label || label.startsWith("Mock");
+/** The host labels placeholder output "Mock — not ASR"; an empty label (no session has run) says nothing, so it is not mock. */
+export const isMock = (label: string | null | undefined): boolean => !!label && label.startsWith("Mock");
 
 /** Written into exported TXT/SRT files. Export content is deliberately not localised. */
 export const MOCK_NOTE = "Mock — not real ASR: these words are placeholders, not recognized speech.";

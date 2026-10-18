@@ -77,8 +77,9 @@ describe("host messages", () => {
     expect(hostText("io error at /x", translator("zh-TW"))).toBe("io error at /x");
     expect(hostText(null)).toBe("");
   });
-  it("fall back to the host's English for a code this UI does not know", () => {
-    expect(hostText(coded("future.thing", "Brand new message"), translator("zh-TW"))).toBe("Brand new message");
+  it("show a generic sentence in the UI language for a code this UI does not know, never the host's English", () => {
+    expect(hostText(coded("future.thing", "Brand new message"), translator("zh-TW"))).toContain("發生問題");
+    expect(hostText(coded("future.thing", "Brand new message"), translator("en"))).toContain("Something went wrong");
   });
   it("translate nested reasons and parameters, choosing the MLX variant of the missing-engine text", () => {
     const why = coded("backend.missing_engine", "x", { engine: "MLX", mlx: true });

@@ -27,8 +27,8 @@ const download: SetupView = {
 };
 const op = (state: ModelOp["state"], done: number, message: string | null = null): ModelOp => ({ kind: "download", name: "tingmix-small-onnx-fp16-r1a2b3c4", state, message, bytes_done: done, bytes_total: 1_320_000_000 });
 
-const idle: LiveStatus = { state: "idle", session_id: null, elapsed_s: 0, samples_in: 0, overflow_samples: 0, level_db: -120, device: "", backend: `${MODEL_ID} (onnx) — EXPERIMENTAL`, coalesced_partials: 0, message: null };
-const rec = (over: Partial<LiveStatus> = {}): LiveStatus => ({ ...idle, state: "recording", session_id: "s1", elapsed_s: 42, samples_in: 672_000, level_db: -32, device: "MacBook Pro Microphone", ...over });
+const idle: LiveStatus = { state: "idle", session_id: null, elapsed_s: 0, samples_in: 0, overflow_samples: 0, level_db: -120, device: "", backend: "", coalesced_partials: 0, message: null, demo: false };
+const rec = (over: Partial<LiveStatus> = {}): LiveStatus => ({ ...idle, backend: `${MODEL_ID} (onnx) — EXPERIMENTAL`, state: "recording", session_id: "s1", elapsed_s: 42, samples_in: 672_000, level_db: -32, device: "MacBook Pro Microphone", ...over });
 const seg = (id: number, text: string, start: number, end: number) => ({ segment_id: id, revision: 3, text, start, end });
 const part = (id: number, text: string, start: number, end: number) => ({ ...seg(id, text, start, end), stable_prefix_len: Math.floor(text.length / 2) });
 
@@ -94,7 +94,7 @@ const STATES: Record<string, State> = {
   "files-running": { tab: "files", jobs: [job("running", "weekly-sync.m4a", 95, 2)] },
   "files-done": { tab: "files", jobs: [job("done", "weekly-sync.m4a", 1260, 3), job("failed", "broken.wav", 0, 0)] },
   "history-empty": { tab: "history", history: [] },
-  "history-items": { tab: "history", history: [hist(1, "live", "live-transcript", 3600, 754), hist(2, "file", "interview-final.mp3", 90000, 2710), hist(3, "file", "lecture-03.m4a", 400000, 5400)] },
+  "history-items": { tab: "history", history: [hist(1, "live", "", 3600, 754), hist(2, "file", "interview-final.mp3", 90000, 2710), hist(3, "file", "lecture-03.m4a", 400000, 5400)] },
   settings: { tab: "settings" },
   "settings-model-advanced-open": { tab: "settings", after: async () => open("details.advanced > summary") },
   "settings-troubleshooting-open": { tab: "settings", after: async () => open("fieldset:last-of-type details > summary") },
