@@ -58,3 +58,26 @@ pub fn tiny_model() -> PathBuf {
     );
     p
 }
+
+/// When a workspace build unifies the `load-dynamic` feature on (the Tauri app asks for it), ORT is not linked and must be
+/// found at run time: `TINGMIX_ORT_DYLIB`, else the copy `tools/ort-fetch/fetch.sh` put under vendor/onnxruntime.
+pub fn init_ort() {
+    #[cfg(feature = "load-dynamic")]
+    {
+        if std::env::var_os("TINGMIX_ORT_DYLIB").is_some() {
+            return;
+        }
+        let vendor = root().join("vendor/onnxruntime");
+        let lib = if cfg!(windows) {
+            vendor.join("windows-x64/lib/onnxruntime.dll")
+        } else {
+            vendor.join("macos-arm64/lib/libonnxruntime.1.31.0.dylib")
+        };
+        assert!(
+            lib.exists(),
+            "load-dynamic build: run tools/ort-fetch/fetch.sh or set TINGMIX_ORT_DYLIB ({})",
+            lib.display()
+        );
+        tingmix_runtime_onnx::set_runtime_library(lib.canonicalize().unwrap());
+    }
+}

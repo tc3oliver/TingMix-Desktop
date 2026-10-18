@@ -9,6 +9,7 @@ use tingmix_runtime_onnx::{Collapser, OnnxSmall, StepModel, Streamer, TokenDecod
 use tingmix_streaming::{SessionConfig, SessionMsg, StreamingSession};
 
 fn model() -> Arc<Mutex<StepModel>> {
+    init_ort();
     Arc::new(Mutex::new(StepModel::load(&tiny_model(), 1).unwrap()))
 }
 
@@ -84,6 +85,7 @@ fn backend_streams_text_and_offline_decode_agree() {
             .collect::<Vec<_>>()
             .join(" ")
     });
+    init_ort();
     let mut b = OnnxSmall::load(&tiny_model(), 1, decode).unwrap();
     assert!(b.info().streaming_native);
     let wav = load_wav("mix_04s.wav");
@@ -105,6 +107,7 @@ fn streaming_session_runs_on_the_onnx_backend() {
             .collect::<Vec<_>>()
             .join(" ")
     });
+    init_ort();
     let b = OnnxSmall::load(&tiny_model(), 1, decode).unwrap();
     let mut session = StreamingSession::new(b, &SessionConfig::default());
     let mut wav = load_wav("mix_04s.wav");

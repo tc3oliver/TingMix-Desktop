@@ -45,6 +45,15 @@ At start-up resolve `onnxruntime/<file>` with `BaseDirectory::Resource`, and cal
 The Windows DLL must be loaded by absolute path: Windows ships its own, older `onnxruntime.dll` in System32 for
 Windows ML, and a bare name could resolve to that one. (Absolute-path loading on Windows is the design, not tested here.)
 
+## Workspace builds unify the feature
+
+`src-tauri` depends on `tingmix-runtime-onnx` with `load-dynamic`, and cargo unifies features across a workspace build, so
+`cargo test --workspace` (and `-p tingmix-app -p tingmix-runtime-onnx` together) runs the ONNX tests in load-dynamic mode:
+ORT is then not linked and must be found at run time. The tests do that themselves (`TINGMIX_ORT_DYLIB`, else
+`vendor/onnxruntime/<platform>/lib/...`), so CI and fresh checkouts must run `tools/ort-fetch/fetch.sh` before a workspace
+test run; without it the ONNX tests fail with a message saying so. `cargo test -p tingmix-runtime-onnx` alone still uses
+the downloaded ORT. Found on the Windows PC, where the workspace run failed with "no ONNX Runtime library configured".
+
 ## Verified (macOS arm64, 2026-10-18)
 
 - `cargo build --offline --release -p tingmix-runtime-onnx --no-default-features --features load-dynamic --example run_wav`
