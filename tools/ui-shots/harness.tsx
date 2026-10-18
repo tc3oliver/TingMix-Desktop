@@ -72,7 +72,7 @@ const STATES: Record<string, State> = {
   "setup-offer": { backend: NOT_READY, setup: download, modelOp: null },
   "setup-downloading": { backend: NOT_READY, setup: download, modelOp: op("running", 488_400_000) },
   "setup-failed": { backend: NOT_READY, setup: download, modelOp: op("failed", 488_400_000, "The connection was interrupted.") },
-  "setup-offline": { backend: NOT_READY, setup: { state: "offline", reason: "No internet connection." }, modelOp: null },
+  "setup-offline": { backend: NOT_READY, setup: { state: "offline", reason: JSON.stringify({ code: "setup.offline", text: "No internet connection (os error 51)" }) }, modelOp: null },
   "setup-checking": { backend: NOT_READY, setup: "never", modelOp: null },
   "setup-paused": { backend: NOT_READY, setup: download, modelOp: op("cancelled", 488_400_000) },
   "setup-finishing": { backend: NOT_READY, setup: download, modelOp: { ...op("running", 1_320_000_000), kind: "probe" } },

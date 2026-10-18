@@ -166,7 +166,7 @@ export function SetupScreen({ backend, onOpenModels, onView, first = false }: Pr
   return (
     <section className={first ? "setup welcome-card" : "setup card"}>
       <h2>{view?.state === "unavailable" ? t("setup.unavailable_title") : t("setup.title")}</h2>
-      {first && <p className="promise">{t("setup.promise")}</p>}
+      {first && view?.state !== "unavailable" && <p className="promise">{t("setup.promise")}</p>}
       {error && <p className="error" role="alert">{error}</p>}
       {body}
     </section>
