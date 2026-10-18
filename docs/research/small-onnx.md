@@ -1,6 +1,6 @@
 # TingMix-Small on ONNX Runtime (CPU): export, frontend, INT8, CPU benchmark
 
-Status words follow `CLAUDE.md`. **Every number below comes from seeded random-init weights** (`SmallNet`, no checkpoint
+Status words follow `CONTRIBUTING.md`. **Every number below comes from seeded random-init weights** (`SmallNet`, no checkpoint
 exists: HF `tc3oliver/TingMix-Small` returns 401). They validate the pipeline (export, state carry, frontend, runtime,
 quantization mechanics, throughput of a model of this shape). They say nothing about recognition accuracy, and the
 vocabulary size (4096) is a placeholder. Release acceptance needs a real candidate checkpoint.

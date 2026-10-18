@@ -85,7 +85,7 @@ Whether we may re-host or re-pack instead is a licensing question (see `licensin
 
 | Item | Ship in installer | Download on first use | Notes |
 |---|---|---|---|
-| App binaries, ONNX Runtime / MLX / Core ML runtime libraries | yes | no | no model weights in git or installer (CLAUDE.md hard rule) |
+| App binaries, ONNX Runtime / MLX / Core ML runtime libraries | yes | no | no model weights in git or installer (CONTRIBUTING.md hard rule) |
 | Apache-2.0 / third-party notices, Gemma Prohibited Use Policy link | yes | no | attribution screen text from the model cards |
 | Signed manifest public key (Ed25519) | yes | no | key management is a model-registry task |
 | Audio-tower bytes (609.8 MB BF16 prefix, or converted derivatives) | no | yes | hash in signed manifest |

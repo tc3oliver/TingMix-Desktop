@@ -1,6 +1,6 @@
 # Requests to the training session
 
-The Desktop repository never modifies `tc3oliver/tingmix` or `tc3oliver/embed2asr` (CLAUDE.md hard rule). Anything it needs from them is written
+The Desktop repository never modifies `tc3oliver/tingmix` or `tc3oliver/embed2asr` (CONTRIBUTING.md hard rule). Anything it needs from them is written
 here. Opened 2026-10-17 against tingmix `f44cbdb`, embed2asr `b582757`, TingMix-Large `75071a1`. Evidence for each request is in
 `repository-audit.md`, `model-inference-graph.md`, `model-artifact-inventory.md`, `licensing-review.md`. Priority: **P0** blocks a Desktop
 acceptance gate, **P1** blocks a release quality gate, **P2** improves cost or safety.

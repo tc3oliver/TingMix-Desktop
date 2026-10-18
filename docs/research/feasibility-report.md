@@ -5,7 +5,7 @@ and benchmark files; each number carries `file@commit` (last commit that touched
 Detailed per-runtime rows are in `compatibility-matrix.md`; this report adds the decision view, the acceptance gates and the open items.
 Placeholders `TODO(lead)` mark results that did not exist in committed form when this was drafted.
 
-Status words (CLAUDE.md): VERIFIED = measured with the real TingMix model; EXPERIMENTAL = implemented or officially supported, TingMix parity
+Status words (CONTRIBUTING.md): VERIFIED = measured with the real TingMix model; EXPERIMENTAL = implemented or officially supported, TingMix parity
 or speed not (fully) established; BLOCKED = missing op, artifact or permission.
 
 ## 1. Verdict in one table

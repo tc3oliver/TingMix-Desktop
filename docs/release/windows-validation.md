@@ -1,6 +1,6 @@
 # Windows validation (physical PC)
 
-Status words follow `CLAUDE.md`. Everything below ran as **native Windows processes** (cargo, rustc, MSVC, PowerShell,
+Status words follow `CONTRIBUTING.md`. Everything below ran as **native Windows processes** (cargo, rustc, MSVC, PowerShell,
 the installer, the app), started over `ssh <windows-test-host>` through WSL interop; nothing counts that ran in WSL/Linux. All model
 numbers are **pipeline-only** (seeded random-init weights, no TingMix-Small checkpoint exists).
 

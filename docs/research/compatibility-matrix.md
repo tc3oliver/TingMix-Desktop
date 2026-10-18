@@ -4,7 +4,7 @@ DRAFT for the lead to verify (task #11). Built only from committed documents and
 (short hash of the last commit that touched the file, `git log -1 -- <file>` on 2026-10-18). Nothing was re-measured for this document.
 Items that depend on uncommitted work or on tasks still running are marked `TODO(lead)`.
 
-Status words (CLAUDE.md): **VERIFIED** = measured with the real TingMix model; **EXPERIMENTAL** = implemented or officially supported,
+Status words (CONTRIBUTING.md): **VERIFIED** = measured with the real TingMix model; **EXPERIMENTAL** = implemented or officially supported,
 parity or speed on TingMix not (fully) established; **BLOCKED** = missing op, artifact or permission. "Not run" means nothing was
 attempted. A VERIFIED/EXPERIMENTAL label here is never a claim about real-speech accuracy: all end-to-end parity uses the 8 synthetic TTS
 fixtures (`tests/fixtures/audio`, `experiments/macos/reference/README.md@12d72f3`), and every Apple timing is one machine
