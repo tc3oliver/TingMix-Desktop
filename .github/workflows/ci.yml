@@ -50,6 +50,10 @@ jobs:
         run: |
           uv sync --locked
           uv run python make_fixtures.py
+      # src-tauri turns on load-dynamic for the whole workspace, so the ONNX tests load the pinned runtime at run time
+      - name: Fetch the pinned ONNX Runtime
+        shell: bash
+        run: sh tools/ort-fetch/fetch.sh ${{ matrix.name }}
       - run: cargo test --workspace
       - name: Heavy tests are skipped without their inputs
         shell: bash
