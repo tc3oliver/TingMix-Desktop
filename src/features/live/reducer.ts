@@ -35,8 +35,11 @@ export function applySessionEvent(s: TranscriptState, sessionId: string, ev: Tra
   return applyEvent(base, ev);
 }
 
+/** An empty final retracts its segment (the pipeline suppressed it as noise): it closes the segment but is never shown. */
 export const finalsOf = (s: TranscriptState): FinalEvent[] =>
-  Object.values(s.finals).sort((a, b) => a.segment_id - b.segment_id);
+  Object.values(s.finals)
+    .filter((f) => f.text.trim() !== "")
+    .sort((a, b) => a.segment_id - b.segment_id);
 
 export const openOf = (s: TranscriptState): PartialEvent[] =>
   Object.values(s.open).sort((a, b) => a.segment_id - b.segment_id);

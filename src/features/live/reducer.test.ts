@@ -63,4 +63,17 @@ describe("transcript reducer", () => {
     expect(s.sessionId).toBe("live-2");
     expect(openOf(s)[0]?.text).toBe("new");
   });
+
+  it("an empty final retracts the caption: the partial disappears, no blank row appears, late partials stay out", () => {
+    let s = applyEvent(emptyTranscript(), partial(0, 0, "background noise"));
+    s = applyEvent(s, final(0, 1, ""));
+    expect(openOf(s)).toEqual([]);
+    expect(finalsOf(s)).toEqual([]);
+    expect(applyEvent(s, partial(0, 5, "late"))).toBe(s);
+    s = applyEvent(s, final(1, 0, "real speech"));
+    expect(finalsOf(s).map((f) => f.text)).toEqual(["real speech"]);
+    // the host's snapshot contains the empty final too
+    const snap = { finals: [{ segment_id: 0, revision: 1, text: "  ", start: 0, end: 1 }], open: [] };
+    expect(finalsOf(applySnapshot(emptyTranscript(), snap))).toEqual([]);
+  });
 });

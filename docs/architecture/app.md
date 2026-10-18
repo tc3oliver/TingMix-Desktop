@@ -113,15 +113,19 @@ model, `BackendInfo.usable` is false, Live and Files are replaced by the setup s
 shown inside Models when nothing is installed) and starting a session fails with `setup.required`. The host
 (`setup::check`, command `setup_check`) fetches the **signed catalog** (`tingmix_models::catalog`: one signed manifest or an
 array, each entry verified against the trusted keys; plain http refused except loopback in tests) from `setup::catalog_url()`,
-a build-time constant (`TINGMIX_CATALOG_URL` at compile time overrides the default). It keeps entries for this OS and CPU that
+a per-platform build-time constant (`setup::catalog_url_for`: macOS arm64 has the TingMix-Desktop manifest on Hugging Face, Windows x86_64 has none until the ONNX package of task 28; `TINGMIX_CATALOG_URL` at compile time overrides it). It keeps entries for this OS and CPU that
 are downloadable and whose engine this build contains, and answers one of: ready / download (licences to accept, size) /
 problem (a model is installed but unusable) / unavailable (`platform`: nothing for this computer yet, `build`: this build
 lacks the engine) / offline. The download is the existing `Models::install` (resumable ranges, cancel, hash check, signed
 manifest, atomic commit); when it finishes `onboard_core` activates the model and tests it, and the pushed backend event
 removes the screen. A cancelled or failed download keeps its bytes, and "Resume download" continues from them.
-**Not live yet**: the default catalog URL points at a file the owner has not published (task 29: release signing key and
-signed packages); until then a real release build shows "TingMix can't reach the model server". Tests use a loopback server
-and a throwaway key (`setup.rs` tests, `tingmix-models/tests/catalog.rs`) plus the MLX end-to-end test.
+**Not verified against the real server**: the macOS manifest lives in a private repo until it is reviewed and published, so
+the real URL has not been fetched from the app; until then a release build shows "TingMix can't reach the model server". Tests
+use a loopback server and a throwaway key (`setup.rs` tests, `tingmix-models/tests/catalog.rs`) plus the MLX end-to-end test.
+
+Live sessions use `SessionConfig::live_recommended()` (adaptive VAD, confidence suppression); file jobs keep `default()`. A
+suppressed segment ends with an **empty final**: the UI treats it as "remove this caption" (the reducer keeps the segment
+closed but `finalsOf` never returns it, so there is no blank row and no stale partial) and the history drops it before saving.
 
 ## Model onboarding and live state
 

@@ -233,7 +233,7 @@ fn pump(
     let native = src.sample_rate();
     let mut resampler =
         (native != MODEL_SAMPLE_RATE).then(|| Resampler::new(native, MODEL_SAMPLE_RATE));
-    let mut worker = SessionWorker::spawn(backend, &SessionConfig::default());
+    let mut worker = SessionWorker::spawn(backend, &SessionConfig::live_recommended());
     let t0 = Instant::now();
     let device = src.device();
     sh.update(sink, |s| {
@@ -260,7 +260,12 @@ fn pump(
         }
         false
     };
-    let finals_now = |sh: &Shared| sh.reducer.lock().unwrap().snapshot().finals;
+    // empty finals retract suppressed segments; they are not part of the saved transcript
+    let finals_now = |sh: &Shared| {
+        let mut f = sh.reducer.lock().unwrap().snapshot().finals;
+        f.retain(|f| !f.text.trim().is_empty());
+        f
+    };
 
     loop {
         let stopping = stop.load(Ordering::SeqCst);
@@ -369,10 +374,20 @@ mod tests {
         }
     }
 
+    /// 1 s of faint room noise (the adaptive VAD learns its floor from it), 3 s of a loud, syllable-modulated tone as stand-in
+    /// speech, then 1.5 s of silence that ends the segment.
     fn synthetic(disconnect_at_end: bool) -> Box<dyn PcmSource> {
-        let tone = (0..48_000 * 3)
-            .map(|i| (i as f32 * 440.0 * std::f32::consts::TAU / 48_000.0).sin() * 0.5);
-        let data = tone.chain(std::iter::repeat_n(0.0, 72_000)).collect();
+        let sr = 48_000.0_f32;
+        let noise = (0..48_000).map(|i| ((i * 7919 % 2001) as f32 / 1000.0 - 1.0) * 0.001);
+        let speech = (0..48_000 * 3).map(|i| {
+            let t = i as f32 / sr;
+            let syllable = 0.5 + 0.5 * (t * 4.0 * std::f32::consts::TAU).sin();
+            (t * 440.0 * std::f32::consts::TAU).sin() * 0.5 * syllable.max(0.2)
+        });
+        let data = noise
+            .chain(speech)
+            .chain(std::iter::repeat_n(0.0, 72_000))
+            .collect();
         Box::new(Synthetic {
             data,
             pos: 0,

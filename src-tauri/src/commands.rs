@@ -281,7 +281,11 @@ fn run_job(
             send(FileBody::Done {
                 audio_s: outcome.audio_s,
             });
-            let finals: Vec<_> = reducer.finals().cloned().collect();
+            let finals: Vec<_> = reducer
+                .finals()
+                .filter(|f| !f.text.trim().is_empty())
+                .cloned()
+                .collect();
             if st.store.settings().save_history && !finals.is_empty() {
                 let entry = HistoryEntry {
                     id: job_id.clone(),
