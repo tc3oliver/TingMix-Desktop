@@ -9,7 +9,8 @@ numbers are **pipeline-only** (seeded random-init weights, no TingMix-Small chec
 | Rust workspace builds and tests on Windows x64 (fmt, clippy, tests, whole workspace incl. the Tauri app crate, at 699e0ab) | VERIFIED except one open Windows-only test failure (finding 4) |
 | Small ONNX backend with the pinned Microsoft ORT 1.31.0 win-x64 dll, loaded by absolute path | VERIFIED (pipeline-only weights) |
 | NSIS installer builds, installs per user without elevation, bundles the pinned `onnxruntime.dll` | VERIFIED (unsigned) |
-| Installed app starts and loads only its own `onnxruntime.dll` | see "Installed app" below |
+| Installed app starts, shows its window, responds and exits cleanly | VERIFIED (one launch, no interaction) |
+| Installed app loads `onnxruntime.dll` from its install directory | NOT VERIFIED in the app: ORT is loaded lazily and no model is installed, so the dll was not loaded at start-up (see below) |
 | CPU streaming performance of a Small-shaped model | EXPERIMENTAL (random weights, this PC only; no real checkpoint, so no acceptance gate is decided) |
 | GPU execution providers | EXPERIMENTAL probe through ORT Python wheels, not through the Rust/`ort` path |
 | Windows ML catalog EPs, microphone capture, UI, signing, SmartScreen, clean-VM install | NOT DONE |
@@ -68,7 +69,16 @@ p95 2.3 to 8.8 ms; zero pushes slower than their chunk; peak working set 108 to 
 p95 5.3 ms (the same graph on the M4 Max: 2.4 / 2.7 ms). 3600 s of audio pushed as fast as possible
 (`soak-3600s-fp32-msft-ort-1.31.0.jsonl`): RTF 0.0142 (1 thread) and 0.0106 (4 threads), p95 5.8 ms, no push slower than its
 chunk; peak working set 340 MB (it includes the 230 MB audio buffer the benchmark holds).
-A real-time 60-minute soak through `tingmix-bench --backend onnx --soak` is in `benchmarks/windows/` once it finishes (see its file for the result; if absent it was still running when this was written).
+
+Real-time 60-minute soak (`soak-realtime-60min-onnx-pyke-ort.json`, `tingmix-bench --backend onnx --model prod.onnx --threads 4
+--duration-s 3600 --soak`, 20 ms chunks, 281 synthetic utterances, tail-partial live policy): all 9 soak assertions pass. First
+partial P50/P95 0.057/0.073 s from onset; final latency from speech end P50/P95 0.796/0.812 s (= VAD hang 0.2 s + silence_ms 0.6 s,
+i.e. about 0 s after the endpoint because the final reuses the tail partial); streaming RTF 0.0079; max 1 pending final,
+nothing left pending, no drift of final latency (early 0.796 s, late 0.796 s), RSS max 115.5 MB with slope -14 MB/h, no stuck
+inference call, 0 backend errors. Caveats: random-init weights (the text means nothing), this run linked ort's own ORT 1.31.0 prebuilt
+(default `download-binaries`), not the pinned Microsoft dll; the binary was built at 22e8c4b and the report's `git_sha`
+(ffb0b91) is the checkout at the end of the run; a `cargo clippy/test` workspace build ran on the same PC around minute 5-10 of
+the hour. Its `partial_staleness` metric (about 5.3 s, flat) is a property of the harness's definition for the Small model, not of drift.
 
 ## Execution-provider probe (`tools/ep-probe/probe.py`)
 
@@ -94,3 +104,34 @@ download through Windows Update.
 
 - Build: `pnpm install --frozen-lockfile` then `pnpm bundle:windows` (= `tauri build --bundles nsis --config src-tauri/tauri.ort-windows.conf.json`), 1 m 51 s of Rust compile, built from 22e8c4b, output `target\release\bundle\nsis\TingMix_0.1.0_x64-setup.exe`, 10.54 MiB (11 052 493 bytes), sha256 `d8ea9b8fe5dff6260c43caeff4ad9461384f0bdb1da6a1f535c1762f8146c1ce`, **not signed** (Authenticode: NotSigned).
 - Silent per-user install (`/S`, no elevation, exit 0) to `C:\Users\User\AppData\Local\TingMix`: `tingmix-app.exe` 19.2 MB, `uninstall.exe`, `onnxruntime\onnxruntime.dll` (sha256 equals the pinned `0c42dc4e...`), `onnxruntime_providers_shared.dll`, `LICENSE`, `ThirdPartyNotices.txt`; uninstall entry under HKCU (`TingMix 0.1.0`).
+
+## Installed app: one launch
+
+With the lead's and the user's approval, the installed `tingmix-app.exe` was started once from
+`C:\Users\User\AppData\Local\TingMix`, left alone for 10 s (no mic, no UI interaction), inspected and closed:
+
+- process running and `Responding: True`, window title `TingMix`;
+- loaded modules matched against `onnx|DirectML`: **none**. The app preloads a backend only when a model is active, and no model
+  is installed on this PC, so the ORT dll was not loaded. That the install-dir `onnxruntime.dll` is the pinned one is proven by
+  its sha256 (above); that Rust loads exactly such a dll by absolute path and never the System32 copy is proven with `run_wav.exe`;
+  the combination inside the app (model activated, ORT loaded from `...\TingMix\onnxruntime\`) still needs the manual steps below;
+- `CloseMainWindow()` ended the process within 8 s; no `tingmix-app` process remained; the number of `msedgewebview2` processes
+  (the user's other WebView2 apps) was unchanged (19 before and after);
+- the run created `C:\Users\User\AppData\Roaming\app.tingmix.desktop` and `...\Local\app.tingmix.desktop` (app and WebView2 data).
+  Uninstall: `C:\Users\User\AppData\Local\TingMix\uninstall.exe` (registry entry under HKCU); the data folders stay unless removed by hand.
+
+## What is not done and exact manual steps for the user
+
+Not done: microphone capture and the UI on Windows, Windows privacy prompt for the microphone, SmartScreen behaviour of an unsigned
+installer, a clean-VM install (this PC already has the VC++ runtime, WebView2 and the dev toolchain), code signing, the offline
+(`bundle:windows:offline`) installer, Windows ML catalog EPs, any real TingMix model, uninstall/upgrade paths.
+
+Manual steps (about 10 minutes, with a model available):
+1. Run `TingMix_0.1.0_x64-setup.exe` (build: `pnpm bundle:windows`, or the installer from this validation). Expect SmartScreen
+   "unknown publisher" because the installer is unsigned; no elevation prompt should appear.
+2. Start TingMix from the Start menu. In Models, import or install a model and activate it (the ORT dll is only loaded now).
+3. While the app runs, in PowerShell: `(Get-Process tingmix-app).Modules | ? ModuleName -match onnx | select FileName` - it must show only
+   `...\AppData\Local\TingMix\onnxruntime\onnxruntime.dll`, never `C:\Windows\System32\onnxruntime.dll`.
+4. Live tab: choose the microphone, press Start. Windows Settings > Privacy & security > Microphone must allow desktop apps; speak and
+   check that partials revise and a final appears; unplug/disable the microphone and check that the app reports it instead of hanging.
+5. Quit, and check Task Manager shows no `tingmix-app.exe` left.
