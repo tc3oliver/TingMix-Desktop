@@ -2,6 +2,15 @@
   "name": "tingmix-desktop",
   "private": true,
   "version": "0.1.0",
+  "description": "Local speech recognition desktop app (Tauri 2, React, Rust)",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tc3oliver/tingmix-desktop.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tc3oliver/tingmix-desktop/issues"
+  },
   "type": "module",
   "packageManager": "pnpm@10.34.7",
   "scripts": {
