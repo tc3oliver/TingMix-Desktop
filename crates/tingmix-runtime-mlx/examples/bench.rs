@@ -36,6 +36,12 @@ fn stats(mut v: Vec<f64>) -> serde_json::Value {
     json!({"n": v.len(), "mean_ms": mean * 1e3, "p50_ms": pct(&mut v, 0.5) * 1e3, "p95_ms": pct(&mut v, 0.95) * 1e3, "p99_ms": pct(&mut v, 0.99) * 1e3, "max_ms": v[v.len() - 1] * 1e3})
 }
 
+#[cfg(not(unix))]
+fn peak_rss_mib() -> f64 {
+    0.0 // not measured off Unix (this example only has MLX numbers on Apple silicon)
+}
+
+#[cfg(unix)]
 fn peak_rss_mib() -> f64 {
     let mut ru = unsafe { std::mem::zeroed::<libc::rusage>() };
     unsafe { libc::getrusage(libc::RUSAGE_SELF, &mut ru) };
