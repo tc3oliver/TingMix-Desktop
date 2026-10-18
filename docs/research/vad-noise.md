@@ -115,3 +115,30 @@ The model-free matrix re-run (`benchmarks/streaming/noise/vad-only-matrix-after-
 utterances, coverage, merges, detection delay). Tuning that was tried and rejected: a spread-only rule at 50 frames added one 1-1.5 s false segment at the start of
 every noisy recording (24 of 24 noisy runs), and a "must last 5 s if loud" rule delayed detection by up to 9 s under steady noise. Open: loud, modulated
 noise (babble) with speech starting immediately cannot be told apart by energy; real-speech and real-room recordings are not covered by these synthetic checks.
+
+## Non-stop compressed speech (fix, 2026-10-18)
+
+A live test with a YouTube talk show played into the microphone skipped parts of sentences. Replaying the first 300 s of
+that video through the live preset (`SessionConfig::live_recommended()`, MLX Large, no microphone) covered only 217 s with
+segments; the other 83 s never reached the model. File mode covered all 300 s. The audio is broadcast-compressed speech over
+a music bed with almost no pauses: frame levels p20 -28, median -22, p90 -15 dBFS. A floor at the 20th percentile of the last
+5 s therefore sits inside the speech, the start threshold (floor + 10 dB) is reached by only the loudest quarter of frames, and
+the stay threshold (floor + 5 dB) is near the median, so segments kept closing mid-sentence.
+
+Change: `floor_percentile` 0.2 -> 0.1 and `stay_margin_db` 5 -> 3. Coverage of the same 300 s (`tingmix-bench --vad-only
+--wav`, model-free): default 217 s / 63 segments; 0.1 alone 283 s; 0.1 + stay 3 296 s / 19 segments; 0.05 300 s. Slowing the
+floor's rise only while speech is open was tried and rejected (239 s at 0.25 dB/s). With the real model the live preset now
+writes continuous text over the 300 s, and no final was suppressed.
+
+Model-free matrix (`vad-only-matrix-floor-p10.json` vs `vad-only-matrix-after-settle.json`, adaptive rows): speech in noise
+improves everywhere (missed utterances at 10 dB SNR: white 2 -> 0, pink 2 -> 0, fan 4 -> 0; at 5 dB pink 47 -> 36, fan 28 -> 3,
+babble 30 -> 8). White, pink and babble noise alone still open no segment. The cost is the steady fan bed: false segments
+0.10 -> 0.79 per minute at every SNR, and one more merged segment per 10 min of fan + speech. Real model, suppression on
+(`mlx-floor-p10/`): fan alone opened 0.56 false segments per minute whose finals were suppressed, but a partial "m" (confidence
+0.34-0.36) showed for a few seconds before the retraction; clean and fan + speech CER 0.025 and 0.023; music bed alone 0.
+The fan + speech run reports one missed utterance: en_02s followed 3.4 s later by zh_08s became one segment, and its text
+starts that segment's final. The 0.05 percentile was rejected for fan noise alone (2.9 false segments per minute).
+
+Tests: `non_stop_compressed_speech_stays_open` (fails on the old defaults); the settle negative control pins the old 0.2
+percentile it was written for. Not checked: real rooms with fans or air conditioning, and how often the brief "m" partial
+appears there. A neural VAD remains the real fix for speech that energy cannot separate from its background.

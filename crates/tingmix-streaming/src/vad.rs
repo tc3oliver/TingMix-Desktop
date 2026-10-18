@@ -111,12 +111,12 @@ pub struct AdaptiveVadParams {
 impl Default for AdaptiveVadParams {
     fn default() -> Self {
         Self {
-            floor_percentile: 0.2,
+            floor_percentile: 0.1,
             window_frames: 250,
             rise_db_per_s: 4.0,
             smooth_frames: 3,
             start_margin_db: 10.0,
-            stay_margin_db: 5.0,
+            stay_margin_db: 3.0,
             abs_min_db: -55.0,
             start_window: 12,
             start_votes: 8,
@@ -398,6 +398,7 @@ mod tests {
     fn without_the_settle_check_speech_at_the_start_is_lost() {
         // negative control: the previous behaviour (trust the first percentile) drags the floor up into the speech
         let mut a = AdaptiveVad::with_params(AdaptiveVadParams {
+            floor_percentile: 0.2, // the percentile this bug was found with; at 0.1 the synthetic pauses keep the floor down
             settle_spread_db: f32::INFINITY,
             settle_loud_db: f32::INFINITY,
             ..Default::default()
@@ -408,6 +409,29 @@ mod tests {
             open < 150,
             "the control no longer reproduces the bug ({open} of 300 frames open): {}",
             a.floor_db()
+        );
+    }
+
+    /// Broadcast audio: compressed speech over a music bed, no real pauses. Levels mimic a measured talk-show video
+    /// (bed -32 dBFS, speech p20 -28, median -22, p90 -15).
+    fn compressed_talk(v: &mut AdaptiveVad) -> usize {
+        feed(v, -32.0, 100);
+        let s = speechlike(v, -16.0, -28.0, 1500);
+        s.iter().filter(|&&x| x).count()
+    }
+
+    #[test]
+    fn non_stop_compressed_speech_stays_open() {
+        let open = compressed_talk(&mut AdaptiveVad::new());
+        assert!(open > 1400, "only {open} of 1500 frames of talk were heard");
+        let old = compressed_talk(&mut AdaptiveVad::with_params(AdaptiveVadParams {
+            floor_percentile: 0.2,
+            stay_margin_db: 5.0,
+            ..Default::default()
+        }));
+        assert!(
+            old < 1200,
+            "the old defaults no longer lose this talk ({old} of 1500 open)"
         );
     }
 
