@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useI18n } from "../../i18n";
 import { hostText, reasonText } from "../../i18n/host";
+import { licenceName } from "../../lib/licence";
 import { api, errorText, onBackend, onModelOp } from "../../lib/api";
 import type { BackendState, ModelOp, SetupView } from "../../types/protocol";
 import { etaSeconds, etaText, pushSample, type RateSample } from "../models/onboard";
@@ -133,7 +134,7 @@ export function SetupScreen({ backend, onOpenModels, onView, first = false }: Pr
         <p>{t("setup.body", { size })}</p>
         {needed.map((l) => (
           <label key={l.id} className="block">
-            <input type="checkbox" checked={accepted.includes(l.id)} onChange={(e) => setAccepted((a) => (e.target.checked ? [...a, l.id] : a.filter((x) => x !== l.id)))} /> {t("setup.agree", { name: `${l.name}${l.spdx ? ` (${l.spdx})` : ""}` })}
+            <input type="checkbox" checked={accepted.includes(l.id)} onChange={(e) => setAccepted((a) => (e.target.checked ? [...a, l.id] : a.filter((x) => x !== l.id)))} /> {t("setup.agree", { name: licenceName(l, t) })}
             <button className="link small" onClick={(e) => { e.preventDefault(); api.openLicenceUrl(l.url).catch((err) => setError(errorText(err))); }}>{t("setup.read_terms")}</button>
           </label>
         ))}

@@ -24,7 +24,7 @@ const NOT_READY: BackendState = { info: info({ label: "Mock — not ASR", mock: 
 const lic = (id: string, name: string, spdx: string | null) => ({ id, name, url: `https://example.org/licences/${id}`, spdx, acceptance_required: true, accepted: false, notes: "" });
 const download: SetupView = {
   state: "download",
-  pending: { token: "t", id: "tingmix-small-onnx-fp16-r1a2b3c4", family: "tingmix-small", backend: "onnx", precision: "fp16", download_bytes: 1_320_000_000, compat_status: "supported", licenses: [lic("apache-2.0", "Apache License 2.0", "Apache-2.0"), lic("tingmix-model", "TingMix Model Licence", null)] },
+  pending: { token: "t", id: "tingmix-small-onnx-fp16-r1a2b3c4", family: "tingmix-small", backend: "onnx", precision: "fp16", download_bytes: 1_320_000_000, compat_status: "supported", licenses: [lic("tingmix-large-model", "TingMix-Large model terms", null), lic("google-embeddinggemma-2", "Google EmbeddingGemma 2 licence and prohibited use policy", null)] },
 };
 const op = (state: ModelOp["state"], done: number, message: string | null = null): ModelOp => ({ kind: "download", name: "tingmix-small-onnx-fp16-r1a2b3c4", state, message, bytes_done: done, bytes_total: 1_320_000_000 });
 
