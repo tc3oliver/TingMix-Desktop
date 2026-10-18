@@ -1206,7 +1206,10 @@ mod tests {
         .contains("hasn't been tested"));
         assert!(
             crate::coded::english(&plain("probe failed: load/first decode failed: boom", MLX))
-                .starts_with("The test run on this Mac failed: Load/first")
+                .starts_with(&format!(
+                    "The test run on {} failed: Load/first",
+                    crate::coded::computer()
+                ))
         );
         assert!(plain("backend mlx is not registered in this build", MLX)
             .contains("\"backend.missing_engine\""));
