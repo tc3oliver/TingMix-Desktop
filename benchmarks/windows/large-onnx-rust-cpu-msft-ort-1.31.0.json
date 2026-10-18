@@ -1,0 +1,59 @@
+{
+  "command": "C:\\Users\\User\\src\\tingmix-desktop\\target\\ort-dynamic\\release\\examples\\bench_large.exe C:\\Users\\User\\src\\tingmix-desktop\\experiments\\windows\\large-onnx\\out\\tingmix-large.onnx C:\\Users\\User\\data\\tingmix-large C:\\Users\\User\\tm\\large-bench-cpu-msft-ort-1.31.0.json cpu 8",
+  "cpu": "AMD Ryzen 7 9700X 8-Core Processor",
+  "model_sha256": "0b9f89c8ca521263cc6e1ddd52985d52f48591cfd1be2c1441d5cf95e618bc47",
+  "ort_library": "C:\\Users\\User\\src\\tingmix-desktop\\vendor\\onnxruntime\\windows-x64\\lib\\onnxruntime.dll",
+  "provider": "Cpu",
+  "results": {
+    "29.5s": {
+      "audio_s": 29.5,
+      "mel_plus_model": {
+        "min_ms": 784.2943,
+        "n": 10,
+        "p50_ms": 819.6949,
+        "p95_ms": 847.6486
+      },
+      "rtf_p50_beam_lm": 0.033110322033898305,
+      "rtf_p50_greedy": 0.028316793220338983,
+      "rtf_p50_model": 0.02778626779661017,
+      "wav_to_text_beam_lm": {
+        "min_ms": 939.8426,
+        "n": 10,
+        "p50_ms": 976.7545,
+        "p95_ms": 990.2838
+      },
+      "wav_to_text_greedy": {
+        "min_ms": 797.0861,
+        "n": 10,
+        "p50_ms": 835.3454,
+        "p95_ms": 872.8441
+      }
+    },
+    "8s": {
+      "audio_s": 7.5191875,
+      "mel_plus_model": {
+        "min_ms": 202.3158,
+        "n": 10,
+        "p50_ms": 237.26659999999998,
+        "p95_ms": 245.7289
+      },
+      "rtf_p50_beam_lm": 0.035668907046140286,
+      "rtf_p50_greedy": 0.03130218524275395,
+      "rtf_p50_model": 0.03155481892159226,
+      "wav_to_text_beam_lm": {
+        "min_ms": 251.19029999999998,
+        "n": 10,
+        "p50_ms": 268.2012,
+        "p95_ms": 292.10720000000003
+      },
+      "wav_to_text_greedy": {
+        "min_ms": 220.79960000000003,
+        "n": 10,
+        "p50_ms": 235.367,
+        "p95_ms": 258.6775
+      }
+    }
+  },
+  "threads": 8,
+  "what": "OnnxLarge wav->text latency (Rust Gemma4 mel + ORT + Rust CTC decode), fixtures mix_08s and the first 29.5 s of mix_29s"
+}

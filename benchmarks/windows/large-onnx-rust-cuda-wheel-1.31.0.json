@@ -1,0 +1,59 @@
+{
+  "command": "C:\\Users\\User\\src\\tingmix-desktop\\target\\ort-dynamic\\release\\examples\\bench_large.exe C:\\Users\\User\\src\\tingmix-desktop\\experiments\\windows\\large-onnx\\out\\tingmix-large.onnx C:\\Users\\User\\data\\tingmix-large C:\\Users\\User\\tm\\large-bench-cuda-wheel-1.31.0.json cuda 8",
+  "cpu": "AMD Ryzen 7 9700X 8-Core Processor",
+  "model_sha256": "0b9f89c8ca521263cc6e1ddd52985d52f48591cfd1be2c1441d5cf95e618bc47",
+  "ort_library": "C:\\Users\\User\\AppData\\Local\\uv\\cache\\archive-v0\\KRFTzJZxhmlgOHdKSddnM\\Lib\\site-packages\\onnxruntime\\capi\\onnxruntime.dll",
+  "provider": "Cuda",
+  "results": {
+    "29.5s": {
+      "audio_s": 29.5,
+      "mel_plus_model": {
+        "min_ms": 80.22550000000001,
+        "n": 10,
+        "p50_ms": 83.1084,
+        "p95_ms": 84.70700000000001
+      },
+      "rtf_p50_beam_lm": 0.007460094915254237,
+      "rtf_p50_greedy": 0.003167406779661017,
+      "rtf_p50_model": 0.0028172338983050845,
+      "wav_to_text_beam_lm": {
+        "min_ms": 214.90210000000002,
+        "n": 10,
+        "p50_ms": 220.0728,
+        "p95_ms": 233.7816
+      },
+      "wav_to_text_greedy": {
+        "min_ms": 90.171,
+        "n": 10,
+        "p50_ms": 93.43849999999999,
+        "p95_ms": 98.8671
+      }
+    },
+    "8s": {
+      "audio_s": 7.5191875,
+      "mel_plus_model": {
+        "min_ms": 28.6207,
+        "n": 10,
+        "p50_ms": 30.9011,
+        "p95_ms": 38.6395
+      },
+      "rtf_p50_beam_lm": 0.008516225988512722,
+      "rtf_p50_greedy": 0.00429417407133417,
+      "rtf_p50_model": 0.0041096328559435446,
+      "wav_to_text_beam_lm": {
+        "min_ms": 60.0017,
+        "n": 10,
+        "p50_ms": 64.0351,
+        "p95_ms": 67.2814
+      },
+      "wav_to_text_greedy": {
+        "min_ms": 29.9925,
+        "n": 10,
+        "p50_ms": 32.2887,
+        "p95_ms": 41.7688
+      }
+    }
+  },
+  "threads": 8,
+  "what": "OnnxLarge wav->text latency (Rust Gemma4 mel + ORT + Rust CTC decode), fixtures mix_08s and the first 29.5 s of mix_29s"
+}

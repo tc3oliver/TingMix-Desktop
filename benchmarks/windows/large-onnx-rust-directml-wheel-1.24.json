@@ -1,0 +1,59 @@
+{
+  "command": "C:\\Users\\User\\src\\tingmix-desktop\\target\\ort-dynamic\\release\\examples\\bench_large.exe C:\\Users\\User\\src\\tingmix-desktop\\experiments\\windows\\large-onnx\\out\\tingmix-large.onnx C:\\Users\\User\\data\\tingmix-large C:\\Users\\User\\tm\\large-bench-directml-wheel-1.24.json directml 8",
+  "cpu": "AMD Ryzen 7 9700X 8-Core Processor",
+  "model_sha256": "0b9f89c8ca521263cc6e1ddd52985d52f48591cfd1be2c1441d5cf95e618bc47",
+  "ort_library": "C:\\Users\\User\\AppData\\Local\\uv\\cache\\archive-v0\\OV-dLEuFJZ4rdmrCciGoh\\Lib\\site-packages\\onnxruntime\\capi\\onnxruntime.dll",
+  "provider": "DirectMl",
+  "results": {
+    "29.5s": {
+      "audio_s": 29.5,
+      "mel_plus_model": {
+        "min_ms": 1110.0131,
+        "n": 10,
+        "p50_ms": 1151.646,
+        "p95_ms": 1197.8738
+      },
+      "rtf_p50_beam_lm": 0.04422462372881356,
+      "rtf_p50_greedy": 0.040019566101694916,
+      "rtf_p50_model": 0.03903884745762712,
+      "wav_to_text_beam_lm": {
+        "min_ms": 1254.6261000000002,
+        "n": 10,
+        "p50_ms": 1304.6264,
+        "p95_ms": 1336.0109
+      },
+      "wav_to_text_greedy": {
+        "min_ms": 1125.1709,
+        "n": 10,
+        "p50_ms": 1180.5772000000002,
+        "p95_ms": 1266.577
+      }
+    },
+    "8s": {
+      "audio_s": 7.5191875,
+      "mel_plus_model": {
+        "min_ms": 39.8932,
+        "n": 10,
+        "p50_ms": 42.9212,
+        "p95_ms": 46.951
+      },
+      "rtf_p50_beam_lm": 0.0096647676361309,
+      "rtf_p50_greedy": 0.005835005444404731,
+      "rtf_p50_model": 0.005708223129161229,
+      "wav_to_text_beam_lm": {
+        "min_ms": 70.8579,
+        "n": 10,
+        "p50_ms": 72.6712,
+        "p95_ms": 75.9511
+      },
+      "wav_to_text_greedy": {
+        "min_ms": 42.643100000000004,
+        "n": 10,
+        "p50_ms": 43.8745,
+        "p95_ms": 45.4082
+      }
+    }
+  },
+  "threads": 8,
+  "what": "OnnxLarge wav->text latency (Rust Gemma4 mel + ORT + Rust CTC decode), fixtures mix_08s and the first 29.5 s of mix_29s"
+}
