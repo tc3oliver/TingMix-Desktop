@@ -1,0 +1,21 @@
+[project]
+name = "tingmix-large-onnx"
+version = "0.0.0"
+description = "TingMix-Large audio tower + Reader (mel to CTC logits) exported to ONNX for Windows (ONNX Runtime CPU/DirectML/CUDA)"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "numpy",
+    "torch==2.9.1",
+    "transformers==5.19.0",
+    "huggingface_hub",
+    "safetensors",
+    "sentencepiece",
+    "soundfile",
+    "onnx==1.19.1",
+    "onnxruntime==1.23.2",
+    "embed2asr @ git+https://github.com/tc3oliver/embed2asr.git@b58275785501c084610b1570f1a446a31da5f933",
+    "tingmix @ git+https://github.com/tc3oliver/tingmix.git@f44cbdbd2cd99598c99cf8d60da6cb41bb15d1db",
+]
+
+[tool.uv]
+package = false
