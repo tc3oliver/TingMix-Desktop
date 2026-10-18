@@ -11,6 +11,7 @@ mod live;
 mod locale;
 mod mic;
 mod models;
+mod opener;
 mod setup;
 mod state;
 mod store;
@@ -200,6 +201,7 @@ pub fn run() {
             commands::models_probe,
             commands::backend_state,
             commands::setup_check,
+            commands::open_licence_url,
             commands::updater_check,
             commands::updater_install,
             commands::mic_permission_status,

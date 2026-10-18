@@ -727,3 +727,17 @@ pub async fn setup_check(state: State<'_, AppState>) -> Result<crate::setup::Set
         token,
     ))
 }
+
+/// Opens a licence page in the system browser. Only an https URL that appears in the licences of an offered or installed
+/// manifest is opened, so the webview cannot make the host open arbitrary addresses.
+#[tauri::command]
+pub async fn open_licence_url(state: State<'_, AppState>, url: String) -> Result<(), String> {
+    if !state.models.licence_url_allowed(&url) {
+        return Err(coded(
+            "system.url_not_allowed",
+            json!({}),
+            "that address is not a licence page of a model on this computer",
+        ));
+    }
+    crate::opener::open(&url).map_err(crate::coded::system)
+}

@@ -34,6 +34,7 @@
     "allow-models-probe",
     "allow-backend-state",
     "allow-setup-check",
+    "allow-open-licence-url",
     "allow-updater-check",
     "allow-updater-install",
     "allow-mic-permission-status",

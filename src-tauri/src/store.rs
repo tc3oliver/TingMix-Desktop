@@ -95,6 +95,7 @@ impl Store {
             .filter_map(|f| serde_json::from_slice::<HistoryEntry>(&fs::read(f.path()).ok()?).ok())
             .map(legacy_name)
             .map(|e| HistorySummary {
+                first_line: first_line(&e.finals),
                 segments: e.finals.len(),
                 id: e.id,
                 source: e.source,
@@ -107,6 +108,18 @@ impl Store {
         out.sort_by(|a, b| b.started_at.cmp(&a.started_at).then(b.id.cmp(&a.id)));
         out
     }
+}
+
+/// The first non-empty final, cut at 80 characters (not bytes: the text is often Chinese).
+fn first_line(finals: &[tingmix_core::FinalEvent]) -> String {
+    const MAX: usize = 80;
+    let Some(t) = finals.iter().map(|f| f.text.trim()).find(|t| !t.is_empty()) else {
+        return String::new();
+    };
+    if t.chars().count() <= MAX {
+        return t.to_string();
+    }
+    t.chars().take(MAX).collect::<String>() + "…"
 }
 
 /// Live entries saved by earlier builds are named "Live session" in English; live entries now have no name and the UI titles
@@ -162,6 +175,41 @@ mod tests {
         assert_eq!(s.settings().caption_size, 96);
         fs::write(s.config_dir().join("settings.json"), b"{broken").unwrap();
         assert_eq!(s.settings().caption_size, 28);
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn summaries_carry_the_first_non_empty_final_cut_at_80_characters() {
+        let (s, dir) = store("firstline");
+        let mut e = entry("live-1", 1);
+        e.finals = vec![
+            FinalEvent {
+                segment_id: 0,
+                revision: 1,
+                text: "  ".into(),
+                start: 0.0,
+                end: 1.0,
+            },
+            FinalEvent {
+                segment_id: 1,
+                revision: 1,
+                text: "我覺得這個".repeat(30),
+                start: 1.0,
+                end: 2.0,
+            },
+        ];
+        s.save_history(&e).unwrap();
+        let mut empty = entry("live-2", 2);
+        empty.finals.clear();
+        s.save_history(&empty).unwrap();
+        let list = s.list_history();
+        let line = &list.iter().find(|h| h.id == "live-1").unwrap().first_line;
+        assert_eq!(line.chars().count(), 81, "{line}");
+        assert!(line.ends_with('…') && line.starts_with("我覺得這個"));
+        assert_eq!(
+            list.iter().find(|h| h.id == "live-2").unwrap().first_line,
+            ""
+        );
         fs::remove_dir_all(dir).unwrap();
     }
 

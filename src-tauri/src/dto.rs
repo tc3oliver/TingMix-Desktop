@@ -181,6 +181,9 @@ pub struct HistorySummary {
     pub duration_s: f64,
     pub backend: String,
     pub segments: usize,
+    /// First non-empty final text, cut to about 80 characters (with an ellipsis when cut): a recognisable title for entries
+    /// that have no name.
+    pub first_line: String,
 }
 
 #[derive(Debug, Clone, Serialize)]

@@ -113,6 +113,30 @@ type Pending = (VerifiedManifest, Option<(PathBuf, bool)>);
 pub type Notify = Arc<dyn Fn(OpView) + Send + Sync>;
 
 impl Models {
+    /// A licence page the user may open: the URL must be https and exactly one of the licence URLs of a manifest that is
+    /// pending (offered for install) or installed. Nothing else is ever opened from a URL the frontend names.
+    pub fn licence_url_allowed(&self, url: &str) -> bool {
+        if !url.starts_with("https://")
+            || url.len() > 2048
+            || url.chars().any(|c| c.is_whitespace() || c.is_control())
+        {
+            return false;
+        }
+        let pending = self
+            .pending
+            .lock()
+            .unwrap()
+            .values()
+            .any(|(m, _)| m.manifest().licenses.iter().any(|l| l.url == url));
+        pending
+            || self.reg().ok().is_some_and(|reg| {
+                reg.list().unwrap_or_default().iter().any(|id| {
+                    reg.open_model(id)
+                        .is_ok_and(|m| m.manifest.licenses.iter().any(|l| l.url == url))
+                })
+            })
+    }
+
     pub fn caps(&self) -> &Capabilities {
         &self.caps
     }
@@ -554,6 +578,23 @@ mod tests {
             .install("unknown", &[], Arc::new(|_| {}))
             .unwrap_err()
             .contains("expired"));
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn only_licence_pages_of_offered_or_installed_models_may_be_opened() {
+        let (m, dir) = models("urls");
+        let p = m.begin_install(SIGNED, "t1".into()).unwrap();
+        let urls: Vec<String> = p.licenses.iter().map(|l| l.url.clone()).collect();
+        assert!(!urls.is_empty());
+        for u in &urls {
+            assert!(m.licence_url_allowed(u), "{u}");
+        }
+        assert!(!m.licence_url_allowed("https://example.com/"));
+        assert!(!m.licence_url_allowed(&format!("{} ", urls[0])));
+        assert!(!m.licence_url_allowed(&urls[0].replacen("https://", "http://", 1)));
+        assert!(!m.licence_url_allowed("file:///etc/passwd"));
+        assert!(!m.licence_url_allowed(""));
         std::fs::remove_dir_all(dir).unwrap();
     }
 

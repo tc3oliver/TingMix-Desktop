@@ -68,6 +68,15 @@ fails when a code is used in `src-tauri/src` but missing here.
 | `setup.no_platform` | | no model for this OS and CPU yet |
 | `setup.no_engine` | | this build lacks the engine the available model needs |
 | `system.failed` | `detail` | disk, dialog or OS failure |
+| `system.url_not_allowed` | | `open_licence_url` was given an address that is not a licence page of an offered or installed model |
+
+## Commands added for the product UX pass
+
+- `open_licence_url(url)`: opens the system browser on a licence page. Allowed only for an `https://` URL that is exactly one of the
+  `licenses[].url` of a manifest that is currently offered (`PendingInstall.licenses[].url`, including the first-run offer) or
+  installed (`models_overview`); anything else fails with `system.url_not_allowed`. No opener plugin and no extra capability.
+- `HistorySummary.first_line`: the first non-empty final text of the entry, cut to about 80 characters with an ellipsis (empty when
+  the entry has no text). Use it to title live entries together with the start time.
 
 ## Fields that are not coded messages
 
