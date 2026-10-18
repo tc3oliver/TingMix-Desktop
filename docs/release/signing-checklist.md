@@ -46,13 +46,13 @@ The updater key is **independent** from the Apple/Microsoft identities and from 
 
 ## 4. Model-manifest release key (replaces `tingmix-dev-1`)
 
-Current state (`crates/tingmix-models/src/keys.rs`, `docs/architecture/model-management.md`): the only trusted key is the DEV key
-`tingmix-dev-1`, whose private half sits in a developer home directory. Shipped fixtures are signed with it.
+Current state (`crates/tingmix-models/src/keys.rs`, `docs/architecture/model-management.md`): release builds trust only `tingmix-release-1`; the DEV key
+`tingmix-dev-1` (private half in a developer home directory, signs test fixtures) is trusted only in debug builds or with the `dev-key` feature.
 
 | Step | Notes |
 |---|---|
 | Generate the release key offline | `manifest-sign keygen <file>` on an offline machine or hardware-backed signer; the private key never touches CI or a laptop that browses |
-| Embed the public key as a new id (for example `tingmix-release-1`) in `TRUSTED` and ship it in an app release; keep the dev key out of release builds | a build with `tingmix-dev-1` trusted must be refused by the release workflow (add a check) |
+| Embed the public key as a new id (for example `tingmix-release-1`) in `TRUSTED` and ship it in an app release; keep the dev key out of release builds (enforced: `tingmix-dev-1` is compiled in only under `debug_assertions` or the `dev-key` feature, with a release-mode test; never enable `dev-key` for a shipped build) | a build with `tingmix-dev-1` trusted must be refused by the release workflow (add a check) |
 | Sign manifests only after the licence decisions E4-E5 (`docs/research/licensing-review.md`; E1-E3 are not pursued by owner decision) and the anti-rollback serial (registry hardening task) | |
 | Rotation and compromise | add the new key, ship, drop the old one later; there is no online revocation list (`model-management.md`) |
 | Backup | two offline copies, tested restore |

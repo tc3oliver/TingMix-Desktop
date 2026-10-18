@@ -7,6 +7,10 @@ license.workspace = true
 version.workspace = true
 rust-version.workspace = true
 
+[features]
+# trust the tingmix-dev-1 fixture key in release-mode builds (always on under debug_assertions)
+dev-key = []
+
 [dependencies]
 ed25519-dalek = "3.0.0"
 getrandom = "0.4.3"

@@ -1,7 +1,7 @@
 //! Publisher public keys embedded in the application: (key id, Ed25519 public key).
 //! The matching private key never enters the repository; see docs/architecture/model-management.md.
 
-/// Rotation = add a new entry, ship, then drop the old one. The dev key signs test fixtures only and is dropped before 1.0.
+/// Rotation = add a new entry, ship, then drop the old one. The dev key signs test fixtures only and is compiled in only under debug_assertions or the `dev-key` feature.
 pub const TRUSTED: &[(&str, [u8; 32])] = &[
     (
         "tingmix-release-1",
@@ -11,6 +11,7 @@ pub const TRUSTED: &[(&str, [u8; 32])] = &[
             0xaf, 0x27, 0x0d, 0xc2,
         ],
     ),
+    #[cfg(any(debug_assertions, feature = "dev-key"))]
     (
         "tingmix-dev-1",
         [
@@ -20,3 +21,11 @@ pub const TRUSTED: &[(&str, [u8; 32])] = &[
         ],
     ),
 ];
+
+#[cfg(all(test, not(any(debug_assertions, feature = "dev-key"))))]
+mod tests {
+    #[test]
+    fn release_build_does_not_trust_dev_key() {
+        assert!(super::TRUSTED.iter().all(|(id, _)| *id != "tingmix-dev-1"));
+    }
+}
