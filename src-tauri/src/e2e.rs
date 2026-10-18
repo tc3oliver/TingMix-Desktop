@@ -256,9 +256,10 @@ fn mlx_import_probe_select_transcribe_live() {
 
 /// The real first-run flow against the published catalog: fetch, accept the licences (what the user's tick does), download
 /// about 1.4 GB, verify, activate, test, select and transcribe `mix_08s.wav`. Prints a timing line per stage.
-/// Needs the network, `--features mlx`, MLX_PREFIX, TINGMIX_MLX_WORKER and TINGMIX_E2E_REAL_FIRST_RUN=1.
+/// Needs the network and TINGMIX_E2E_REAL_FIRST_RUN=1. macOS: `--features mlx`, MLX_PREFIX, TINGMIX_MLX_WORKER. Windows (ONNX):
+/// TINGMIX_ORT_DYLIB (absolute path of onnxruntime.dll) and TINGMIX_ONNX_WORKER (tingmix-onnx-worker.exe).
 #[test]
-#[ignore = "downloads ~1.4 GB from the published catalog; needs a --features mlx build"]
+#[ignore = "downloads ~1.4 GB from the published catalog; needs the platform engine (see the doc comment)"]
 fn real_first_run_download_probe_transcribe() {
     assert_eq!(
         std::env::var("TINGMIX_E2E_REAL_FIRST_RUN").as_deref(),
@@ -267,7 +268,12 @@ fn real_first_run_download_probe_transcribe() {
     );
     let (dir, keep) = scratch_dir();
     let models = Arc::new(Models::open(dir.join("models"))); // embedded keys: the release key signs the catalog
-    let rt = Runtimes::default();
+                                                             // ONNX builds: the pinned ONNX Runtime library by absolute path (the app does this from its bundle at start-up)
+    let ort = std::env::var_os("TINGMIX_ORT_DYLIB").map(PathBuf::from);
+    if let Some(p) = &ort {
+        tingmix_runtime_onnx::set_runtime_library(p.clone());
+    }
+    let rt = Runtimes { ort_library: ort };
     let t0 = Instant::now();
     let stamp = |what: &str| println!("[{:7.1}s] {what}", t0.elapsed().as_secs_f64());
 
