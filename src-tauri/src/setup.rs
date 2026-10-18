@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use serde::Serialize;
 use serde_json::json;
-use tingmix_models::catalog;
+use tingmix_models::{catalog, select};
 
 use crate::backends::{self, Runtimes};
 use crate::coded::coded;
@@ -95,16 +95,30 @@ pub fn check(
     };
     let caps = models.caps();
     let for_here = cat.for_platform(&caps.os, &caps.arch);
+    let high_water = |m: &tingmix_models::Manifest| {
+        models
+            .reg()
+            .ok()
+            .and_then(|r| r.high_water(&m.lineage()).ok())
+            .map_or(0, |h| h.0)
+    };
     let downloadable: Vec<_> = for_here
         .into_iter()
-        .filter(|m| m.manifest().files.iter().all(|f| !f.url.is_empty()))
+        .filter(|m| {
+            let mf = m.manifest();
+            mf.files.iter().all(|f| !f.url.is_empty())
+                && select::requirements_met(mf, caps, env!("CARGO_PKG_VERSION")).is_ok()
+                && mf.serial >= high_water(mf)
+        })
         .collect();
     if downloadable.is_empty() {
         return no_platform();
     }
+    // MLX is the faster engine on Apple Silicon; do not let catalog order decide
     let Some(m) = downloadable
         .into_iter()
-        .find(|m| backends::engine_available(&m.manifest().backend, rt))
+        .filter(|m| backends::engine_ready(&m.manifest().backend, rt))
+        .min_by_key(|m| m.manifest().backend != backends::MLX)
     else {
         return SetupView::Unavailable {
             why: "build".into(),
@@ -295,6 +309,8 @@ mod tests {
     fn first_run_offers_the_download_then_installs_activates_and_tests_it() {
         let (models, dir) = models("flow");
         let (listener, base) = bind();
+        // the engine counts as available only with its probe worker next to the app; any existing file stands in
+        std::env::set_var("TINGMIX_ONNX_WORKER", std::env::current_exe().unwrap());
         let (m, mut docs) = manifest("model-a", &base, std::env::consts::OS, "onnx-cpu");
         docs.insert("/catalog.json".into(), catalog_doc(&[&m]));
         serve_on(listener, docs);
@@ -398,6 +414,28 @@ mod tests {
         };
         assert_eq!(why, "platform");
 
+        // an entry that needs a newer app than this one is not offered
+        let (mut newer, _) = manifest(
+            "m-newer",
+            "http://127.0.0.1:9",
+            std::env::consts::OS,
+            "onnx-cpu",
+        );
+        newer.min_app_version = "99.0.0".into();
+        let base = serve(HashMap::from([(
+            "/n.json".to_string(),
+            catalog_doc(&[&newer]),
+        )]));
+        let url = format!("{base}/n.json");
+        let cfg = Catalog {
+            url: &url,
+            allow_loopback_http: true,
+        };
+        let SetupView::Unavailable { why, .. } = check(&models, &rt, &cfg, "n".into()) else {
+            panic!("min_app_version")
+        };
+        assert_eq!(why, "platform");
+
         // fits the OS, but this build has no such engine
         let (mlx, _) = manifest("m-mlx", "http://127.0.0.1:9", std::env::consts::OS, "mlx");
         let base = serve(HashMap::from([(
@@ -409,7 +447,7 @@ mod tests {
             url: &url,
             allow_loopback_http: true,
         };
-        if !backends::engine_available("mlx", &rt) {
+        if !backends::engine_ready("mlx", &rt) {
             let SetupView::Unavailable { why, .. } = check(&models, &rt, &cfg, "c".into()) else {
                 panic!("build")
             };

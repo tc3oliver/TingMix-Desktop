@@ -286,6 +286,25 @@ pub fn engine_available(backend: &str, rt: &Runtimes) -> bool {
     version_of(backend, rt).is_some()
 }
 
+/// `engine_available` and the probe worker it is checked by exists: a build without the sidecar can install a model but
+/// never activate it.
+pub fn engine_ready(backend: &str, rt: &Runtimes) -> bool {
+    engine_available(backend, rt) && worker_exe(backend).is_some_and(|p| p.is_file())
+}
+
+fn worker_exe(backend: &str) -> Option<std::path::PathBuf> {
+    match backend {
+        ONNX => std::env::var_os("TINGMIX_ONNX_WORKER")
+            .map(Into::into)
+            .or_else(|| tingmix_runtime_onnx::probe::OnnxProbeTarget::sibling_worker().ok()),
+        #[cfg(all(feature = "mlx", target_os = "macos", target_arch = "aarch64"))]
+        MLX => std::env::var_os("TINGMIX_MLX_WORKER")
+            .map(Into::into)
+            .or_else(|| tingmix_runtime_mlx::probe::MlxProbeTarget::sibling_worker().ok()),
+        _ => None,
+    }
+}
+
 fn version_of(backend: &str, rt: &Runtimes) -> Option<String> {
     match backend {
         ONNX => rt.ort_version(),

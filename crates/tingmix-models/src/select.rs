@@ -51,41 +51,23 @@ pub struct KnownGood {
     pub fingerprint: String,
 }
 
-/// `Ok(rtf)` (lower is better, `u32::MAX` = unknown) or the human-readable reason the manifest is ineligible.
-fn check(
+/// The probe-free eligibility checks: platform, app version, CPU features, Apple chip and RAM. Setup uses it to avoid
+/// offering a download that [`select`] would reject after install.
+pub fn requirements_met(
     m: &Manifest,
     caps: &Capabilities,
-    regs: &[BackendReg],
-    probe_of: &dyn Fn(&Manifest) -> Option<Probe>,
-) -> std::result::Result<(u32, BackendReg), String> {
+    app_version: &str,
+) -> std::result::Result<(), String> {
     if (m.os != "any" && m.os != caps.os) || (m.arch != "any" && m.arch != caps.arch) {
         return Err(format!(
             "built for {}/{}, this machine is {}/{}",
             m.os, m.arch, caps.os, caps.arch
         ));
     }
-    let reg = regs
-        .iter()
-        .find(|r| r.backend == m.backend)
-        .ok_or_else(|| format!("backend {} is not registered in this build", m.backend))?;
-    match reg.validation {
-        Validation::Validated => {}
-        Validation::Experimental => {
-            return Err(format!(
-                "backend {} is EXPERIMENTAL; only VALIDATED backends are selected",
-                m.backend
-            ))
-        }
-        Validation::Blocked => return Err(format!("backend {} is BLOCKED", m.backend)),
-    }
-    let have = reg
-        .runtime_version
-        .as_deref()
-        .ok_or_else(|| format!("runtime {} is not available", m.runtime.name))?;
-    if !version_at_least(have, &m.runtime.min_version) {
+    if !version_at_least(app_version, &m.min_app_version) {
         return Err(format!(
-            "runtime {} {} is older than the required {}",
-            m.runtime.name, have, m.runtime.min_version
+            "needs TingMix {} or newer, this is {app_version}",
+            m.min_app_version
         ));
     }
     if let Some(f) = m
@@ -112,6 +94,41 @@ fn check(
             "needs {} GiB RAM, machine has {} GiB",
             m.requirements.min_ram_bytes >> 30,
             caps.ram_bytes >> 30
+        ));
+    }
+    Ok(())
+}
+
+/// `Ok(rtf)` (lower is better, `u32::MAX` = unknown) or the human-readable reason the manifest is ineligible.
+fn check(
+    m: &Manifest,
+    caps: &Capabilities,
+    regs: &[BackendReg],
+    probe_of: &dyn Fn(&Manifest) -> Option<Probe>,
+) -> std::result::Result<(u32, BackendReg), String> {
+    requirements_met(m, caps, env!("CARGO_PKG_VERSION"))?;
+    let reg = regs
+        .iter()
+        .find(|r| r.backend == m.backend)
+        .ok_or_else(|| format!("backend {} is not registered in this build", m.backend))?;
+    match reg.validation {
+        Validation::Validated => {}
+        Validation::Experimental => {
+            return Err(format!(
+                "backend {} is EXPERIMENTAL; only VALIDATED backends are selected",
+                m.backend
+            ))
+        }
+        Validation::Blocked => return Err(format!("backend {} is BLOCKED", m.backend)),
+    }
+    let have = reg
+        .runtime_version
+        .as_deref()
+        .ok_or_else(|| format!("runtime {} is not available", m.runtime.name))?;
+    if !version_at_least(have, &m.runtime.min_version) {
+        return Err(format!(
+            "runtime {} {} is older than the required {}",
+            m.runtime.name, have, m.runtime.min_version
         ));
     }
     let probe = probe_of(m)

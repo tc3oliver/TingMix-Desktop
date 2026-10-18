@@ -198,3 +198,23 @@ fn detect_and_parse() {
     let c = Capabilities::detect();
     assert!(c.ram_bytes > 0 && !c.os.is_empty());
 }
+
+#[test]
+fn requirements_met_rejects_a_newer_app_version_a_small_machine_and_a_missing_chip() {
+    let mut m = mf("a", "mlx");
+    assert!(requirements_met(&m, &caps(), "0.1.0").is_ok());
+    m.min_app_version = "0.2.0".into();
+    assert!(requirements_met(&m, &caps(), "0.1.9")
+        .unwrap_err()
+        .contains("0.2.0"));
+    assert!(requirements_met(&m, &caps(), "0.2.0").is_ok());
+    m.requirements.min_ram_bytes = 128 << 30;
+    assert!(requirements_met(&m, &caps(), "0.2.0")
+        .unwrap_err()
+        .contains("RAM"));
+    m.requirements.min_ram_bytes = 0;
+    m.requirements.apple_chip_min_generation = Some(5);
+    assert!(requirements_met(&m, &caps(), "0.2.0")
+        .unwrap_err()
+        .contains("M5"));
+}
