@@ -816,7 +816,7 @@ fn an_unreadable_manifest_is_not_replaced() {
     let r = Downloader::new(true).install(&reg, &newer, &no_cancel(), |_| {});
     std::fs::set_permissions(&mf, std::fs::Permissions::from_mode(0o644)).unwrap();
     // a read error may be transient: the install stays where it is
-    assert!(!matches!(r, Ok(_)));
+    assert!(r.is_err());
     assert!(dir.path().join("versions/v1/model.safetensors").is_file());
     assert!(reg.open_model("v1").is_ok());
 }
