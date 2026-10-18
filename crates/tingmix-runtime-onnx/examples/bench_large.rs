@@ -30,6 +30,41 @@ fn stats(mut v: Vec<f64>) -> serde_json::Value {
     serde_json::json!({"n": v.len(), "p50_ms": pct(&mut v, 0.5) * 1e3, "p95_ms": pct(&mut v, 0.95) * 1e3, "min_ms": v[0] * 1e3})
 }
 
+#[cfg(unix)]
+fn peak_rss_mb() -> f64 {
+    let mut u: libc::rusage = unsafe { std::mem::zeroed() };
+    unsafe { libc::getrusage(libc::RUSAGE_SELF, &mut u) };
+    let bytes = if cfg!(target_os = "macos") {
+        u.ru_maxrss as f64
+    } else {
+        u.ru_maxrss as f64 * 1024.0
+    };
+    bytes / 1e6
+}
+
+#[cfg(windows)]
+fn peak_rss_mb() -> f64 {
+    #[repr(C)]
+    struct Counters {
+        cb: u32,
+        page_fault_count: u32,
+        peak_working_set_size: usize,
+        rest: [usize; 7],
+    }
+    extern "system" {
+        fn GetCurrentProcess() -> isize;
+        fn K32GetProcessMemoryInfo(process: isize, counters: *mut Counters, cb: u32) -> i32;
+    }
+    let mut c = Counters {
+        cb: std::mem::size_of::<Counters>() as u32,
+        page_fault_count: 0,
+        peak_working_set_size: 0,
+        rest: [0; 7],
+    };
+    unsafe { K32GetProcessMemoryInfo(GetCurrentProcess(), &mut c, c.cb) };
+    c.peak_working_set_size as f64 / 1e6
+}
+
 fn sh(cmd: &str, args: &[&str]) -> String {
     std::process::Command::new(cmd)
         .args(args)
@@ -49,7 +84,6 @@ fn main() {
     let threads: usize = a.get(5).map_or(8, |s| s.parse().unwrap());
     let units = large.join("units.json");
     let lm_path = large.join("lm/lmCN_cv_parl_ascend_ntuml.charlm.json.gz");
-    let mut greedy = OnnxLarge::load(&model, &units, Decode::Greedy, provider, threads).unwrap();
     let lm = CharLm::load(&lm_path).unwrap();
     let mut beam = OnnxLarge::load(
         &model,
@@ -67,40 +101,32 @@ fn main() {
         let mut audio = wav(clip);
         audio.truncate(max);
         let secs = audio.len() as f64 / 16e3;
-        let (mut logits_t, mut greedy_t, mut beam_t) = (vec![], vec![], vec![]);
+        let (mut logits_t, mut beam_t) = (vec![], vec![]);
         for i in 0..12 {
             let t = Instant::now();
-            greedy.chunk_logits(&audio).unwrap();
+            beam.chunk_logits(&audio).unwrap();
             let l = t.elapsed().as_secs_f64();
-            let t = Instant::now();
-            let g = greedy.transcribe_batch(&[&audio]).unwrap();
-            let gt = t.elapsed().as_secs_f64();
             let t = Instant::now();
             let b = beam.transcribe_batch(&[&audio]).unwrap();
             let bt = t.elapsed().as_secs_f64();
             if i >= 2 {
                 logits_t.push(l);
-                greedy_t.push(gt);
                 beam_t.push(bt);
             } else if i == 0 {
-                eprintln!(
-                    "{label}: {} chars greedy, {} chars beam",
-                    g[0].chars().count(),
-                    b[0].chars().count()
-                );
+                eprintln!("{label}: {} chars beam", b[0].chars().count());
             }
         }
         let rtf = |v: &Vec<f64>| pct(&mut v.clone(), 0.5) / secs;
         rows.insert(
             label.into(),
-            serde_json::json!({"audio_s": secs, "mel_plus_model": stats(logits_t.clone()), "wav_to_text_greedy": stats(greedy_t.clone()), "wav_to_text_beam_lm": stats(beam_t.clone()),
-                "rtf_p50_model": rtf(&logits_t), "rtf_p50_greedy": rtf(&greedy_t), "rtf_p50_beam_lm": rtf(&beam_t)}),
+            serde_json::json!({"audio_s": secs, "mel_plus_model": stats(logits_t.clone()), "wav_to_text_beam_lm": stats(beam_t.clone()),
+                "rtf_p50_model": rtf(&logits_t), "rtf_p50_beam_lm": rtf(&beam_t)}),
         );
         eprintln!("{label}: {}", rows[label]);
     }
     let doc = serde_json::json!({
         "what": "OnnxLarge wav->text latency (Rust Gemma4 mel + ORT + Rust CTC decode), fixtures mix_08s and the first 29.5 s of mix_29s",
-        "command": a.join(" "), "provider": format!("{provider:?}"), "threads": threads,
+        "command": a.join(" "), "provider": format!("{provider:?}"), "threads": threads, "peak_rss_mb": peak_rss_mb(), "note_memory": "peak_rss_mb = peak resident/working set of this process, which holds ONE backend (beam+LM, the production decode)",
         "model_sha256": if cfg!(windows) { sh("powershell", &["-NoProfile", "-Command", &format!("(Get-FileHash -Algorithm SHA256 -LiteralPath '{}').Hash.ToLower()", model.display())]) } else { sh("shasum", &["-a", "256", &model.display().to_string()]).split_whitespace().next().unwrap_or("").to_owned() },
         "ort_library": std::env::var("TINGMIX_ORT_DYLIB").unwrap_or_else(|_| "linked (download-binaries)".into()),
         "cpu": if cfg!(windows) { sh("powershell", &["-NoProfile", "-Command", "(Get-CimInstance Win32_Processor | Select-Object -First 1).Name"]) } else { sh("sysctl", &["-n", "machdep.cpu.brand_string"]) },
