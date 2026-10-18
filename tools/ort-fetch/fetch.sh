@@ -8,7 +8,9 @@ root="$(cd "$here/../.." && pwd)"
 out="$root/vendor/onnxruntime"
 want="${1:-all}"
 mkdir -p "$out/.cache"
-sha() { shasum -a 256 "$1" | awk '{print $1}'; }
+# shasum on macOS, sha256sum on Linux and in Git Bash on Windows
+if command -v shasum >/dev/null 2>&1; then sha256() { shasum -a 256 "$@"; }; else sha256() { sha256sum "$@"; }; fi
+sha() { sha256 "$1" | awk '{print $1}'; }
 
 while IFS=$'\t' read -r platform url expect; do
   [[ -z "$platform" || "$platform" == \#* ]] && continue
@@ -39,7 +41,7 @@ while IFS=$'\t' read -r platform url expect; do
   fi
   mv "$dest.tmp" "$dest"
   # the files we bundle must also match the recorded hashes (catches a tampered cache extraction)
-  (cd "$out" && grep " $platform/" "$here/FILES.sha256" | shasum -a 256 -c --quiet -)
+  (cd "$out" && grep " $platform/" "$here/FILES.sha256" | sha256 -c --quiet -)
   echo "$platform: archive and bundled files verified ($got)"
 done < "$here/MANIFEST.tsv"
 echo "ONNX Runtime files:"; find "$out" -path "$out/.cache" -prune -o -path '*testdata*' -prune -o -path '*.dSYM*' -prune -o \( -name '*.dylib' -o -name '*.dll' -o -name 'LICENSE' -o -name 'ThirdPartyNotices.txt' \) -print

@@ -108,7 +108,12 @@ def main():
         lines += [f"### {l} ({len(by_lic[l])})", "", ", ".join(by_lic[l]), ""]
     text = "\n".join(lines) + "\n" + npm() + NATIVE
     if "--check" in sys.argv:
-        sys.exit(0 if OUT.exists() and OUT.read_text() == text else 1)
+        old = OUT.read_text() if OUT.exists() else ""
+        if old != text:
+            import difflib
+            sys.stdout.writelines(difflib.unified_diff(old.splitlines(True), text.splitlines(True), str(OUT), "generated"))
+            sys.exit(1)
+        sys.exit(0)
     OUT.write_text(text)
     print(f"wrote {OUT.relative_to(ROOT)}: {len(allp)} crates, {len(by_lic)} licence expressions, {len(flagged)} flagged")
 
