@@ -38,10 +38,10 @@ decoded and the model writes a lone BPE piece.
 
 Model-free segmentation, 600 s per condition (`benchmarks/streaming/noise/vad-only-matrix.json`, 98 rows): with energy VAD every
 noise bed at 30 dB SNR or louder (and white/pink/fan/babble at -53 dBFS and above) leaves the segment open until the 25 s cap
-(19 merged segments per run; noise-only streams yield 2.47 false segments/min, i.e. permanently open). Adaptive VAD:
-speech coverage 1.0 at 30 and 20 dB SNR for all four noise types, 0.99-1.0 at 15 dB, about 0.85-0.94 at 10 dB, collapsing
-at 5 dB; noise-only false segments 0 over 120 min for white/pink/babble and 3 over 40 min for the fan bed; detection delay
-0.2 s (clean).
+(19 merged segments per run; noise-only streams yield 2.47 false segments/min, i.e. permanently open; pink noise at 40 dB even gave 2.86/min). Adaptive VAD:
+speech coverage 1.0 at 40, 30, 20 and 15 dB SNR for all four noise types, 0.85-0.94 at 10 dB (2-4 of 47 utterances missed), and
+0.0-0.41 at 5 dB (28-47 missed); noise-only false segments: 0 in 60 min each of white, pink and babble, 6 in 60 min of the fan bed
+(exactly one per 10-minute run: a slow-rumble artifact near stream start that I did not chase down); detection delay 0.21 s.
 
 Real model, 120 s replays at 2x speed, speech = the 8 fixtures in random order, gaps 1-4 s (`mlx-suppress-off/`,
 `mlx-suppress-on/`; stream CER against the clean-audio oracle texts (tests/fixtures/large/expected_texts.json); "miss" = utterances without a final;
@@ -93,7 +93,7 @@ Python-parity goldens. The app wiring lives in `src-tauri` (decoder).
 ## Limits
 
 - Energy-only VAD: a nearby second talker or music with speech-like dynamics still opens segments (the babble bed here is
-  stationary-ish); the confidence check is the second line of defence. At 10 dB SNR 6-15 % of speech frames are missed and at 5 dB nearly all.
+  stationary-ish); the confidence check is the second line of defence. At 10 dB SNR 6-15 % of speech is missed (a few utterances) and at 5 dB most of it.
 - Synthetic TTS speech and generated noise on one machine; thresholds should be re-checked with real microphones before
   they are treated as final. The MLX confidence is greedy-frame based while the text comes from beam+LM.
 - The first 0.5 s after a stream starts makes no speech decision (audio is not lost: preroll covers it).

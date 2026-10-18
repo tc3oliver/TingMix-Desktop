@@ -1,10 +1,10 @@
 {
- "binary": "target/release/tingmix-bench",
+ "binary": "<target>/release/tingmix-bench",
  "extra_args": [],
  "env": {
   "cpu": "Apple M4 Max",
   "git_dirty": true,
-  "git_sha": "9b9b282a1cd0f7944863410657d0176f61b7eb85",
+  "git_sha": "4afb0ef6136388b6181262b04fdcd3486095f4de",
   "os": "Darwin macOS 27.0",
   "profile": "release",
   "ram_gb": 64.0,
@@ -84,63 +84,63 @@
    "snr_db": null,
    "vad": "adaptive",
    "speech": true,
-   "active_non_speech_s_per_min": 3.5710762553023816,
+   "active_non_speech_s_per_min": 4.10772417875113,
    "audio_s": 608.22,
-   "detection_delay_s_max": 0.26706250000000864,
-   "detection_delay_s_mean": 0.2479853723404255,
+   "detection_delay_s_max": 0.18943749999999682,
+   "detection_delay_s_mean": 0.17096409574467797,
    "false_segments": 0,
    "false_segments_per_min": 0.0,
    "first_segments": [
     [
-     1.58,
-     27.4
+     1.5,
+     27.32
     ],
     [
-     27.4,
-     36.8
+     27.32,
+     36.84
     ],
     [
-     37.66,
-     39.92
+     37.58,
+     39.96
     ],
     [
-     40.86,
-     42.84
+     40.78,
+     42.88
     ],
     [
-     46.26,
-     51.98
+     46.18,
+     52.0
     ],
     [
-     53.14,
-     61.22
+     53.06,
+     61.26
     ],
     [
-     63.88,
-     84.86
+     63.8,
+     84.9
     ],
     [
-     86.18,
-     90.3
+     86.1,
+     90.34
     ],
     [
-     91.46,
-     100.62
+     91.38,
+     100.66
     ],
     [
-     103.5,
-     111.58
+     103.42,
+     111.62
     ],
     [
-     114.28,
-     123.46
+     114.22,
+     123.5
     ],
     [
-     124.12,
-     129.84
+     124.04,
+     129.88
     ]
    ],
-   "longest_segment_s": 25.82000000000005,
+   "longest_segment_s": 25.82,
    "merged_segments": 0,
    "missed_utterances": 0,
    "segments": 53,
@@ -239,67 +239,67 @@
    "snr_db": 40,
    "vad": "adaptive",
    "speech": true,
-   "active_non_speech_s_per_min": 3.476373680576125,
+   "active_non_speech_s_per_min": 3.9617243760481946,
    "audio_s": 608.22,
-   "detection_delay_s_max": 0.2694375000000093,
-   "detection_delay_s_mean": 0.2535172872340406,
+   "detection_delay_s_max": 0.1953749999999843,
+   "detection_delay_s_mean": 0.17734707446808134,
    "false_segments": 0,
    "false_segments_per_min": 0.0,
    "first_segments": [
     [
-     1.6,
-     20.08
+     1.52,
+     27.34
     ],
     [
-     20.16,
-     23.0
+     27.34,
+     36.8
     ],
     [
-     23.0,
-     28.66
+     37.58,
+     39.96
     ],
     [
-     28.66,
-     31.3
+     40.8,
+     42.88
     ],
     [
-     32.26,
-     36.78
+     46.18,
+     52.0
     ],
     [
-     37.66,
-     39.92
+     53.06,
+     61.24
     ],
     [
-     40.86,
-     42.84
-    ],
-    [
-     46.26,
-     51.96
-    ],
-    [
-     53.14,
-     61.2
-    ],
-    [
-     63.88,
-     76.98
-    ],
-    [
-     76.98,
-     79.94
-    ],
-    [
-     79.98,
+     63.8,
      84.82
+    ],
+    [
+     86.12,
+     90.34
+    ],
+    [
+     91.38,
+     100.62
+    ],
+    [
+     103.42,
+     111.6
+    ],
+    [
+     114.22,
+     123.46
+    ],
+    [
+     124.06,
+     129.88
     ]
    ],
-   "longest_segment_s": 18.479999999999997,
+   "longest_segment_s": 25.82,
    "merged_segments": 0,
    "missed_utterances": 0,
-   "segments": 81,
-   "speech_coverage": 0.9961025135401749,
+   "segments": 53,
+   "speech_coverage": 1.0,
    "utterances": 47
   },
   {
@@ -462,67 +462,67 @@
    "snr_db": 30,
    "vad": "adaptive",
    "speech": true,
-   "active_non_speech_s_per_min": 3.042320213080806,
+   "active_non_speech_s_per_min": 3.874913682549125,
    "audio_s": 608.22,
-   "detection_delay_s_max": 0.6579999999999941,
-   "detection_delay_s_mean": 0.33521941489361273,
+   "detection_delay_s_max": 0.2025624999999991,
+   "detection_delay_s_mean": 0.1837300531914896,
    "false_segments": 0,
    "false_segments_per_min": 0.0,
    "first_segments": [
     [
-     1.6,
-     9.02
+     1.52,
+     27.34
     ],
     [
-     9.42,
-     11.26
+     27.34,
+     36.8
     ],
     [
-     11.26,
-     20.08
+     37.6,
+     39.94
     ],
     [
-     20.16,
-     23.0
+     40.8,
+     42.86
     ],
     [
-     23.0,
-     28.66
+     46.18,
+     51.98
     ],
     [
-     28.66,
-     31.3
+     53.06,
+     61.22
     ],
     [
-     32.26,
-     36.78
+     63.82,
+     84.82
     ],
     [
-     37.66,
-     39.92
+     86.12,
+     90.34
     ],
     [
-     40.88,
-     42.82
+     91.38,
+     100.6
     ],
     [
-     46.66,
-     51.94
+     103.42,
+     111.58
     ],
     [
-     53.14,
-     61.18
+     114.22,
+     123.44
     ],
     [
-     63.88,
-     76.98
+     124.06,
+     129.86
     ]
    ],
-   "longest_segment_s": 13.100000000000023,
+   "longest_segment_s": 25.82,
    "merged_segments": 0,
    "missed_utterances": 0,
-   "segments": 94,
-   "speech_coverage": 0.9880020860313409,
+   "segments": 53,
+   "speech_coverage": 1.0,
    "utterances": 47
   },
   {
@@ -685,67 +685,67 @@
    "snr_db": 20,
    "vad": "adaptive",
    "speech": true,
-   "active_non_speech_s_per_min": 1.7410784748939787,
+   "active_non_speech_s_per_min": 3.5927789286771548,
    "audio_s": 608.22,
-   "detection_delay_s_max": 1.5470625000000382,
-   "detection_delay_s_mean": 0.6466326219512203,
+   "detection_delay_s_max": 0.4595625000000041,
+   "detection_delay_s_mean": 0.21394281914893343,
    "false_segments": 0,
    "false_segments_per_min": 0.0,
    "first_segments": [
     [
-     2.86,
-     9.02
+     1.52,
+     27.34
     ],
     [
-     9.42,
-     11.26
+     27.34,
+     36.8
     ],
     [
-     11.26,
-     20.08
+     37.62,
+     39.92
     ],
     [
-     20.16,
-     23.0
+     40.82,
+     42.84
     ],
     [
-     23.0,
-     28.66
+     46.28,
+     51.96
     ],
     [
-     28.66,
-     31.3
-    ],
-    [
-     41.04,
-     42.8
-    ],
-    [
-     46.66,
-     51.92
-    ],
-    [
-     53.34,
+     53.08,
      61.18
     ],
     [
-     63.9,
-     68.04
+     63.82,
+     84.82
     ],
     [
-     68.04,
-     76.98
+     86.16,
+     90.3
     ],
     [
-     76.98,
-     79.94
+     91.38,
+     100.46
+    ],
+    [
+     103.44,
+     111.54
+    ],
+    [
+     114.22,
+     123.34
+    ],
+    [
+     124.34,
+     129.82
     ]
    ],
-   "longest_segment_s": 8.960000000000036,
+   "longest_segment_s": 25.82,
    "merged_segments": 0,
-   "missed_utterances": 6,
-   "segments": 96,
-   "speech_coverage": 0.8471715763023453,
+   "missed_utterances": 0,
+   "segments": 53,
+   "speech_coverage": 1.0,
    "utterances": 47
   },
   {
@@ -908,67 +908,67 @@
    "snr_db": 15,
    "vad": "adaptive",
    "speech": true,
-   "active_non_speech_s_per_min": 1.3962957482490104,
+   "active_non_speech_s_per_min": 3.4053467495314385,
    "audio_s": 608.22,
-   "detection_delay_s_max": 2.487062500000036,
-   "detection_delay_s_mean": 0.8973643292682969,
+   "detection_delay_s_max": 0.597999999999999,
+   "detection_delay_s_mean": 0.24245345744680427,
    "false_segments": 0,
    "false_segments_per_min": 0.0,
    "first_segments": [
     [
-     3.82,
-     9.0
+     1.54,
+     27.36
     ],
     [
-     9.42,
-     11.24
+     27.36,
+     36.78
     ],
     [
-     11.24,
-     20.08
+     37.62,
+     39.92
     ],
     [
-     21.0,
-     22.98
+     40.84,
+     42.82
     ],
     [
-     22.98,
-     28.66
+     46.6,
+     51.94
     ],
     [
-     28.66,
-     31.28
+     53.08,
+     61.18
     ],
     [
-     41.04,
-     42.8
+     63.82,
+     82.9
     ],
     [
-     46.66,
-     51.92
+     83.08,
+     84.82
     ],
     [
-     54.22,
-     60.0
+     86.16,
+     90.3
     ],
     [
-     63.9,
-     68.02
+     91.4,
+     100.46
     ],
     [
-     68.02,
-     76.98
+     103.44,
+     111.54
     ],
     [
-     76.98,
-     79.94
+     114.24,
+     123.32
     ]
    ],
-   "longest_segment_s": 8.960000000000036,
+   "longest_segment_s": 25.82,
    "merged_segments": 0,
-   "missed_utterances": 6,
-   "segments": 93,
-   "speech_coverage": 0.8096753901124599,
+   "missed_utterances": 0,
+   "segments": 59,
+   "speech_coverage": 0.9995630554310676,
    "utterances": 47
   },
   {
@@ -1131,67 +1131,67 @@
    "snr_db": 10,
    "vad": "adaptive",
    "speech": true,
-   "active_non_speech_s_per_min": 0.6482933806846202,
+   "active_non_speech_s_per_min": 2.8346712538226435,
    "audio_s": 608.22,
-   "detection_delay_s_max": 3.2681249999999977,
-   "detection_delay_s_mean": 1.4490716463414666,
+   "detection_delay_s_max": 0.7693749999999966,
+   "detection_delay_s_mean": 0.2994747340425533,
    "false_segments": 0,
    "false_segments_per_min": 0.0,
    "first_segments": [
     [
-     3.94,
-     6.14
+     1.64,
+     20.06
     ],
     [
-     7.1,
-     8.98
+     20.94,
+     26.96
     ],
     [
-     9.44,
-     11.24
+     29.5,
+     31.28
     ],
     [
-     15.64,
-     19.56
+     32.54,
+     36.78
     ],
     [
-     21.0,
-     22.98
+     37.64,
+     39.88
     ],
     [
-     22.98,
-     28.66
+     40.9,
+     42.8
     ],
     [
-     28.66,
-     31.26
+     46.62,
+     51.92
     ],
     [
-     41.06,
-     42.78
+     53.66,
+     60.02
     ],
     [
-     46.68,
-     47.94
+     63.84,
+     74.0
     ],
     [
-     47.96,
-     51.9
+     77.6,
+     79.92
     ],
     [
-     54.24,
-     60.0
+     80.3,
+     82.9
     ],
     [
-     65.36,
-     68.02
+     86.18,
+     90.26
     ]
    ],
-   "longest_segment_s": 8.780000000000001,
+   "longest_segment_s": 18.460000000000036,
    "merged_segments": 0,
-   "missed_utterances": 6,
-   "segments": 102,
-   "speech_coverage": 0.6813079609133201,
+   "missed_utterances": 2,
+   "segments": 79,
+   "speech_coverage": 0.9046052764811748,
    "utterances": 47
   },
   {
@@ -1356,16 +1356,41 @@
    "speech": true,
    "active_non_speech_s_per_min": 0.0,
    "audio_s": 608.22,
-   "detection_delay_s_max": 0.0,
-   "detection_delay_s_mean": -0.0,
+   "detection_delay_s_max": 22.015375000000006,
+   "detection_delay_s_mean": 21.988593750000007,
    "false_segments": 0,
    "false_segments_per_min": 0.0,
-   "first_segments": [],
-   "longest_segment_s": 0.0,
+   "first_segments": [
+    [
+     23.32,
+     24.58
+    ],
+    [
+     188.7,
+     189.94
+    ],
+    [
+     286.18,
+     287.44
+    ],
+    [
+     371.04,
+     372.32
+    ],
+    [
+     433.06,
+     434.32
+    ],
+    [
+     539.26,
+     540.54
+    ]
+   ],
+   "longest_segment_s": 1.2799999999999727,
    "merged_segments": 0,
    "missed_utterances": 47,
-   "segments": 0,
-   "speech_coverage": -0.0,
+   "segments": 6,
+   "speech_coverage": 0.004682827983294991,
    "utterances": 47
   },
   {
@@ -1528,67 +1553,67 @@
    "snr_db": 40,
    "vad": "adaptive",
    "speech": true,
-   "active_non_speech_s_per_min": 3.502022294564492,
+   "active_non_speech_s_per_min": 3.9735621978889766,
    "audio_s": 608.22,
-   "detection_delay_s_max": 0.2694375000000093,
-   "detection_delay_s_mean": 0.25266622340425376,
+   "detection_delay_s_max": 0.1953749999999843,
+   "detection_delay_s_mean": 0.17692154255318812,
    "false_segments": 0,
    "false_segments_per_min": 0.0,
    "first_segments": [
     [
-     1.58,
-     20.08
+     1.52,
+     27.34
     ],
     [
-     20.16,
-     23.0
+     27.34,
+     36.8
     ],
     [
-     23.0,
-     28.66
+     37.58,
+     39.96
     ],
     [
-     28.66,
-     31.3
+     40.8,
+     42.88
     ],
     [
-     32.26,
-     36.78
+     46.18,
+     52.0
     ],
     [
-     37.66,
-     39.92
+     53.06,
+     61.24
     ],
     [
-     40.86,
-     42.84
-    ],
-    [
-     46.26,
-     51.96
-    ],
-    [
-     53.14,
-     61.2
-    ],
-    [
-     63.88,
-     76.98
-    ],
-    [
-     76.98,
-     79.94
-    ],
-    [
-     79.98,
+     63.8,
      84.82
+    ],
+    [
+     86.12,
+     90.34
+    ],
+    [
+     91.38,
+     100.62
+    ],
+    [
+     103.42,
+     111.6
+    ],
+    [
+     114.22,
+     123.46
+    ],
+    [
+     124.06,
+     129.86
     ]
    ],
-   "longest_segment_s": 18.5,
+   "longest_segment_s": 25.82,
    "merged_segments": 0,
    "missed_utterances": 0,
-   "segments": 79,
-   "speech_coverage": 0.9961025135401749,
+   "segments": 53,
+   "speech_coverage": 1.0,
    "utterances": 47
   },
   {
@@ -1751,67 +1776,67 @@
    "snr_db": 30,
    "vad": "adaptive",
    "speech": true,
-   "active_non_speech_s_per_min": 3.065995856762361,
+   "active_non_speech_s_per_min": 3.878859623162712,
    "audio_s": 608.22,
-   "detection_delay_s_max": 0.6579999999999941,
-   "detection_delay_s_mean": 0.3343683510638257,
+   "detection_delay_s_max": 0.2025624999999991,
+   "detection_delay_s_mean": 0.1837300531914896,
    "false_segments": 0,
    "false_segments_per_min": 0.0,
    "first_segments": [
     [
-     1.6,
-     9.02
+     1.52,
+     27.34
     ],
     [
-     9.42,
-     11.26
+     27.34,
+     36.8
     ],
     [
-     11.26,
-     20.08
+     37.6,
+     39.96
     ],
     [
-     20.16,
-     23.0
+     40.8,
+     42.86
     ],
     [
-     23.0,
-     28.66
+     46.18,
+     51.98
     ],
     [
-     28.66,
-     31.3
+     53.06,
+     61.2
     ],
     [
-     32.26,
-     36.78
+     63.82,
+     84.82
     ],
     [
-     37.66,
-     39.92
+     86.12,
+     90.34
     ],
     [
-     40.88,
-     42.82
+     91.38,
+     100.6
     ],
     [
-     46.66,
-     51.94
+     103.42,
+     111.58
     ],
     [
-     53.14,
-     61.18
+     114.22,
+     123.42
     ],
     [
-     63.88,
-     76.98
+     124.06,
+     129.84
     ]
    ],
-   "longest_segment_s": 13.100000000000023,
+   "longest_segment_s": 25.82,
    "merged_segments": 0,
    "missed_utterances": 0,
-   "segments": 94,
-   "speech_coverage": 0.987951427470044,
+   "segments": 53,
+   "speech_coverage": 1.0,
    "utterances": 47
   },
   {
@@ -1974,67 +1999,67 @@
    "snr_db": 20,
    "vad": "adaptive",
    "speech": true,
-   "active_non_speech_s_per_min": 1.8013218901055739,
+   "active_non_speech_s_per_min": 3.6144816020519324,
    "audio_s": 608.22,
-   "detection_delay_s_max": 1.5470625000000382,
-   "detection_delay_s_mean": 0.6110228658536602,
+   "detection_delay_s_max": 0.4595625000000041,
+   "detection_delay_s_mean": 0.2135172872340402,
    "false_segments": 0,
    "false_segments_per_min": 0.0,
    "first_segments": [
     [
-     2.86,
-     9.02
+     1.52,
+     27.34
     ],
     [
-     9.42,
-     11.26
+     27.34,
+     36.8
     ],
     [
-     11.26,
-     20.08
+     37.62,
+     39.92
     ],
     [
-     20.16,
-     22.98
+     40.82,
+     42.84
     ],
     [
-     22.98,
-     28.66
+     46.28,
+     51.96
     ],
     [
-     28.66,
-     31.3
+     53.08,
+     61.2
     ],
     [
-     40.9,
-     42.8
+     63.82,
+     84.82
     ],
     [
-     46.66,
-     51.92
+     86.16,
+     90.3
     ],
     [
-     53.34,
-     61.18
+     91.38,
+     100.48
     ],
     [
-     63.9,
-     68.04
+     103.44,
+     111.56
     ],
     [
-     68.04,
-     76.98
+     114.22,
+     123.34
     ],
     [
-     76.98,
-     79.94
+     124.34,
+     129.82
     ]
    ],
-   "longest_segment_s": 8.960000000000036,
+   "longest_segment_s": 25.82,
    "merged_segments": 0,
-   "missed_utterances": 6,
-   "segments": 96,
-   "speech_coverage": 0.8461586753583659,
+   "missed_utterances": 0,
+   "segments": 53,
+   "speech_coverage": 1.0,
    "utterances": 47
   },
   {
@@ -2197,67 +2222,67 @@
    "snr_db": 15,
    "vad": "adaptive",
    "speech": true,
-   "active_non_speech_s_per_min": 1.4523157738976167,
+   "active_non_speech_s_per_min": 3.4497139193055197,
    "audio_s": 608.22,
-   "detection_delay_s_max": 2.487062500000036,
-   "detection_delay_s_mean": 0.8085838414634196,
+   "detection_delay_s_max": 0.597999999999999,
+   "detection_delay_s_mean": 0.23649601063829412,
    "false_segments": 0,
    "false_segments_per_min": 0.0,
    "first_segments": [
     [
-     2.86,
-     9.0
+     1.52,
+     27.34
     ],
     [
-     9.42,
-     11.24
+     27.34,
+     36.78
     ],
     [
-     11.24,
-     20.06
+     37.62,
+     39.92
     ],
     [
-     21.0,
-     22.98
+     40.84,
+     42.82
     ],
     [
-     22.98,
-     28.66
+     46.6,
+     51.94
     ],
     [
-     28.66,
-     31.28
+     53.08,
+     61.18
     ],
     [
-     41.04,
-     42.8
+     63.82,
+     84.82
     ],
     [
-     46.66,
-     51.9
+     86.16,
+     90.3
     ],
     [
-     54.22,
-     60.0
+     91.4,
+     100.46
     ],
     [
-     63.9,
-     68.02
+     103.44,
+     110.38
     ],
     [
-     68.02,
-     76.98
+     110.4,
+     111.54
     ],
     [
-     76.98,
-     79.94
+     114.22,
+     123.32
     ]
    ],
-   "longest_segment_s": 8.960000000000008,
+   "longest_segment_s": 25.82000000000005,
    "merged_segments": 0,
-   "missed_utterances": 6,
-   "segments": 93,
-   "speech_coverage": 0.8079136455778186,
+   "missed_utterances": 0,
+   "segments": 58,
+   "speech_coverage": 0.9992019803253948,
    "utterances": 47
   },
   {
@@ -2420,67 +2445,67 @@
    "snr_db": 10,
    "vad": "adaptive",
    "speech": true,
-   "active_non_speech_s_per_min": 0.9672486929071828,
+   "active_non_speech_s_per_min": 2.835411117687698,
    "audio_s": 608.22,
-   "detection_delay_s_max": 2.6270625000000223,
-   "detection_delay_s_mean": 1.0495594512195159,
+   "detection_delay_s_max": 0.7693749999999966,
+   "detection_delay_s_mean": 0.2930917553191499,
    "false_segments": 0,
    "false_segments_per_min": 0.0,
    "first_segments": [
     [
-     3.82,
-     6.3
-    ],
-    [
-     7.1,
-     8.34
-    ],
-    [
-     9.44,
+     1.54,
      11.24
     ],
     [
-     15.64,
-     19.56
+     11.24,
+     20.06
     ],
     [
-     21.0,
-     26.94
+     20.96,
+     23.0
     ],
     [
-     29.58,
-     31.24
+     23.18,
+     26.96
     ],
     [
-     41.04,
-     42.78
+     29.52,
+     31.26
     ],
     [
-     46.68,
+     32.9,
+     35.46
+    ],
+    [
+     37.64,
+     39.88
+    ],
+    [
+     40.9,
+     42.8
+    ],
+    [
+     46.62,
      51.9
     ],
     [
-     54.24,
-     60.0
+     53.66,
+     60.02
     ],
     [
-     65.36,
-     68.02
+     63.84,
+     68.04
     ],
     [
-     68.2,
-     76.98
-    ],
-    [
-     76.98,
-     79.9
+     68.04,
+     70.46
     ]
    ],
-   "longest_segment_s": 8.780000000000001,
+   "longest_segment_s": 18.47999999999999,
    "merged_segments": 0,
-   "missed_utterances": 9,
-   "segments": 87,
-   "speech_coverage": 0.6845708580764225,
+   "missed_utterances": 2,
+   "segments": 84,
+   "speech_coverage": 0.8732208577065267,
    "utterances": 47
   },
   {
@@ -2645,29 +2670,41 @@
    "speech": true,
    "active_non_speech_s_per_min": 0.0,
    "audio_s": 608.22,
-   "detection_delay_s_max": 22.01993749999997,
-   "detection_delay_s_mean": 22.01377083333333,
+   "detection_delay_s_max": 21.991562499999986,
+   "detection_delay_s_mean": 6.788218750000011,
    "false_segments": 0,
    "false_segments_per_min": 0.0,
    "first_segments": [
     [
-     23.36,
-     24.56
+     3.06,
+     6.32
     ],
     [
-     371.06,
-     372.3
+     286.18,
+     287.44
     ],
     [
-     539.3,
-     540.52
+     350.78,
+     352.12
+    ],
+    [
+     371.02,
+     372.32
+    ],
+    [
+     519.0,
+     522.1
+    ],
+    [
+     539.28,
+     540.54
     ]
    ],
-   "longest_segment_s": 1.240000000000009,
+   "longest_segment_s": 3.2600000000000002,
    "merged_segments": 0,
    "missed_utterances": 47,
-   "segments": 3,
-   "speech_coverage": 0.0022611016383720303,
+   "segments": 6,
+   "speech_coverage": 0.00711691007487586,
    "utterances": 47
   },
   {
@@ -2830,67 +2867,67 @@
    "snr_db": 40,
    "vad": "adaptive",
    "speech": true,
-   "active_non_speech_s_per_min": 3.813751603038409,
+   "active_non_speech_s_per_min": 4.182697050409422,
    "audio_s": 608.22,
-   "detection_delay_s_max": 0.2694375000000093,
-   "detection_delay_s_mean": 0.2505385638297873,
+   "detection_delay_s_max": 0.19681249999999295,
+   "detection_delay_s_mean": 0.1756449468085075,
    "false_segments": 0,
    "false_segments_per_min": 0.0,
    "first_segments": [
     [
-     1.58,
-     20.08
+     1.52,
+     27.34
     ],
     [
-     20.16,
-     23.0
+     27.34,
+     36.8
     ],
     [
-     23.0,
-     28.66
+     37.58,
+     39.96
     ],
     [
-     28.66,
-     31.3
+     40.8,
+     43.22
     ],
     [
-     32.26,
-     36.78
+     46.18,
+     52.0
     ],
     [
-     37.66,
-     39.92
+     53.06,
+     61.22
     ],
     [
-     40.86,
-     43.2
-    ],
-    [
-     46.26,
-     51.96
-    ],
-    [
-     53.14,
-     61.2
-    ],
-    [
-     63.88,
-     76.98
-    ],
-    [
-     76.98,
-     79.94
-    ],
-    [
-     79.98,
+     63.76,
      84.82
+    ],
+    [
+     86.12,
+     90.34
+    ],
+    [
+     91.38,
+     100.62
+    ],
+    [
+     103.42,
+     111.6
+    ],
+    [
+     114.22,
+     123.46
+    ],
+    [
+     124.06,
+     129.86
     ]
    ],
-   "longest_segment_s": 18.5,
+   "longest_segment_s": 25.82,
    "merged_segments": 0,
    "missed_utterances": 0,
-   "segments": 81,
-   "speech_coverage": 0.9961272250334904,
+   "segments": 53,
+   "speech_coverage": 1.0,
    "utterances": 47
   },
   {
@@ -2898,17 +2935,22 @@
    "snr_db": 40,
    "vad": "adaptive",
    "speech": false,
-   "active_non_speech_s_per_min": 0.0,
+   "active_non_speech_s_per_min": 0.12244897959183763,
    "audio_s": 607.6,
    "detection_delay_s_max": 0.0,
    "detection_delay_s_mean": -0.0,
-   "false_segments": 0,
-   "false_segments_per_min": 0.0,
-   "first_segments": [],
-   "longest_segment_s": 0.0,
+   "false_segments": 1,
+   "false_segments_per_min": 0.09874917709019092,
+   "first_segments": [
+    [
+     372.8,
+     374.04
+    ]
+   ],
+   "longest_segment_s": 1.240000000000009,
    "merged_segments": 0,
    "missed_utterances": 0,
-   "segments": 0,
+   "segments": 1,
    "speech_coverage": -0.0,
    "utterances": 0
   },
@@ -3053,290 +3095,295 @@
    "snr_db": 30,
    "vad": "adaptive",
    "speech": true,
-   "active_non_speech_s_per_min": 3.474400710269348,
+   "active_non_speech_s_per_min": 4.16494031764825,
    "audio_s": 608.22,
-   "detection_delay_s_max": 0.6419999999999959,
-   "detection_delay_s_mean": 0.31692154255318766,
+   "detection_delay_s_max": 0.2025624999999991,
+   "detection_delay_s_mean": 0.18160239361701982,
    "false_segments": 0,
    "false_segments_per_min": 0.0,
    "first_segments": [
     [
-     1.6,
-     9.02
+     1.52,
+     27.34
     ],
     [
-     9.42,
-     11.26
+     27.34,
+     36.8
     ],
     [
-     11.26,
-     20.08
+     37.6,
+     39.94
     ],
     [
-     20.16,
-     23.0
+     40.8,
+     43.22
     ],
     [
-     23.0,
-     28.66
+     46.18,
+     51.98
     ],
     [
-     28.66,
-     31.3
+     53.06,
+     61.2
     ],
     [
-     32.26,
-     36.78
+     63.76,
+     84.82
     ],
     [
-     37.66,
+     86.12,
+     90.34
+    ],
+    [
+     91.38,
+     100.6
+    ],
+    [
+     103.42,
+     111.58
+    ],
+    [
+     114.22,
+     123.42
+    ],
+    [
+     124.08,
+     129.84
+    ]
+   ],
+   "longest_segment_s": 25.82,
+   "merged_segments": 0,
+   "missed_utterances": 0,
+   "segments": 53,
+   "speech_coverage": 1.0,
+   "utterances": 47
+  },
+  {
+   "noise": "fan",
+   "snr_db": 30,
+   "vad": "adaptive",
+   "speech": false,
+   "active_non_speech_s_per_min": 0.12244897959183763,
+   "audio_s": 607.6,
+   "detection_delay_s_max": 0.0,
+   "detection_delay_s_mean": -0.0,
+   "false_segments": 1,
+   "false_segments_per_min": 0.09874917709019092,
+   "first_segments": [
+    [
+     372.8,
+     374.04
+    ]
+   ],
+   "longest_segment_s": 1.240000000000009,
+   "merged_segments": 0,
+   "missed_utterances": 0,
+   "segments": 1,
+   "speech_coverage": -0.0,
+   "utterances": 0
+  },
+  {
+   "noise": "fan",
+   "snr_db": 20,
+   "vad": "energy",
+   "speech": true,
+   "active_non_speech_s_per_min": 12.319226595639766,
+   "audio_s": 608.22,
+   "detection_delay_s_max": 23.3543125,
+   "detection_delay_s_mean": 8.955308823529403,
+   "false_segments": 0,
+   "false_segments_per_min": 0.0,
+   "first_segments": [
+    [
+     0.0,
+     25.04
+    ],
+    [
+     25.04,
+     50.06
+    ],
+    [
+     50.06,
+     75.08
+    ],
+    [
+     75.08,
+     100.1
+    ],
+    [
+     100.1,
+     125.12
+    ],
+    [
+     125.12,
+     150.14
+    ],
+    [
+     150.14,
+     175.16
+    ],
+    [
+     175.16,
+     200.18
+    ],
+    [
+     200.18,
+     225.2
+    ],
+    [
+     225.2,
+     250.22
+    ],
+    [
+     250.22,
+     275.24
+    ],
+    [
+     275.24,
+     300.26
+    ]
+   ],
+   "longest_segment_s": 25.04,
+   "merged_segments": 19,
+   "missed_utterances": 0,
+   "segments": 25,
+   "speech_coverage": 1.0,
+   "utterances": 47
+  },
+  {
+   "noise": "fan",
+   "snr_db": 20,
+   "vad": "energy",
+   "speech": false,
+   "active_non_speech_s_per_min": 60.0,
+   "audio_s": 607.6,
+   "detection_delay_s_max": 0.0,
+   "detection_delay_s_mean": -0.0,
+   "false_segments": 25,
+   "false_segments_per_min": 2.4687294272547726,
+   "first_segments": [
+    [
+     0.0,
+     25.04
+    ],
+    [
+     25.04,
+     50.06
+    ],
+    [
+     50.06,
+     75.08
+    ],
+    [
+     75.08,
+     100.1
+    ],
+    [
+     100.1,
+     125.12
+    ],
+    [
+     125.12,
+     150.14
+    ],
+    [
+     150.14,
+     175.16
+    ],
+    [
+     175.16,
+     200.18
+    ],
+    [
+     200.18,
+     225.2
+    ],
+    [
+     225.2,
+     250.22
+    ],
+    [
+     250.22,
+     275.24
+    ],
+    [
+     275.24,
+     300.26
+    ]
+   ],
+   "longest_segment_s": 25.04,
+   "merged_segments": 0,
+   "missed_utterances": 0,
+   "segments": 25,
+   "speech_coverage": -0.0,
+   "utterances": 0
+  },
+  {
+   "noise": "fan",
+   "snr_db": 20,
+   "vad": "adaptive",
+   "speech": true,
+   "active_non_speech_s_per_min": 3.857156949787935,
+   "audio_s": 608.22,
+   "detection_delay_s_max": 0.4571875000000034,
+   "detection_delay_s_mean": 0.20670877659574158,
+   "false_segments": 0,
+   "false_segments_per_min": 0.0,
+   "first_segments": [
+    [
+     1.52,
+     27.34
+    ],
+    [
+     27.34,
+     36.8
+    ],
+    [
+     37.62,
      39.92
     ],
     [
-     40.88,
-     43.2
+     40.82,
+     43.22
     ],
     [
-     46.26,
+     46.28,
      51.94
     ],
     [
-     53.14,
+     53.08,
      61.18
     ],
     [
-     63.88,
-     76.98
-    ]
-   ],
-   "longest_segment_s": 13.100000000000023,
-   "merged_segments": 0,
-   "missed_utterances": 0,
-   "segments": 94,
-   "speech_coverage": 0.9878039907815134,
-   "utterances": 47
-  },
-  {
-   "noise": "fan",
-   "snr_db": 30,
-   "vad": "adaptive",
-   "speech": false,
-   "active_non_speech_s_per_min": 0.0,
-   "audio_s": 607.6,
-   "detection_delay_s_max": 0.0,
-   "detection_delay_s_mean": -0.0,
-   "false_segments": 0,
-   "false_segments_per_min": 0.0,
-   "first_segments": [],
-   "longest_segment_s": 0.0,
-   "merged_segments": 0,
-   "missed_utterances": 0,
-   "segments": 0,
-   "speech_coverage": -0.0,
-   "utterances": 0
-  },
-  {
-   "noise": "fan",
-   "snr_db": 20,
-   "vad": "energy",
-   "speech": true,
-   "active_non_speech_s_per_min": 12.319226595639766,
-   "audio_s": 608.22,
-   "detection_delay_s_max": 23.3543125,
-   "detection_delay_s_mean": 8.955308823529403,
-   "false_segments": 0,
-   "false_segments_per_min": 0.0,
-   "first_segments": [
-    [
-     0.0,
-     25.04
-    ],
-    [
-     25.04,
-     50.06
-    ],
-    [
-     50.06,
-     75.08
-    ],
-    [
-     75.08,
-     100.1
-    ],
-    [
-     100.1,
-     125.12
-    ],
-    [
-     125.12,
-     150.14
-    ],
-    [
-     150.14,
-     175.16
-    ],
-    [
-     175.16,
-     200.18
-    ],
-    [
-     200.18,
-     225.2
-    ],
-    [
-     225.2,
-     250.22
-    ],
-    [
-     250.22,
-     275.24
-    ],
-    [
-     275.24,
-     300.26
-    ]
-   ],
-   "longest_segment_s": 25.04,
-   "merged_segments": 19,
-   "missed_utterances": 0,
-   "segments": 25,
-   "speech_coverage": 1.0,
-   "utterances": 47
-  },
-  {
-   "noise": "fan",
-   "snr_db": 20,
-   "vad": "energy",
-   "speech": false,
-   "active_non_speech_s_per_min": 60.0,
-   "audio_s": 607.6,
-   "detection_delay_s_max": 0.0,
-   "detection_delay_s_mean": -0.0,
-   "false_segments": 25,
-   "false_segments_per_min": 2.4687294272547726,
-   "first_segments": [
-    [
-     0.0,
-     25.04
-    ],
-    [
-     25.04,
-     50.06
-    ],
-    [
-     50.06,
-     75.08
-    ],
-    [
-     75.08,
-     100.1
-    ],
-    [
-     100.1,
-     125.12
-    ],
-    [
-     125.12,
-     150.14
-    ],
-    [
-     150.14,
-     175.16
-    ],
-    [
-     175.16,
-     200.18
-    ],
-    [
-     200.18,
-     225.2
-    ],
-    [
-     225.2,
-     250.22
-    ],
-    [
-     250.22,
-     275.24
-    ],
-    [
-     275.24,
-     300.26
-    ]
-   ],
-   "longest_segment_s": 25.04,
-   "merged_segments": 0,
-   "missed_utterances": 0,
-   "segments": 25,
-   "speech_coverage": -0.0,
-   "utterances": 0
-  },
-  {
-   "noise": "fan",
-   "snr_db": 20,
-   "vad": "adaptive",
-   "speech": true,
-   "active_non_speech_s_per_min": 2.5975017263490505,
-   "audio_s": 608.22,
-   "detection_delay_s_max": 1.5470625000000382,
-   "detection_delay_s_mean": 0.49389062500000125,
-   "false_segments": 0,
-   "false_segments_per_min": 0.0,
-   "first_segments": [
-    [
-     1.6,
-     9.0
-    ],
-    [
-     9.42,
-     11.24
-    ],
-    [
-     11.24,
-     20.08
-    ],
-    [
-     20.16,
-     28.66
-    ],
-    [
-     28.66,
-     31.28
-    ],
-    [
-     40.88,
-     43.2
-    ],
-    [
-     46.66,
-     51.92
-    ],
-    [
-     53.34,
-     61.18
-    ],
-    [
-     63.9,
-     68.04
-    ],
-    [
-     68.04,
-     76.98
-    ],
-    [
-     76.98,
-     79.94
-    ],
-    [
-     80.24,
+     63.78,
      84.82
+    ],
+    [
+     86.16,
+     90.32
+    ],
+    [
+     91.38,
+     100.48
+    ],
+    [
+     103.42,
+     111.56
+    ],
+    [
+     114.22,
+     123.34
+    ],
+    [
+     124.34,
+     129.82
     ]
    ],
-   "longest_segment_s": 13.079999999999984,
+   "longest_segment_s": 25.82,
    "merged_segments": 0,
-   "missed_utterances": 3,
-   "segments": 96,
-   "speech_coverage": 0.907439836404781,
+   "missed_utterances": 0,
+   "segments": 54,
+   "speech_coverage": 0.9998105941031631,
    "utterances": 47
   },
   {
@@ -3344,17 +3391,22 @@
    "snr_db": 20,
    "vad": "adaptive",
    "speech": false,
-   "active_non_speech_s_per_min": 0.0,
+   "active_non_speech_s_per_min": 0.12244897959183763,
    "audio_s": 607.6,
    "detection_delay_s_max": 0.0,
    "detection_delay_s_mean": -0.0,
-   "false_segments": 0,
-   "false_segments_per_min": 0.0,
-   "first_segments": [],
-   "longest_segment_s": 0.0,
+   "false_segments": 1,
+   "false_segments_per_min": 0.09874917709019092,
+   "first_segments": [
+    [
+     372.8,
+     374.04
+    ]
+   ],
+   "longest_segment_s": 1.240000000000009,
    "merged_segments": 0,
    "missed_utterances": 0,
-   "segments": 0,
+   "segments": 1,
    "speech_coverage": -0.0,
    "utterances": 0
   },
@@ -3499,67 +3551,67 @@
    "snr_db": 15,
    "vad": "adaptive",
    "speech": true,
-   "active_non_speech_s_per_min": 1.8368846798855893,
+   "active_non_speech_s_per_min": 3.7062000591891215,
    "audio_s": 608.22,
-   "detection_delay_s_max": 1.5470625000000382,
-   "detection_delay_s_mean": 0.689559451219514,
+   "detection_delay_s_max": 0.4619999999999891,
+   "detection_delay_s_mean": 0.2271343085106349,
    "false_segments": 0,
    "false_segments_per_min": 0.0,
    "first_segments": [
     [
-     2.86,
-     9.0
+     1.52,
+     27.34
     ],
     [
-     9.42,
-     11.24
+     27.34,
+     36.78
     ],
     [
-     11.24,
-     20.06
+     37.62,
+     39.92
     ],
     [
-     21.0,
-     28.66
+     40.82,
+     43.22
     ],
     [
-     28.66,
-     31.28
-    ],
-    [
-     40.9,
-     43.2
-    ],
-    [
-     46.66,
+     46.46,
      51.92
     ],
     [
-     54.22,
-     60.0
+     53.08,
+     61.18
     ],
     [
-     63.9,
-     68.02
+     63.78,
+     82.9
     ],
     [
-     68.02,
-     76.98
+     83.08,
+     84.82
     ],
     [
-     76.98,
-     79.94
+     86.16,
+     90.3
     ],
     [
-     80.24,
-     84.8
+     91.4,
+     100.46
+    ],
+    [
+     103.44,
+     110.38
+    ],
+    [
+     110.4,
+     111.54
     ]
    ],
-   "longest_segment_s": 13.079999999999984,
+   "longest_segment_s": 25.82000000000005,
    "merged_segments": 0,
-   "missed_utterances": 6,
-   "segments": 88,
-   "speech_coverage": 0.8050986905763972,
+   "missed_utterances": 0,
+   "segments": 67,
+   "speech_coverage": 0.9974604564364219,
    "utterances": 47
   },
   {
@@ -3567,17 +3619,22 @@
    "snr_db": 15,
    "vad": "adaptive",
    "speech": false,
-   "active_non_speech_s_per_min": 0.0,
+   "active_non_speech_s_per_min": 0.12244897959183763,
    "audio_s": 607.6,
    "detection_delay_s_max": 0.0,
    "detection_delay_s_mean": -0.0,
-   "false_segments": 0,
-   "false_segments_per_min": 0.0,
-   "first_segments": [],
-   "longest_segment_s": 0.0,
+   "false_segments": 1,
+   "false_segments_per_min": 0.09874917709019092,
+   "first_segments": [
+    [
+     372.8,
+     374.04
+    ]
+   ],
+   "longest_segment_s": 1.240000000000009,
    "merged_segments": 0,
    "missed_utterances": 0,
-   "segments": 0,
+   "segments": 1,
    "speech_coverage": -0.0,
    "utterances": 0
   },
@@ -3722,67 +3779,67 @@
    "snr_db": 10,
    "vad": "adaptive",
    "speech": true,
-   "active_non_speech_s_per_min": 1.5723093617441322,
+   "active_non_speech_s_per_min": 3.260376590707321,
    "audio_s": 608.22,
-   "detection_delay_s_max": 2.487062500000036,
-   "detection_delay_s_mean": 0.849071646341464,
+   "detection_delay_s_max": 0.6171875,
+   "detection_delay_s_mean": 0.2667087765957394,
    "false_segments": 0,
    "false_segments_per_min": 0.0,
    "first_segments": [
     [
-     3.82,
-     8.34
+     1.54,
+     11.24
     ],
     [
-     9.44,
-     19.56
+     15.6,
+     20.04
     ],
     [
-     21.0,
-     26.94
+     20.96,
+     26.96
     ],
     [
-     29.58,
-     31.22
+     29.52,
+     31.24
     ],
     [
-     41.04,
-     43.2
+     35.18,
+     36.76
     ],
     [
-     46.66,
+     37.64,
+     39.9
+    ],
+    [
+     40.86,
+     43.22
+    ],
+    [
+     46.6,
      51.9
     ],
     [
-     54.24,
-     59.46
+     53.18,
+     59.44
     ],
     [
-     63.9,
-     68.02
+     63.8,
+     68.04
     ],
     [
-     68.18,
-     76.96
+     68.14,
+     70.46
     ],
     [
-     76.96,
-     79.9
-    ],
-    [
-     86.5,
-     90.46
-    ],
-    [
-     91.72,
-     97.98
+     70.46,
+     74.02
     ]
    ],
-   "longest_segment_s": 10.12,
+   "longest_segment_s": 18.560000000000002,
    "merged_segments": 0,
-   "missed_utterances": 8,
-   "segments": 78,
-   "speech_coverage": 0.7157617792637851,
+   "missed_utterances": 4,
+   "segments": 81,
+   "speech_coverage": 0.8477837787188118,
    "utterances": 47
   },
   {
@@ -3790,17 +3847,22 @@
    "snr_db": 10,
    "vad": "adaptive",
    "speech": false,
-   "active_non_speech_s_per_min": 0.0,
+   "active_non_speech_s_per_min": 0.12244897959183763,
    "audio_s": 607.6,
    "detection_delay_s_max": 0.0,
    "detection_delay_s_mean": -0.0,
-   "false_segments": 0,
-   "false_segments_per_min": 0.0,
-   "first_segments": [],
-   "longest_segment_s": 0.0,
+   "false_segments": 1,
+   "false_segments_per_min": 0.09874917709019092,
+   "first_segments": [
+    [
+     372.8,
+     374.04
+    ]
+   ],
+   "longest_segment_s": 1.240000000000009,
    "merged_segments": 0,
    "missed_utterances": 0,
-   "segments": 0,
+   "segments": 1,
    "speech_coverage": -0.0,
    "utterances": 0
   },
@@ -3945,67 +4007,67 @@
    "snr_db": 5,
    "vad": "adaptive",
    "speech": true,
-   "active_non_speech_s_per_min": 0.9312974745980211,
+   "active_non_speech_s_per_min": 0.9900241688862783,
    "audio_s": 608.22,
-   "detection_delay_s_max": 21.991562499999986,
-   "detection_delay_s_mean": 3.5092392857142856,
+   "detection_delay_s_max": 3.3558749999999975,
+   "detection_delay_s_mean": 1.0971378676470582,
    "false_segments": 0,
    "false_segments_per_min": 0.0,
    "first_segments": [
     [
-     21.02,
-     24.58
+     3.06,
+     6.34
     ],
     [
-     41.04,
-     43.2
+     40.94,
+     43.22
     ],
     [
-     46.66,
-     51.88
+     46.64,
+     51.76
     ],
     [
-     65.36,
-     68.0
+     56.16,
+     59.0
     ],
     [
-     87.24,
-     90.46
+     64.06,
+     68.02
     ],
     [
-     92.78,
-     97.92
+     87.2,
+     90.22
     ],
     [
-     104.58,
-     109.74
+     94.56,
+     97.94
     ],
     [
-     114.56,
-     120.76
+     103.72,
+     109.36
+    ],
+    [
+     114.68,
+     117.7
+    ],
+    [
+     117.7,
+     119.94
     ],
     [
      154.04,
-     156.0
+     156.02
     ],
     [
-     160.08,
-     163.82
-    ],
-    [
-     188.66,
-     189.96
-    ],
-    [
-     205.24,
-     210.38
+     156.94,
+     158.82
     ]
    ],
-   "longest_segment_s": 6.200000000000003,
+   "longest_segment_s": 6.079999999999984,
    "merged_segments": 0,
-   "missed_utterances": 24,
-   "segments": 38,
-   "speech_coverage": 0.45981216847476747,
+   "missed_utterances": 28,
+   "segments": 41,
+   "speech_coverage": 0.40912031734187865,
    "utterances": 47
   },
   {
@@ -4013,17 +4075,22 @@
    "snr_db": 5,
    "vad": "adaptive",
    "speech": false,
-   "active_non_speech_s_per_min": 0.0,
+   "active_non_speech_s_per_min": 0.12244897959183763,
    "audio_s": 607.6,
    "detection_delay_s_max": 0.0,
    "detection_delay_s_mean": -0.0,
-   "false_segments": 0,
-   "false_segments_per_min": 0.0,
-   "first_segments": [],
-   "longest_segment_s": 0.0,
+   "false_segments": 1,
+   "false_segments_per_min": 0.09874917709019092,
+   "first_segments": [
+    [
+     372.8,
+     374.04
+    ]
+   ],
+   "longest_segment_s": 1.240000000000009,
    "merged_segments": 0,
    "missed_utterances": 0,
-   "segments": 0,
+   "segments": 1,
    "speech_coverage": -0.0,
    "utterances": 0
   },
@@ -4119,67 +4186,67 @@
    "snr_db": 40,
    "vad": "adaptive",
    "speech": true,
-   "active_non_speech_s_per_min": 3.4921574430305053,
+   "active_non_speech_s_per_min": 3.9794811088093547,
    "audio_s": 608.22,
-   "detection_delay_s_max": 0.2694375000000093,
-   "detection_delay_s_mean": 0.2509640957446793,
+   "detection_delay_s_max": 0.191562499999975,
+   "detection_delay_s_mean": 0.17521941489361367,
    "false_segments": 0,
    "false_segments_per_min": 0.0,
    "first_segments": [
     [
-     1.58,
-     20.08
+     1.52,
+     27.34
     ],
     [
-     20.16,
-     23.0
+     27.34,
+     36.8
     ],
     [
-     23.0,
-     28.66
+     37.58,
+     39.96
     ],
     [
-     28.66,
-     31.3
+     40.8,
+     42.88
     ],
     [
-     32.26,
-     36.78
+     46.18,
+     52.0
     ],
     [
-     37.66,
-     39.92
+     53.06,
+     61.24
     ],
     [
-     40.86,
-     42.84
-    ],
-    [
-     46.26,
-     51.96
-    ],
-    [
-     53.14,
-     61.2
-    ],
-    [
-     63.88,
-     76.98
-    ],
-    [
-     76.98,
-     79.94
-    ],
-    [
-     79.98,
+     63.8,
      84.82
+    ],
+    [
+     86.1,
+     90.34
+    ],
+    [
+     91.38,
+     100.64
+    ],
+    [
+     103.42,
+     111.6
+    ],
+    [
+     114.22,
+     123.46
+    ],
+    [
+     124.06,
+     129.88
     ]
    ],
-   "longest_segment_s": 18.5,
+   "longest_segment_s": 25.82,
    "merged_segments": 0,
    "missed_utterances": 0,
-   "segments": 80,
-   "speech_coverage": 0.9961272250334904,
+   "segments": 53,
+   "speech_coverage": 1.0,
    "utterances": 47
   },
   {
@@ -4342,67 +4409,67 @@
    "snr_db": 30,
    "vad": "adaptive",
    "speech": true,
-   "active_non_speech_s_per_min": 3.058103975535201,
+   "active_non_speech_s_per_min": 3.884778534083118,
    "audio_s": 608.22,
-   "detection_delay_s_max": 0.6579999999999941,
-   "detection_delay_s_mean": 0.3339428191489324,
+   "detection_delay_s_max": 0.2025624999999991,
+   "detection_delay_s_mean": 0.1816023936170197,
    "false_segments": 0,
    "false_segments_per_min": 0.0,
    "first_segments": [
     [
-     1.6,
-     9.02
+     1.52,
+     27.34
     ],
     [
-     9.42,
-     11.26
+     27.34,
+     36.8
     ],
     [
-     11.26,
-     20.08
+     37.58,
+     39.96
     ],
     [
-     20.16,
-     23.0
+     40.8,
+     42.86
     ],
     [
-     23.0,
-     28.66
+     46.18,
+     51.98
     ],
     [
-     28.66,
-     31.3
+     53.06,
+     61.22
     ],
     [
-     32.26,
-     36.78
+     63.8,
+     84.82
     ],
     [
-     37.66,
-     39.92
+     86.12,
+     90.34
     ],
     [
-     40.88,
-     42.82
+     91.38,
+     100.6
     ],
     [
-     46.66,
-     51.96
+     103.42,
+     111.56
     ],
     [
-     53.14,
-     61.18
+     114.22,
+     123.42
     ],
     [
-     63.88,
-     76.98
+     124.06,
+     129.86
     ]
    ],
-   "longest_segment_s": 13.100000000000023,
+   "longest_segment_s": 25.82,
    "merged_segments": 0,
    "missed_utterances": 0,
-   "segments": 95,
-   "speech_coverage": 0.9880267975246564,
+   "segments": 53,
+   "speech_coverage": 1.0,
    "utterances": 47
   },
   {
@@ -4565,67 +4632,67 @@
    "snr_db": 20,
    "vad": "adaptive",
    "speech": true,
-   "active_non_speech_s_per_min": 1.9119562000592327,
+   "active_non_speech_s_per_min": 3.6302653645062954,
    "audio_s": 608.22,
-   "detection_delay_s_max": 1.5470625000000382,
-   "detection_delay_s_mean": 0.6157601744186073,
+   "detection_delay_s_max": 0.4595625000000041,
+   "detection_delay_s_mean": 0.2096874999999981,
    "false_segments": 0,
    "false_segments_per_min": 0.0,
    "first_segments": [
     [
-     2.86,
-     9.0
+     1.52,
+     27.34
     ],
     [
-     9.42,
-     11.26
+     27.34,
+     36.8
     ],
     [
-     11.26,
-     20.08
+     37.6,
+     39.92
     ],
     [
-     20.16,
-     23.0
+     40.82,
+     42.84
     ],
     [
-     23.0,
-     28.66
+     46.28,
+     51.96
     ],
     [
-     28.66,
-     31.3
-    ],
-    [
-     32.28,
-     36.78
-    ],
-    [
-     38.22,
-     39.9
-    ],
-    [
-     40.88,
-     42.82
-    ],
-    [
-     46.66,
-     51.92
-    ],
-    [
-     53.34,
+     53.06,
      61.18
     ],
     [
-     63.9,
-     68.04
+     63.82,
+     84.82
+    ],
+    [
+     86.14,
+     90.32
+    ],
+    [
+     91.38,
+     100.48
+    ],
+    [
+     103.42,
+     111.56
+    ],
+    [
+     114.22,
+     123.34
+    ],
+    [
+     124.34,
+     129.84
     ]
    ],
-   "longest_segment_s": 8.960000000000036,
+   "longest_segment_s": 25.82,
    "merged_segments": 0,
-   "missed_utterances": 4,
-   "segments": 100,
-   "speech_coverage": 0.8930376136872495,
+   "missed_utterances": 0,
+   "segments": 53,
+   "speech_coverage": 1.0,
    "utterances": 47
   },
   {
@@ -4788,67 +4855,67 @@
    "snr_db": 15,
    "vad": "adaptive",
    "speech": true,
-   "active_non_speech_s_per_min": 1.507152017362163,
+   "active_non_speech_s_per_min": 3.486238532110112,
    "audio_s": 608.22,
-   "detection_delay_s_max": 2.4799375000000055,
-   "detection_delay_s_mean": 0.7407789634146379,
+   "detection_delay_s_max": 0.597999999999999,
+   "detection_delay_s_mean": 0.23053856382978438,
    "false_segments": 0,
    "false_segments_per_min": 0.0,
    "first_segments": [
     [
-     2.86,
-     9.0
+     1.52,
+     27.34
     ],
     [
-     9.42,
-     11.24
+     27.34,
+     36.8
     ],
     [
-     11.24,
-     20.08
+     37.62,
+     39.92
     ],
     [
-     21.0,
-     22.98
+     40.82,
+     42.84
     ],
     [
-     22.98,
-     28.66
+     46.6,
+     51.94
     ],
     [
-     28.66,
-     31.28
-    ],
-    [
-     41.04,
-     42.8
-    ],
-    [
-     46.66,
-     51.92
-    ],
-    [
-     53.36,
+     53.08,
      61.18
     ],
     [
-     63.9,
-     68.04
+     63.82,
+     82.9
     ],
     [
-     68.04,
-     76.98
+     83.08,
+     84.82
     ],
     [
-     76.98,
-     79.94
+     86.16,
+     90.3
+    ],
+    [
+     91.4,
+     100.46
+    ],
+    [
+     103.44,
+     111.54
+    ],
+    [
+     114.22,
+     123.3
     ]
    ],
-   "longest_segment_s": 8.960000000000036,
+   "longest_segment_s": 25.82000000000005,
    "merged_segments": 0,
-   "missed_utterances": 6,
-   "segments": 92,
-   "speech_coverage": 0.8118478748581257,
+   "missed_utterances": 0,
+   "segments": 55,
+   "speech_coverage": 0.9996211882063263,
    "utterances": 47
   },
   {
@@ -5011,67 +5078,67 @@
    "snr_db": 10,
    "vad": "adaptive",
    "speech": true,
-   "active_non_speech_s_per_min": 1.1467519976324476,
+   "active_non_speech_s_per_min": 3.133637910624474,
    "audio_s": 608.22,
-   "detection_delay_s_max": 2.611562499999991,
-   "detection_delay_s_mean": 0.93980335365854,
+   "detection_delay_s_max": 0.6020000000000323,
+   "detection_delay_s_mean": 0.2641555851063779,
    "false_segments": 0,
    "false_segments_per_min": 0.0,
    "first_segments": [
     [
-     3.82,
-     6.14
+     1.54,
+     27.36
     ],
     [
-     7.1,
-     9.0
+     27.36,
+     28.66
     ],
     [
-     13.08,
-     19.56
+     29.5,
+     31.28
     ],
     [
-     21.0,
-     22.98
+     31.7,
+     36.8
     ],
     [
-     22.98,
-     26.96
+     37.64,
+     39.9
     ],
     [
-     28.46,
-     31.26
+     40.88,
+     42.82
     ],
     [
-     41.04,
-     42.8
+     46.6,
+     51.92
     ],
     [
-     46.68,
-     51.9
+     53.08,
+     60.02
     ],
     [
-     54.22,
-     60.0
+     63.84,
+     74.02
     ],
     [
-     63.9,
-     68.02
+     80.26,
+     82.9
     ],
     [
-     68.18,
-     76.98
+     83.46,
+     84.8
     ],
     [
-     76.98,
-     79.9
+     86.16,
+     90.26
     ]
    ],
-   "longest_segment_s": 8.939999999999998,
+   "longest_segment_s": 25.82000000000005,
    "merged_segments": 0,
-   "missed_utterances": 6,
-   "segments": 91,
-   "speech_coverage": 0.740814759548586,
+   "missed_utterances": 0,
+   "segments": 75,
+   "speech_coverage": 0.9404683560976529,
    "utterances": 47
   },
   {
@@ -5234,67 +5301,67 @@
    "snr_db": 5,
    "vad": "adaptive",
    "speech": true,
-   "active_non_speech_s_per_min": 0.08089178257867642,
+   "active_non_speech_s_per_min": 0.7348266252343042,
    "audio_s": 608.22,
-   "detection_delay_s_max": 22.035374999999988,
-   "detection_delay_s_mean": 9.180477678571426,
+   "detection_delay_s_max": 21.951562499999966,
+   "detection_delay_s_mean": 1.855024999999998,
    "false_segments": 0,
    "false_segments_per_min": 0.0,
    "first_segments": [
     [
-     23.34,
-     24.58
+     3.06,
+     6.16
     ],
     [
-     41.06,
-     42.76
+     15.6,
+     17.56
     ],
     [
-     54.24,
+     23.3,
+     24.6
+    ],
+    [
+     29.54,
+     31.16
+    ],
+    [
+     40.94,
+     42.8
+    ],
+    [
+     54.2,
      59.46
     ],
     [
-     68.2,
-     70.42
+     64.14,
+     68.04
     ],
     [
-     94.64,
-     97.86
+     86.54,
+     90.24
     ],
     [
-     188.72,
-     189.94
+     91.86,
+     97.88
     ],
     [
-     286.2,
-     287.44
+     106.52,
+     108.68
     ],
     [
-     340.18,
-     345.36
+     117.62,
+     120.58
     ],
     [
-     371.06,
-     372.3
-    ],
-    [
-     389.28,
-     391.94
-    ],
-    [
-     433.02,
-     436.68
-    ],
-    [
-     476.52,
-     478.04
+     160.8,
+     163.84
     ]
    ],
-   "longest_segment_s": 5.219999999999999,
+   "longest_segment_s": 6.019999999999996,
    "merged_segments": 0,
-   "missed_utterances": 43,
-   "segments": 14,
-   "speech_coverage": 0.10032626570079152,
+   "missed_utterances": 30,
+   "segments": 47,
+   "speech_coverage": 0.37701262761365517,
    "utterances": 47
   },
   {
