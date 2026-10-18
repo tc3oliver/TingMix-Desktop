@@ -5,7 +5,7 @@ use common::*;
 use tingmix_models::fetch::Downloader;
 use tingmix_models::import::{import_dir, import_zip};
 use tingmix_models::manifest::*;
-use tingmix_models::Error;
+use tingmix_models::{Error, Registry};
 
 fn accept(reg: &tingmix_models::Registry, m: &VerifiedManifest) {
     reg.record_acceptance(m, "model-terms").unwrap();
@@ -711,4 +711,38 @@ fn acceptance_survives_a_url_that_needs_json_escaping() {
     let m = signed(&raw);
     accept(&reg, &m);
     assert!(reg.missing_acceptances(m.manifest()).is_empty());
+}
+
+#[test]
+fn an_install_signed_by_a_no_longer_trusted_key_is_replaced_by_a_verified_one() {
+    let srv = serve(&[("v1", 1)]);
+    let dir = tempfile::tempdir().unwrap();
+    let reg = registry(dir.path());
+    let old = signed(&manifest("v1", &srv.url, 1));
+    accept(&reg, &old);
+    Downloader::new(true)
+        .install(&reg, &old, &no_cancel(), |_| {})
+        .unwrap();
+    reg.activate("v1").unwrap();
+
+    // the same registry under a verifier that no longer trusts key 1 (a release build after the dev key was dropped)
+    let release = Verifier::new(&[("release", key(2).verifying_key().to_bytes())]).unwrap();
+    let reg = Registry::open(dir.path(), release)
+        .unwrap()
+        .allow_loopback_http(true);
+    assert_eq!(reg.list().unwrap(), ["v1"]);
+    assert!(reg.open_model("v1").is_err());
+
+    let mut raw = manifest("v1", &srv.url, 1);
+    raw.serial = 2;
+    let new = reg
+        .verifier()
+        .verify(sign(&raw, "release", &key(2)))
+        .unwrap();
+    accept(&reg, &new);
+    Downloader::new(true)
+        .install(&reg, &new, &no_cancel(), |_| {})
+        .unwrap();
+    assert_eq!(reg.open_model("v1").unwrap().manifest.serial, 2);
+    assert_eq!(reg.active().unwrap().as_deref(), Some("v1"));
 }

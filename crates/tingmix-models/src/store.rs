@@ -187,7 +187,8 @@ impl Registry {
         if let Some(l) = self.missing_acceptances(m.manifest()).into_iter().next() {
             return Err(Error::LicenseNotAccepted(l));
         }
-        if self.version_dir(&m.manifest().id).exists() {
+        let existing = self.version_dir(&m.manifest().id);
+        if existing.exists() && self.open_model(&m.manifest().id).is_ok() {
             return Err(Error::AlreadyInstalled(m.manifest().id.clone()));
         }
         let man = m.manifest();
@@ -202,6 +203,11 @@ impl Registry {
                 serial: man.serial,
                 high_water: high_water.0,
             });
+        }
+        if existing.exists() {
+            // an install this build cannot open (signed by a key it no longer trusts, or damaged) is replaced by this
+            // verified one; the pointers keep naming the id, so it becomes usable again once the download commits
+            fs::remove_dir_all(&existing).map_err(io(&existing))?;
         }
         let d = self.root.join("tmp").join(&m.manifest().id);
         fs::create_dir_all(&d).map_err(io(&d))?;
