@@ -693,15 +693,13 @@ enum WarmState {
     Failed(String, String),
 }
 
-use std::sync::atomic::Ordering;
-
 /// One preloaded backend (model and LM already in memory) so Start does not wait for the load. A session takes it; the next
 /// one is loaded after the session ends, never in parallel (a second copy of Large is ~2 GiB).
 pub struct Warm {
     slot: std::sync::Mutex<WarmState>,
     cv: std::sync::Condvar,
     /// Backends handed out by `take` and not yet released by `release_and_preload` (a live session or file job holds each).
-    taken: std::sync::atomic::AtomicU32,
+    taken: std::sync::Mutex<u32>,
 }
 
 impl Default for Warm {
@@ -709,7 +707,7 @@ impl Default for Warm {
         Self {
             slot: std::sync::Mutex::new(WarmState::Empty),
             cv: std::sync::Condvar::new(),
-            taken: std::sync::atomic::AtomicU32::new(0),
+            taken: std::sync::Mutex::new(0),
         }
     }
 }
@@ -777,7 +775,7 @@ impl Warm {
 pub fn preload(app: &tauri::AppHandle) {
     use tauri::Manager;
     let st = app.state::<crate::state::AppState>();
-    if st.warm.taken.load(Ordering::SeqCst) > 0 {
+    if *st.warm.taken.lock().unwrap() > 0 {
         return; // a session or job holds a copy; loading a second Large now would double the memory
     }
     let d = decide(&st.models, &st.runtimes);
@@ -854,10 +852,11 @@ pub fn take(app: &tauri::AppHandle) -> Result<Resolved, String> {
     use tauri::Manager;
     let r = take_inner(app);
     if r.is_ok() {
-        app.state::<crate::state::AppState>()
+        *app.state::<crate::state::AppState>()
             .warm
             .taken
-            .fetch_add(1, Ordering::SeqCst);
+            .lock()
+            .unwrap() += 1;
     }
     r
 }
@@ -865,11 +864,11 @@ pub fn take(app: &tauri::AppHandle) -> Result<Resolved, String> {
 /// The session or job that `take` served has ended (or never started): allow preloading again and preload.
 pub fn release_and_preload(app: &tauri::AppHandle) {
     use tauri::Manager;
-    let _ = app
-        .state::<crate::state::AppState>()
-        .warm
-        .taken
-        .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |n| n.checked_sub(1));
+    {
+        let st = app.state::<crate::state::AppState>();
+        let mut n = st.warm.taken.lock().unwrap();
+        *n = n.saturating_sub(1);
+    }
     preload(app);
 }
 
@@ -1011,8 +1010,9 @@ fn probe_mlx(
 }
 
 /// The Large ONNX graph is probed in a child (`tingmix-onnx-worker`, next to the app executable), so an ONNX Runtime or driver
-/// crash cannot take the app down. The child inherits `TINGMIX_ORT_DYLIB`, which the app sets at start-up.
+/// crash cannot take the app down. The child gets the library path as `TINGMIX_ORT_DYLIB` from the target.
 fn probe_onnx_large(
+    rt: &Runtimes,
     root: &std::path::Path,
     model: &InstalledModel,
     fx: &ProbeFixture,
@@ -1028,7 +1028,8 @@ fn probe_onnx_large(
     Some(match worker {
         Ok(exe) => run_probe(
             root,
-            &mut OnnxProbeTarget::new(exe, Provider::Cpu, onnx_threads(), true),
+            &mut OnnxProbeTarget::new(exe, Provider::Cpu, onnx_threads(), true)
+                .with_library(rt.ort_library.clone()),
             model,
             fx,
             2,
@@ -1097,7 +1098,7 @@ pub fn start_probe(
                     };
                     let rec = (match backend {
                         MLX => probe_mlx(reg.root(), &model, &fx),
-                        ONNX => probe_onnx_large(reg.root(), &model, &fx),
+                        ONNX => probe_onnx_large(&rt, reg.root(), &model, &fx),
                         _ => None,
                     })
                     .unwrap_or_else(|| {

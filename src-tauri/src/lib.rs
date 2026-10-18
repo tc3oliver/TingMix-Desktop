@@ -74,8 +74,6 @@ pub fn run() {
                 bundled.or_else(|| std::env::var_os("TINGMIX_ORT_DYLIB").map(Into::into));
             if let Some(p) = &ort_library {
                 tingmix_runtime_onnx::set_runtime_library(p.clone());
-                // the probe worker is a child process: it finds the library through the environment it inherits
-                std::env::set_var("TINGMIX_ORT_DYLIB", p);
             }
             // Registering the updater without a pubkey makes plugin init fail, so it exists only when one is configured.
             let updater = app

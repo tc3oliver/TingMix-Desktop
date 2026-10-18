@@ -24,6 +24,7 @@ pub struct OnnxProbeTarget {
     provider: Provider,
     threads: usize,
     use_lm: bool,
+    library: Option<PathBuf>,
     timeout: Duration,
     worker: Option<Worker>,
     info: Option<(String, String)>,
@@ -39,10 +40,17 @@ impl OnnxProbeTarget {
             provider,
             threads,
             use_lm,
+            library: None,
             timeout: Duration::from_secs(120),
             worker: None,
             info: None,
         }
+    }
+
+    /// ONNX Runtime library the worker loads, passed to the child as `TINGMIX_ORT_DYLIB` (the parent's environment stays untouched).
+    pub fn with_library(mut self, library: Option<PathBuf>) -> Self {
+        self.library = library;
+        self
     }
 
     /// `tingmix-onnx-worker` next to the running executable.
@@ -80,6 +88,9 @@ impl OnnxProbeTarget {
         cmd.arg(self.threads.to_string());
         if self.use_lm {
             cmd.arg(first("lm")?);
+        }
+        if let Some(lib) = &self.library {
+            cmd.env("TINGMIX_ORT_DYLIB", lib);
         }
         let mut child = cmd
             .stdin(Stdio::piped())
