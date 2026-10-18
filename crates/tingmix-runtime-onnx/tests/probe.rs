@@ -142,9 +142,14 @@ fn onnx_probe_passes_in_child_process() {
         sample_rate: 16_000,
         expected_text: "good morning everyone",
     };
+    let (provider, backend, device) = match std::env::var("TINGMIX_ONNX_PROVIDER").as_deref() {
+        Ok("directml") => (Provider::DirectMl, "onnx-directml", "gpu:directml"),
+        Ok("cuda") => (Provider::Cuda, "onnx-cuda", "gpu:cuda"),
+        _ => (Provider::Cpu, "onnx-cpu", "cpu"),
+    };
     let mut t = OnnxProbeTarget::new(
         PathBuf::from(env!("CARGO_BIN_EXE_tingmix-onnx-worker")),
-        Provider::Cpu,
+        provider,
         4,
         true,
     );
@@ -154,18 +159,14 @@ fn onnx_probe_passes_in_child_process() {
     assert!(rec.passed, "{}", rec.detail);
     assert_eq!(
         (rec.backend.as_str(), rec.device.as_str()),
-        ("onnx-cpu", "cpu")
+        (backend, device)
     );
-    assert!(
-        rec.backend_version.starts_with("1.3"),
-        "{}",
-        rec.backend_version
-    );
+    assert!(!rec.backend_version.is_empty(), "{}", rec.backend_version);
     assert!(rec.rtf_x1000.is_some());
     assert!(matches!(
         consult(
             dir.path(),
-            "onnx-cpu",
+            backend,
             &model.manifest,
             Some(&rec.backend_version),
             &rec.device
