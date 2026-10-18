@@ -28,7 +28,7 @@ Prohibited Use Policy link, and the data-licence facts above, with no commercial
 
 Recommended default: the Desktop is distributed **without model weights**; models are fetched by the
 user from the original Hub repositories at pinned revisions after a licence screen (no mirrors, no offline bundles distributed
-by us). The offline-import path (BRIEF section 2) stays, importing files the user
+by us). The offline-import path (goals.md section 2) stays, importing files the user
 obtained themselves.
 
 ## 2. Component table

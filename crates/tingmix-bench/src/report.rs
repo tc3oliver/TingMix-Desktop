@@ -185,7 +185,7 @@ pub struct Gate {
     pub met: bool,
 }
 
-/// BRIEF section 13 initial targets for Large, applied to this run. Only meaningful with a real backend.
+/// goals.md section 13 initial targets for Large, applied to this run. Only meaningful with a real backend.
 pub fn gates(o: &RunOut, silence_s: f64) -> Vec<Gate> {
     let after_endpoint: Vec<f64> = o
         .utterances

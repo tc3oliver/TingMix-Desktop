@@ -1,8 +1,8 @@
 # Runtime compatibility matrix
 
-DRAFT for the lead to verify (task #11). Built only from committed documents and benchmark JSON; every number carries `file@commit`
+DRAFT, to be verified before publication. Built only from committed documents and benchmark JSON; every number carries `file@commit`
 (short hash of the last commit that touched the file, `git log -1 -- <file>` on 2026-10-18). Nothing was re-measured for this document.
-Items that depend on uncommitted work or on tasks still running are marked `TODO(lead)`.
+Items that depend on uncommitted work or on tasks still running are marked `TODO`.
 
 Status words (CONTRIBUTING.md): **VERIFIED** = measured with the real TingMix model; **EXPERIMENTAL** = implemented or officially supported,
 parity or speed on TingMix not (fully) established; **BLOCKED** = missing op, artifact or permission. "Not run" means nothing was
@@ -33,7 +33,7 @@ Oracle: PyTorch CPU fp32 (embed2asr + tingmix) on the 8 fixtures. Its own encode
 | Core ML, stage 2 sub-sampling conv (F = 2999) | fp32 / fp16 (trace values shown; export values are in the JSON) | EXPERIMENTAL | converts. fp32 CPU_AND_GPU 1.29 ms, CPU_ONLY 12.85 ms, rel-L2 about 4e-7; fp16 ALL 2.63 ms, CPU_AND_GPU 2.04 ms, CPU_AND_NE 4.00 ms, CPU_ONLY 7.84 ms, rel-L2 5.0e-4 (GPU) to 2.7e-3 (CPU_ONLY). All 12 fp16 ops are Neural-Engine-supported (compute plan), 2 placed on the NE in ALL | `benchmarks/apple/coreml/stage2_subsample.json@5a3865e` | placement is the compute-plan preference, not an execution counter |
 | Core ML, stage 3 one Conformer block (T = 750, batch 1) | fp32 / fp16 (trace values shown; export values are in the JSON) | EXPERIMENTAL | converts. fp32 CPU_AND_GPU 4.26 ms, CPU_ONLY 19.0 ms, rel-L2 1.4e-7 to 3.3e-7; fp16 CPU_AND_GPU 5.5 ms, ALL 9.71 ms, CPU_AND_NE 15.3 ms, CPU_ONLY 22.1 ms, rel-L2 5.1e-4 (GPU), 6.4e-4 (ALL), 8.9e-4 (NE), 1.4e-3 (CPU_ONLY). fp16 plan: 44 of 170 ops on the NE, 123 on the GPU | `benchmarks/apple/coreml/stage3_block.json@5a3865e` | |
 | Core ML, fp16 on the CPU path | one block, per-sub-block bisect | EXPERIMENTAL, a precision risk | error grows through the block on CPU_ONLY: after ff1 rel-L2 2.7e-3, after attention 2.3e-3, after the light conv 2.3e-2, after ff2 8.3e-2, after norm_out 0.54, while CPU_AND_GPU stays between 3.1e-4 and 8.0e-4 at every cut, 5.2e-4 after norm_out (reference absmax up to about 300) | `benchmarks/apple/coreml/bisect_stage3_fp16_cpu_cuts.json@5a3865e` | root cause not stated in the committed files |
-| Core ML, whole 12-layer tower and Reader chain | | not in committed results | `benchmarks/apple/coreml/stage4_tower.json` and `experiments/macos/coreml/stage4_tower.py`, `stage5_encoder_reader.py` are uncommitted work of task #4 | | TODO(lead): add after #4 commits |
+| Core ML, whole 12-layer tower and Reader chain | | not in committed results | `benchmarks/apple/coreml/stage4_tower.json` and `experiments/macos/coreml/stage4_tower.py`, `stage5_encoder_reader.py` are uncommitted work of | | TODO: add after #4 commits |
 | Rust decoder (CTC greedy and beam+LM) | f32 log-probs | VERIFIED | identical to the Python reference on 303 decode, 5025 LM-unit, 12 greedy, 300+300 LM-probability, 60+60 beam comparisons; on the real oracle logits of the 8 fixtures: greedy and beam+LM text 8/8 identical. LM load 2.5 s and 579 MB RSS (Python reference 19.7 s, about 7.0 GB) | `docs/research/decoder-parity.md@c609cdc` | tie-breaking and libm can differ off macOS arm64 |
 | Native Windows / Intel Mac | Large | not studied | no document or measurement exists for Large on Windows | | BLOCKED: no Windows machine; no study |
 
@@ -65,6 +65,6 @@ vocabulary 4096) and proves the pipeline only (`docs/research/small-onnx.md@5fe2
 | Unsigned macOS arm64 `.app` and DMG (ORT bundled, no MLX) | built and launched with no Python on PATH; 64,820 KiB `.app`, 19,514,768-byte DMG; `otool -L` shows only system libraries | `docs/release/packaging.md@43fb351` |
 | Signing, notarization, Gatekeeper | not done; no credentials; checklist only | `docs/release/signing-checklist.md@f80e59a` |
 | Windows installer | not built | `docs/release/packaging.md@43fb351` |
-| Microphone permission prompt and live capture from the `.app` | TODO(lead): user check, task #16 | |
-| Streaming 60-minute soak for the app pipeline | TODO(lead): task #14 | |
+| Microphone permission prompt and live capture from the `.app` | TODO: user check | |
+| Streaming 60-minute soak for the app pipeline | TODO | |
 | Dependency licences | generated inventory; MPL-2.0 crates flagged (symphonia, tauri's cssparser/selectors) | `docs/release/dependency-licenses.md@f8cf8c5` |

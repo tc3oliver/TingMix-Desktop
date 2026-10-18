@@ -56,7 +56,7 @@ used, and no Xcode performance report was generated. Statements about the ANE re
 
 - Variable length: Core ML needs one model per frame-count bucket (RangeDim is unreliable on GPU/ANE, EnumeratedShapes is slower and cannot carry the T-dependent attention mask). A 29.5 s offline window plus bucketed shorter windows means several 0.6 GB models, or padding with a length-aware GRU (not available in Core ML).
 - Versus MLX (`benchmarks/apple/mlx`): MLX fp32 does 29 s in 154 to 162 ms. Core ML best case for 29.5 s is 158 ms (fp16, CPU_AND_GPU) or 163 ms (fp32, ALL): equal within noise, not better, with a larger artifact set, an fp16 accuracy cost (still 100 % ids on 2 clips) and four graph rewrites. For 8 s: Core ML fp16 GPU 27 ms; MLX comparison not re-measured here.
-- Recommendation: keep Core ML EXPERIMENTAL; MLX stays the Apple default (BRIEF section 5 rule: Core ML slower or less accurate than MLX is not the default).
+- Recommendation: keep Core ML EXPERIMENTAL; MLX stays the Apple default (goals.md section 5 rule: Core ML slower or less accurate than MLX is not the default).
 
 ## Not done / open
 

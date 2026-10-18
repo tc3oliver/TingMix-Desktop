@@ -5,7 +5,7 @@ embeddinggemma-2 `914f7f8`). Citations use `TM:` / `E2A:` / `TML:` / `EG2:` / `T
 Status words: VERIFIED = measured on the real released artifact bytes or real model output; EXPERIMENTAL = random-weight or
 read-from-code evidence only; BLOCKED = artifact missing. The audit did not measure any TingMix accuracy or speed itself.
 
-Method: read every file named in BRIEF section 3 in full at the pinned commits (clones in `~/Developer/scratch/tingmix-audit/`), read the
+Method: read every file named in goals.md section 3 in full at the pinned commits (clones in `~/Developer/scratch/tingmix-audit/`), read the
 `transformers==5.19.0` Gemma4 audio sources, read safetensors headers of the real artifacts by HTTP range, downloaded and hashed the released
 files, ran the upstream Small tests, and wrote targeted Small checks (`experiments/audit/`, own `uv` project, raw JSON in
 `experiments/audit/results/`).
@@ -27,9 +27,9 @@ files, ran the upstream Small tests, and wrote targeted Small checks (`experimen
 | EG2 | `config.json`, `preprocessor_config.json`, `README.md`, safetensors header and bytes `[0, 609,821,480)` | all | |
 | TF | `models/gemma4/{modeling,feature_extraction}_gemma4.py`, `masking_utils.py`, `models/embedding_gemma2/modeling_embedding_gemma2.py` | audio paths | `model-inference-graph.md` |
 
-## 2. Confirmation of the BRIEF's initial values (section 3 of the brief says to verify, not trust)
+## 2. Confirmation of the goals.md's initial values (goals.md section 3 says to verify, not trust)
 
-| BRIEF value | Result | Evidence | Status |
+| goals.md value | Result | Evidence | Status |
 |---|---|---|---|
 | Audio tower about 304.8M parameters | 304,824,608 parameters + 480 clip scalars | module built from pinned config; 751 tensors, 304,825,088 elements in the EG2 header | VERIFIED |
 | 128-bin feature extraction | 128 HTK mel bins, 0-8000 Hz, 20 ms window, 10 ms hop, FFT 512, magnitude, `log(x+0.001)` | `EG2:preprocessor_config.json`; `TF:feature_extraction_gemma4.py` | VERIFIED |
@@ -56,7 +56,7 @@ Severity: H = blocks or endangers the Desktop, M = needs a decision, L = note.
 | L6 | M | `SHA256SUMS` omits the 113.9 MB LM file and is unsigned. | `model-artifact-inventory.md` section 1; `TM:tools/export_release.py:40` | Our manifest hashes all artifacts and is Ed25519-signed (task #8). |
 | L7 | M | The LM is 698 MB of JSON (22.6M n-grams); parsing it in Python peaks at about 6 GB. | `results/lm_stats.json` | Needs a compact binary format built offline; the Rust decoder already streams the JSON (`tingmix-decoder`, flate2 + zlib-rs), but memory on user machines must be measured. Request R4. |
 | L8 | M | Licensing of weights and LM is unresolved and internally contradictory. | `licensing-review.md` | Commercial-use question not pursued (owner decision 2026-10-18); default is "download from the original repos", no mirrors. |
-| L9 | L | Two code paths unpickle research checkpoints (`torch.load(..., weights_only=False)`): `export_release.py:27`, `large/model.py:61`. The released safetensors files contain no pickle. | `TM:tools/export_release.py:27`, `TM:large/model.py:51,61` | Never port these; the Desktop reads safetensors only (BRIEF section 11). |
+| L9 | L | Two code paths unpickle research checkpoints (`torch.load(..., weights_only=False)`): `export_release.py:27`, `large/model.py:61`. The released safetensors files contain no pickle. | `TM:tools/export_release.py:27`, `TM:large/model.py:51,61` | Never port these; the Desktop reads safetensors only (goals.md section 11). |
 | L10 | L | `LargeModel.DEFAULT_REPO` still points at the older `tc3oliver/Embed2ASR-v1` (9.66M Reader). | `TM:large/model.py:9` | Do not use the default; always pass the pinned TingMix-Large path. |
 | L11 | L | The Reader uses `pack_padded_sequence`, so the backward GRU starts at each clip's true end. | `E2A:reader.py:46-55` | Run each clip at its own length (batch size 1); any padded-batch port must replicate packing. |
 | L12 | L | ffmpeg `-ac 1` mixes stereo as (L+R)/sqrt(2) (+3 dB) while array input averages channels; the output has no digits or punctuation. | `E2A:audio.py:4-6`, `TML:README.md` limitations | Desktop picks one downmix rule and documents it; inverse text normalisation is a product feature, not a model feature. |
@@ -67,14 +67,14 @@ Severity: H = blocks or endangers the Desktop, M = needs a decision, L = note.
 Also: `tingmix` pins `embed2asr` by tag `v0.1.0` (`TM:pyproject.toml:22`), not by the commit pinned in `PINNED.md`; `src/` is byte-identical between
 `v0.1.0` and `b582757` (only `tools/bench_speed.py` and docs differ, `git diff --stat`), so the pins are equivalent for inference code.
 
-## 4. TingMix-Small audit (BRIEF section 3 checklist)
+## 4. TingMix-Small audit (goals.md section 3 checklist)
 
 Upstream tests: `tests/test_small.py`, 5 passed in 0.52 s (`results/upstream_test_small.txt`; torch 2.9.1 CPU). They use a 32/48/2-layer random network and
 compare streaming with offline on 3 s of noise at chunk sizes 160, 777, 4000, plus a fake-model session test. They do **not** cover production-size dimensions,
 other chunk boundaries, short inputs, tails, or memory. The targeted checks in `experiments/audit/small_stream_audit.py` (random weights, so
 EXPERIMENTAL for everything that is about numbers and cannot say anything about accuracy) give:
 
-| Check (BRIEF item) | Result | Detail |
+| Check (goals.md item) | Result | Detail |
 |---|---|---|
 | Causal Conv padding | PASS | `F.pad(x,(1,0))` before each stride-2 k3 conv (`model.py:66-67`); stream block re-computation with 4 mel frames of context and `h[1:]` (`model.py:99-107`) reproduces offline outputs exactly: 15 chunkings (1, 7, 159, 160, 161, 511, 512, 513, 639, 640, 641, 1600, 16000, random, whole) at d 512 / hidden 640 / 5 layers / vocab 5025: max abs difference 1.9e-6, argmax identical. |
 | Frame count and output shape | PASS | `frames(n) = (n-512)//160+1` for n >= 512; output frames = `frames // 4`; first output frame needs **992 samples** (mel frames 0-3: `3*160+512`); 2,607 lengths (0-2,599, 4,000, 16,000, 16,001, 16,159, 16,160, 16,161, 33,333) agree between closed form and streaming. |

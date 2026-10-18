@@ -107,7 +107,7 @@ download through Windows Update.
 
 ## Installed app: one launch
 
-With the lead's and the user's approval, the installed `tingmix-app.exe` was started once from
+The installed `tingmix-app.exe` was started once from
 `C:\Users\User\AppData\Local\TingMix`, left alone for 10 s (no mic, no UI interaction), inspected and closed:
 
 - process running and `Responding: True`, window title `TingMix`;

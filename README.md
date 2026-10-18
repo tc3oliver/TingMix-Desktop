@@ -35,7 +35,7 @@ The user interface is available in English and Traditional Chinese and follows t
 
 ## Build from source
 
-Requirements: Rust 1.85 or newer (`rustup` or your package manager), Node 24 with pnpm 10, and the platform toolchain for
+Clone the repository (`git clone https://github.com/tc3oliver/TingMix-Desktop.git`). Requirements: Rust 1.85 or newer (`rustup` or your package manager), Node 24 with pnpm 10, and the platform toolchain for
 Tauri 2 ([prerequisites](https://v2.tauri.app/start/prerequisites/)): Xcode command-line tools on macOS; Visual Studio
 Build Tools (MSVC) and the WebView2 runtime on Windows. Python is only needed for the research tools.
 

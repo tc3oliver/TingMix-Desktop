@@ -36,7 +36,7 @@ This Code of Conduct applies within all community spaces, and also applies when 
 
 ## Enforcement
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the community leaders responsible for enforcement at the maintainer, @tc3oliver, through the contact options on their GitHub profile (please do not post reports in public issues). All complaints will be reviewed and investigated promptly and fairly.
+Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the community leaders responsible for enforcement at the maintainers through GitHub's private vulnerability reporting (https://github.com/tc3oliver/TingMix-Desktop/security/advisories/new; choose it even for conduct reports, and please do not post reports in public issues). All complaints will be reviewed and investigated promptly and fairly.
 
 All community leaders are obligated to respect the privacy and security of the reporter of any incident.
 

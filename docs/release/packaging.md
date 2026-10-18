@@ -26,8 +26,8 @@ Outputs: `target/release/bundle/macos/TingMix.app`, `target/release/bundle/dmg/T
 
 ## Not verified
 
-- Inference from the installed `.app`: this smoke test only covers start, window and quit. Importing a model, probing, selecting a backend and transcribing from the packaged app is task #20.
-- Microphone permission prompt and live capture from the `.app` (needs a human at the machine; task #16).
+- Inference from the installed `.app`: this smoke test only covers start, window and quit. Importing a model, probing, selecting a backend and transcribing from the packaged app is covered in `docs/architecture/app.md`.
+- Microphone permission prompt and live capture from the `.app` (needs a person at the machine).
 - Running from `/Applications` after copying out of the DMG, Gatekeeper/quarantine behaviour, notarization, stapling, hardened-runtime entitlements (library validation versus the Microsoft-signed ORT dylib is discussed in `onnxruntime.md`).
 - Anything on a clean Mac without developer tools (this Mac has Xcode, Homebrew and mise; PATH was stripped but the file system was not).
 - Windows: the NSIS installer, DLL loading, WebView2 and VC++ runtime handling, MSI. The `windows-latest` CI job is untested because the repository has no remote; the `unzip` fallback in the `package` job (7z) is a guess about the runner image.

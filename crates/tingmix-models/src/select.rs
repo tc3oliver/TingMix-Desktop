@@ -1,4 +1,4 @@
-//! Capability-based runtime selection (BRIEF section 12). Only backends registered as VALIDATED are eligible, and a
+//! Capability-based runtime selection (goals.md section 12). Only backends registered as VALIDATED are eligible, and a
 //! backend needs a passing compatibility probe. GPU vendor never enters the decision.
 
 use std::path::Path;

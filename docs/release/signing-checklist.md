@@ -2,7 +2,7 @@
 
 Status 2026-10-18: **none of these exist yet.** No signing identity, notarization credential, Authenticode certificate, updater key or
 release manifest key is present in this repository or on the build machine, so CI builds are unsigned development artifacts and must
-not be described as signed or notarized (BRIEF section 15). This file lists what has to be obtained and decided; it makes no claim that any
+not be described as signed or notarized (goals.md section 15). This file lists what has to be obtained and decided; it makes no claim that any
 step works. Names of Tauri settings and environment variables were read from the Tauri 2 docs on 2026-10-18
 (`https://v2.tauri.app/distribute/sign/macos/`, `.../sign/windows/`, `.../plugin/updater/`) and must be re-checked against the Tauri
 version in `Cargo.lock` before first use.
@@ -39,7 +39,7 @@ Open: deployment target (`minimumSystemVersion 13.0` in `tauri.conf.json`) versu
 |---|---|
 | Updater keypair | generated once with `tauri signer generate`; private key in `TAURI_SIGNING_PRIVATE_KEY` (+ `_PASSWORD`) for release CI only; public key goes into `plugins.updater.pubkey` |
 | `bundle.createUpdaterArtifacts` | enable only on the release workflow |
-| Update endpoint (`endpoints`) | HTTPS location of the update manifest; the updater is a user-authorised network use, kept separate from model downloads (BRIEF section 15); the app must not auto-activate a model on update |
+| Update endpoint (`endpoints`) | HTTPS location of the update manifest; the updater is a user-authorised network use, kept separate from model downloads (goals.md section 15); the app must not auto-activate a model on update |
 | Key loss plan | a lost updater private key means existing installs cannot be updated; keep an offline backup and a documented rotation path |
 
 The updater key is **independent** from the Apple/Microsoft identities and from the model manifest key below.
@@ -63,4 +63,4 @@ Current state (`crates/tingmix-models/src/keys.rs`, `docs/architecture/model-man
 - Reproducible inputs: pinned action SHAs (the current `ci.yml` pins major tags only), `--locked` builds, `cargo deny` and the licence inventory green.
 - Notices: attribution screen content from `docs/release/dependency-licenses.md` (MPL-2.0 notices for symphonia and tauri's `cssparser`/`selectors`) and model licence texts.
 - Post-build checks on clean machines: signature/notarization status, microphone prompt, offline start with a pre-imported model, no Python on PATH.
-- Smoke tests of the installers wait for the app (task #9).
+- Smoke tests of the installers wait for the app (the application).

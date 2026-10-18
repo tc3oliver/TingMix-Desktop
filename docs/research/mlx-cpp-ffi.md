@@ -97,7 +97,7 @@ builds and tests on other platforms and in CI.
 7. All numbers were taken on a loaded machine and on synthetic TTS fixtures; re-run on an idle machine and on real speech
    before using them as release gates.
 
-## Native Rust path: wav to text (task #12)
+## Native Rust path: wav to text
 
 Crates: `tingmix-frontend-gemma` (log-mel), `tingmix-runtime-mlx` (`MlxLargeBackend: AsrBackend`, `Decode::{Greedy, BeamLm}`),
 decoding by `tingmix-decoder`. Chunking follows `embed2asr` `transcribe`: 29.5 s windows (472 000 samples), tails under
@@ -111,8 +111,8 @@ filters in Hz space (`mel_filter_bank`, no norm), `ln(mel + 1e-3)`, padded frame
 
 **End to end** (`tingmix-runtime-mlx/tests/e2e.rs`): from the wav bytes through Rust only, greedy and beam+LM (0.35/1.5/16) text
 equals `tests/fixtures/large/expected_texts.json` on 8/8 clips, 16/16 comparisons, fp32. Logits through the same Rust path were
-already within 1.3e-4 of the dumps (`tests/parity.rs`, my own dumps) and the MLX fp32 Python graph within 2.1e-4 of the
-reference task's dumps (`experiments/macos/mlx/cross_check.py`).
+already within 1.3e-4 of the dumps (`tests/parity.rs`, against dumps made with the same harness) and the MLX fp32 Python graph within 2.1e-4 of the
+CPU reference harness's dumps (`experiments/macos/mlx/cross_check.py`).
 
 **Rust-side timings** (`cargo run --release -p tingmix-runtime-mlx --example bench`, raw `benchmarks/apple/mlx/rust-bench.json`),
 fp32, M4 Max, 30 runs after 3 warmups, loadavg 10 to 16 from other processes (a first run at loadavg 7 to 17 gave up to 2x higher
@@ -142,12 +142,12 @@ segment. Clips: zh_02s, en_08s, mix_08s, zh_16s (1.7, 5.1, 7.5, 20.4 s of audio)
   clips (beam+LM up to 136 ms P50, 194 ms P95 at 20 s). No partial was coalesced; decode RTF stayed far below the 0.5 budget.
 - Final arrived 0.68 to 0.91 s after the segment's audio end; that is the 600 ms endpoint silence plus a decode, so the
   model-side final latency is roughly 70 to 300 ms.
-Not done: a 60-minute soak (task #14), power, and streaming of segments near the 25 s cap.
+Not done in this study: a 60-minute soak, power, and streaming of segments near the 25 s cap.
 
 Remaining gaps are unchanged from the list above (Metal toolchain / source build and bundling, single window, batch 1,
 no `mx.compile`, host-launched GRU), plus: no runtime-selection wiring and no Windows/other-platform equivalent.
 
-## App integration: probe, worker, bundling (task #19)
+## App integration: probe, worker, bundling
 
 **Probe** (`tingmix-runtime-mlx`, feature `probe`): `probe::MlxProbeTarget` implements `tingmix_models::probe::ProbeTarget`. It
 spawns the `tingmix-mlx-worker` binary, which loads the model once and answers decode requests over stdin/stdout (request: u64

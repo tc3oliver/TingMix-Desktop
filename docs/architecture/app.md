@@ -106,7 +106,7 @@ install is refused while a live session runs. An update replaces the app bundle 
 directory (`models/`), are verified by their own signed manifests, and an app update never installs, switches or
 re-activates one.
 
-## First run: download the speech model (task 27)
+## First run: download the speech model
 
 A release build never runs on the placeholder engine (`backends::demo_allowed()` is `cfg!(debug_assertions)`). With no usable
 model, `BackendInfo.usable` is false, Live and Files are replaced by the setup screen (`features/setup/SetupScreen.tsx`, also
@@ -140,7 +140,7 @@ Provenance: file jobs, live sessions and history entries carry the label of the 
 "Mock — not real ASR" next to the transcript, in the history list, and in exports (TXT first line, SRT first cue, file name
 suffix `(MOCK)`). Frontend logic with tests: `features/models/onboard.ts`, `lib/provenance.ts`, `features/export/format.ts`.
 
-## UI structure (task 24, `docs/architecture/ui-ux-brief.md`)
+## UI structure (`docs/design/ui-ux.md`)
 
 Five tabs (Live, Files, History, Models, Settings; Diagnostics is a collapsible section at the bottom of Settings and polls
 only while open) with the ARIA tabs pattern. The engine chip right of the tabs is the one place that states the engine
@@ -151,11 +151,11 @@ licence card (`lib/shortcuts.ts`, tested). Live warns when a recording delivers 
 "Stop and choose another microphone" (`lib/signal.ts`, tested). Captions follow the newest line only while the user is at the
 bottom ("Jump to latest" otherwise); finals sit in a `role="log"` region, partials are never announced. Deletes (history
 entries, models) ask first. A file dropped anywhere shows an overlay and opens Files. The slider in Settings saves once it
-settles and only the newest save may update the screen. Copy is still English source strings (task 25 localises it; the host
+settles and only the newest save may update the screen. Copy is still English source strings (translation is covered under Languages; the host
 still builds some English prose: `status.message`, operation messages, selection reasons, tray items).
 Not verified: layout and contrast were not looked at on a screen; Tauri's default macOS menu may swallow some shortcuts.
 
-## Languages (task 25)
+## Languages
 
 English and Traditional Chinese (`src/i18n/en.ts`, `zh-TW.ts`; the Chinese dictionary is typed against the English keys, so a
 missing key does not compile, and a test also checks parameters, plural pairs and empty strings). No i18n library: a typed

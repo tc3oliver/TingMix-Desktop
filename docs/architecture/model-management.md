@@ -1,6 +1,6 @@
 # Model management (crate `tingmix-models`)
 
-Implements BRIEF sections 11 and 12. Status: EXPERIMENTAL (unit and integration tests only; no real download of the
+Implements goals.md sections 11 and 12. Status: EXPERIMENTAL (unit and integration tests only; no real download of the
 1.7 GB TingMix-Large set has been run through it, and no UI uses it yet).
 
 ## Trust model
@@ -55,7 +55,7 @@ weights for converters and the PyTorch reference, no native backend consumes the
 Second fixture: `tingmix-large-mlx-fp32.{manifest,signed}.json`, the converted MLX artifact from
 `experiments/macos/mlx/convert.py` (single fp32 safetensors, audio tower with LoRA merged, plus reader; 1,308,067,132 bytes,
 sha256 `9737153e...fc7ec`, verified against the file on disk). Backend `mlx`, runtime `mlx >= 0.32.4`, status `EXPERIMENTAL`
-until task 12 (native end-to-end parity) passes, no RTF recorded. The model file has no URL (not published anywhere; the
+until native end-to-end parity passes, no RTF recorded. The model file has no URL (not published anywhere; the
 licence review says derived artifacts stay unpublished until E1-E5 are decided), so it installs by offline import. Tokenizer,
 LM and config files point at the pinned TingMix-Large revision. `provenance` records the converter path and commit
 (`7574a39`), the two source revisions and the merge (`W + 2.0*B@A` in fp32, layout transposes). Both fixtures are signed

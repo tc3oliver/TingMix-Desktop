@@ -35,7 +35,7 @@ Findings:
 1. `SHA256SUMS` does not list the 113.9 MB LM file, so the LM has no checksum in the repository (the Hub LFS oid matches the
    file we hashed, but only the manifest we sign can authenticate it). `tools/export_release.py:40` hashes only files present in
    the export directory; the LM is not covered by it (VERIFIED: the Hub tree lists the file, `SHA256SUMS` does not).
-2. `SHA256SUMS` is unsigned and lives next to the data; BRIEF section 11 requires a publisher-signed manifest (Ed25519) rather than this file.
+2. `SHA256SUMS` is unsigned and lives next to the data; goals.md section 11 requires a publisher-signed manifest (Ed25519) rather than this file.
 3. `config.json` pins the base encoder by revision (`914f7f89...`), so the pairing is machine-readable (VERIFIED).
 4. Reader tensors are F32 (`model.safetensors` metadata `{"format":"pt"}`); LoRA tensors are F32. No pickle is involved in
    these three safetensors files (header-only inspection, VERIFIED). The training export `.pt` is pickle
@@ -101,7 +101,7 @@ Disk footprint of the straightforward Large install (BF16 tower prefix as publis
 | Artifact | Status |
 |---|---|
 | `tc3oliver/TingMix-Small` | **BLOCKED**: API returns 401 (not published). `TM:docs/small-design.md:1` says "interface only; not trained yet". Expected layout (`TM:models/small/__init__.py:4`): `small.json`, `model.safetensors`, `units.json`, `tokenizer_bpe.model`. With the default trainer config (d 512, hidden 640, 5 GRU layers, vocab 5025) the network has 16,192,961 parameters (instantiated from `TM:models/small/model.py:53-62`; no checkpoint exists, so no accuracy, size-on-disk or INT8 figure can be given). |
-| `tc3oliver/Embed2ASR-v1 @ b40e1db5bf106bfe4481615591ce34a0c22c6231` | Not used. 9.66M-parameter Reader (BRIEF: do not use for Large). Note `TM:large/model.py:9` still has it as `DEFAULT_REPO`. |
+| `tc3oliver/Embed2ASR-v1 @ b40e1db5bf106bfe4481615591ce34a0c22c6231` | Not used. 9.66M-parameter Reader (goals.md: do not use for Large). Note `TM:large/model.py:9` still has it as `DEFAULT_REPO`. |
 | Training exports (`*.pt`), training data, features | Not distributed; never Desktop inputs. |
 
 ## 5. Reproducibility check (is everything needed for inference on the Hub?)

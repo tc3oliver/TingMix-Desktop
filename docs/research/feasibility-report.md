@@ -1,9 +1,9 @@
 # TingMix Desktop feasibility report
 
-DRAFT for the lead to verify and own (task #11). Date of drafting 2026-10-18, repository at `f80e59a`. Built only from committed documents
+DRAFT, to be verified before publication. Date of drafting 2026-10-18, repository at `f80e59a`. Built only from committed documents
 and benchmark files; each number carries `file@commit` (last commit that touched the file). Nothing was re-run for this report.
 Detailed per-runtime rows are in `compatibility-matrix.md`; this report adds the decision view, the acceptance gates and the open items.
-Placeholders `TODO(lead)` mark results that did not exist in committed form when this was drafted.
+Placeholders `TODO` mark results that did not exist in committed form when this was drafted.
 
 Status words (CONTRIBUTING.md): VERIFIED = measured with the real TingMix model; EXPERIMENTAL = implemented or officially supported, TingMix parity
 or speed not (fully) established; BLOCKED = missing op, artifact or permission.
@@ -46,7 +46,7 @@ LoRA merge / artifact strategy: MLX conversion reads only `audio_tower.*`, merge
 fp32 safetensors is 1.3 GB (`mlx-cpp-ffi.md@946a03d`). Whether a merged bf16/fp16 artifact keeps accuracy is covered only by the 8-clip parity (fp16 8/8 identical text, bf16 8/8). The Desktop
 fetches the original files at pinned revisions; no mirror of Google or TingMix weights (`licensing-review.md@f80e59a`).
 
-## 3. Acceptance targets (BRIEF sections 7 and 13)
+## 3. Acceptance targets (goals.md sections 7 and 13)
 
 Targets are release gates, not observations. "Measured" is the closest committed measurement and is stated with its limits. No gate is marked passed here.
 
@@ -55,13 +55,13 @@ Targets are release gates, not observations. "Measured" is the closest committed
 | First Partial P95 | <= 1.5 s | MLX buffered streaming via `SessionWorker`: first partial 0.50 to 0.51 s in 7 of 8 replays, 0.61 s once (hop 480 ms + one decode); 4 synthetic clips, replayed at real time, P95 not computed, no UI rendering (`mlx-cpp-ffi.md@946a03d`) | <= 1.0 s | not measured (needs session, endpointing, real checkpoint) (`small-onnx.md@5fe2432`) |
 | Final latency P95 | <= 1.0 s | final 0.68 to 0.91 s after segment audio end (600 ms endpoint silence + decode), same 8 replays, P95 not computed (`mlx-cpp-ffi.md@946a03d`) | <= 0.8 s | not measured |
 | Streaming RTF | < 1.0 | decode cost per update P50 24 / 36 / 38 / 72 ms on clips of 1.7 / 5.1 / 7.5 / 20.4 s (greedy), "far below the 0.5 budget"; offline RTF P50 0.005 to 0.012 (`mlx-cpp-ffi.md@946a03d`, `benchmarks/apple/mlx/README.md@36eb69e`) | <= 0.5 | RTF 0.0065 to 0.0103 (1 thread, fp32, 160 to 640 ms chunks) with random weights on an Apple M4 Max, not the reference PC (`small-onnx.md@5fe2432`) |
-| Continuous operation >= 60 min | yes | TODO(lead): task #14 soak result | yes | 3600 s pipeline soak with random weights: RTF 0.0080, P95 3.2 ms, 0 pushes slower than the chunk (`benchmarks/onnx-cpu/soak-3600s-fp32-1t-320ms.jsonl@5fe2432`); not the app session, not a real model |
-| No accumulating backlog | | no coalesced partial in the replays above (`mlx-cpp-ffi.md@946a03d`); long-run: TODO(lead) #14 | required | 0 pushes slower than the chunk in the CPU runs (`small-onnx.md@5fe2432`) |
+| Continuous operation >= 60 min | yes | TODO soak result | yes | 3600 s pipeline soak with random weights: RTF 0.0080, P95 3.2 ms, 0 pushes slower than the chunk (`benchmarks/onnx-cpu/soak-3600s-fp32-1t-320ms.jsonl@5fe2432`); not the app session, not a real model |
+| No accumulating backlog | | no coalesced partial in the replays above (`mlx-cpp-ffi.md@946a03d`); long-run: TODO | required | 0 pushes slower than the chunk in the CPU runs (`small-onnx.md@5fe2432`) |
 | Peak inference-process RSS | | MLX with LM about 1.9 to 2 GiB budget; worker max RSS 1.85 GiB, peak footprint 2.22 GiB (`mlx-cpp-ffi.md@946a03d`) | <= 1 GB on the reference PC | 136 MB peak (60 s run), 375 MB in the 3600 s run including a 230 MB benchmark buffer (about 144 MB net); reference PC unspecified and not measured (`small-onnx.md@5fe2432`) |
 | Streaming accuracy regression | <= 5% relative to offline error rate | not measured: needs a real-speech set (R12); upstream reports final-vs-offline MER differences on its own streaming runs (`docs/streaming.md` in tingmix) but that is a different implementation | <= 5% | not measurable without a checkpoint |
-| Parity gates (BRIEF section 13 stages 1 to 7) | explicit tolerances before accepting a conversion | stages 1 to 6 on the 8 synthetic clips: mel 4.8e-7 (Rust), features/logits per precision, greedy and beam+LM text 8/8; stage 7 (streaming finals) covered only by the replays above (`mlx-cpp-ffi.md@946a03d`, `benchmarks/apple/mlx/parity.md@7574a39`); proposed relative-RMS gates 1e-3 (fp32), 2e-2 (fp16), 5e-2 (bf16) (`experiments/macos/mps/README.md@0569a5d`) | | pipeline parity only (`small-onnx.md@5fe2432`) |
+| Parity gates (goals.md section 13 stages 1 to 7) | explicit tolerances before accepting a conversion | stages 1 to 6 on the 8 synthetic clips: mel 4.8e-7 (Rust), features/logits per precision, greedy and beam+LM text 8/8; stage 7 (streaming finals) covered only by the replays above (`mlx-cpp-ffi.md@946a03d`, `benchmarks/apple/mlx/parity.md@7574a39`); proposed relative-RMS gates 1e-3 (fp32), 2e-2 (fp16), 5e-2 (bf16) (`experiments/macos/mps/README.md@0569a5d`) | | pipeline parity only (`small-onnx.md@5fe2432`) |
 | Power and thermals | investigate `powermetrics` | not measured (needs sudo) (`mlx-cpp-ffi.md@946a03d`) | | not measured |
-| User-visible subtitle P95 (input to rendering) | separate from inference P95 | TODO(lead): app-level timing, tasks #14 and #16 | | TODO(lead) |
+| User-visible subtitle P95 (input to rendering) | separate from inference P95 | TODO: app-level timing | | TODO |
 
 ## 4. Blockers and gaps
 
@@ -73,10 +73,10 @@ Targets are release gates, not observations. "Measured" is the closest committed
 | B4 | Metal toolchain missing on the build machine (`xcrun metal` fails) | no MLX source build; the app uses the PyPI wheel's libmlx; the 216 MB `mlx.metallib` is not trimmed (about 240 MB app size) | install the toolchain, build MLX from a pinned tag in CI |
 | B5 | No signing identity, notarization or updater key | bundle is ad hoc sealed only; hardened-runtime behaviour with Microsoft's ORT dylib and the MLX files untested | project owner, `docs/release/signing-checklist.md@f80e59a` |
 | B6 | One Apple machine, shared during every run | timings indicative; no idle-machine rerun; other chips and macOS versions untested | rerun on an idle machine |
-| B7 | Core ML whole tower and Reader chain not in committed results | no Core ML end-to-end conclusion | task #4; TODO(lead) |
+| B7 | Core ML whole tower and Reader chain not in committed results | no Core ML end-to-end conclusion | TODO |
 | B8 | Reference PC for Small gates unspecified | RSS and RTF gates have no target hardware | owner decision |
 | B9 | Gemma Prohibited Use Policy: whether it binds users (E4); re-hosting Google weights (E5) | wording of the licence screen; offline bundles | owner; both avoided by the current no-mirror default (`licensing-review.md@f80e59a`) |
-| B10 | Open items from the packaging smoke test: install from the DMG into `/Applications`, Gatekeeper, clean-Mac run | | TODO(lead) with #16 |
+| B10 | Open items from the packaging smoke test: install from the DMG into `/Applications`, Gatekeeper, clean-Mac run | | TODO |
 
 ## 5. Requests to the training session (R1 to R13)
 
@@ -106,16 +106,16 @@ Full text in `docs/research/requests-to-training.md@f80e59a`. None has been answ
 
 Still open for the owner: E4 (Prohibited Use Policy as a binding condition) and E5 (re-hosting or re-packing Google weights); B8 (reference PC for the Small gates).
 
-## 7. Recommendation (for the lead to confirm)
+## 7. Recommendation
 
 1. Apple Silicon Large: continue on MLX C++ + Rust (fp32) as the only path with end-to-end parity; keep it behind the EXPERIMENTAL switch until a real-speech set (B2), an idle-machine rerun (B6) and a source-built, signed MLX (B4, B5) exist. Treat PyTorch MPS as a cross-check and Core ML as a study until a whole-tower result is committed (B7).
 2. Small: keep the ONNX Runtime CPU pipeline ready and do not claim any Small accuracy or acceptance result until R1 delivers a checkpoint; INT8 for the recurrent layers needs the MatMul-unrolled graph or a different export (R6).
 3. Windows: the first CI run and one physical machine are required before any Windows claim; ship CPU EP only in v1 per `windows-inference.md@5fe2432`.
 4. Do not describe any artifact as signed, notarized, or accuracy-validated.
 
-## 8. TODO(lead)
+## 8. TODO
 
-- #14: 60-minute app-level soak results (Large and, if available, Small) and user-visible subtitle P95.
+-: 60-minute app-level soak results (Large and, if available, Small) and user-visible subtitle P95.
 - #16: result of the manual UI, microphone-permission and live-capture check from the `.app`.
 - #4: Core ML whole-tower result once committed.
 - Rebuild the release bundle from HEAD (`32e7e52` seals the bundle) and replace the codesign statement in `docs/release/packaging.md@43fb351`.

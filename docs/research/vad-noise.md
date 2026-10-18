@@ -6,7 +6,7 @@ Everything below is off by default in the library; `SessionConfig::live_recommen
 
 ## Problem
 
-User report 2026-10-18 (iPhone Continuity mic, real model): noise makes the app emit finals like "m" and "我"; a video
+Observed 2026-10-18 (phone microphone through Continuity, real model): noise makes the app emit finals like "m" and "我"; a video
 played through a speaker never reaches an endpoint, so segments end at the 25 s cap mid-sentence. Cause: `EnergyVad` is a
 fixed -50 dBFS threshold (the Python reference's behaviour, kept as the compatibility default). Any bed above -50 dBFS
 (a room, a fan, background music) is "speech" for ever, so the silence endpoint never fires, and noise-only stretches are
@@ -78,7 +78,7 @@ only; an earlier variant that also applied it to partials delayed first partial 
 
 Quiet-point cut, continuous speech (4 fixtures back to back with 50-100 ms gaps, pink bed at -55 dBFS, adaptive VAD,
 suppression on, 100 s; `benchmarks/streaming/noise/cut/`): stream CER against the prompts 0.152 with the hard cap, 0.092 with the cut. Only 5 utterances, one
-seed: indicative. On a real 527 s zh-TW video with a music bed (lead's local file, not committed) energy VAD gave 22
+seed: indicative. On a real 527 s zh-TW video with a music bed (a local file, not committed) energy VAD gave 22
 segments of which 21 ended at the cap; with the cut, 23 segments with median 23.2 s and none cut at the cap; the adaptive
 VAD found the pauses and gave 104 segments (median 2.3 s, longest 12 s), none at the cap.
 

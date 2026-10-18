@@ -6,9 +6,8 @@ The project is pre-release. Only the latest commit on the default branch is supp
 
 ## Reporting a vulnerability
 
-Please report privately, not in a public issue: use GitHub's **Security > Report a vulnerability** form on this repository
-(private security advisory). If that is unavailable, contact the maintainer, @tc3oliver, through the contact options on their
-GitHub profile and ask for a private channel before sending details.
+Please report privately, not in a public issue: use GitHub's private vulnerability reporting on this repository
+(**Security > Report a vulnerability**, https://github.com/tc3oliver/TingMix-Desktop/security/advisories/new).
 
 Include what you found, how to reproduce it, the affected commit or version, and the impact you expect. You can expect an
 acknowledgement within a week. Please allow time for a fix before public disclosure; we will credit you if you wish.

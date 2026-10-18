@@ -6,10 +6,10 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tc3oliver/tingmix-desktop.git"
+    "url": "git+https://github.com/tc3oliver/TingMix-Desktop.git"
   },
   "bugs": {
-    "url": "https://github.com/tc3oliver/tingmix-desktop/issues"
+    "url": "https://github.com/tc3oliver/TingMix-Desktop/issues"
   },
   "type": "module",
   "packageManager": "pnpm@10.34.7",
@@ -21,8 +21,8 @@
     "tauri": "tauri",
     "bundle:macos": "tauri build --bundles app,dmg --config src-tauri/tauri.ort-macos.conf.json",
     "bundle:macos:debug": "tauri build --debug --bundles app --config src-tauri/tauri.ort-macos.conf.json",
-    "bundle:windows": "tauri build --bundles nsis --config src-tauri/tauri.ort-windows.conf.json",
-    "bundle:windows:offline": "tauri build --bundles nsis --config src-tauri/tauri.ort-windows.conf.json --config src-tauri/tauri.windows-offline.conf.json"
+    "bundle:windows": "sh tools/stage-onnx-worker.sh release && tauri build --bundles nsis --config src-tauri/tauri.ort-windows.conf.json",
+    "bundle:windows:offline": "sh tools/stage-onnx-worker.sh release && tauri build --bundles nsis --config src-tauri/tauri.ort-windows.conf.json --config src-tauri/tauri.windows-offline.conf.json"
   },
   "dependencies": {
     "@tauri-apps/api": "2.12.4",

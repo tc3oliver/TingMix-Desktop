@@ -216,7 +216,7 @@ fn main() {
     }
     let res = json!({
         "cmd": format!("cargo run --release -p tingmix-runtime-mlx --example bench -- {}", a[1..].join(" ")),
-        "note": "fp32; other agents were running work on this machine; buffered streaming (re-decode of the open segment), SessionConfig::default()",
+        "note": "fp32; other processes were running on this machine; buffered streaming (re-decode of the open segment), SessionConfig::default()",
         "load_s": load_s, "lm_load_s": lm_load_s, "peak_rss_mib": {"after_model_load": rss_after_load, "after_lm_load": rss_after_lm, "after_latency_bench": rss_bench, "final": peak_rss_mib()},
         "latency": rows, "streaming": stream,
     });

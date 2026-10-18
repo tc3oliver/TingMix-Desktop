@@ -191,7 +191,7 @@ The text-space projection `embed_audio.embedding_projection` and the pooled 768-
   `layers.{i}.self_attn.{q_proj,k_proj,v_proj,post}.linear.lora_{a,b}`; shapes `lora_a [16,in]`, `lora_b [out,16]` (VERIFIED, header).
 - Mathematically mergeable: `W' = W + 2.0 * B A` per target. The reference computes the bf16 base output and the fp32 LoRA term
   separately; a merged bf16 weight rounds differently. Parity thresholds for merged weights must be measured, not assumed
-  (EXPERIMENTAL until a teammate measures it).
+  (EXPERIMENTAL until measured).
 - `load_delta` rejects unknown tensor names and copies with dtype cast (`encoder.py:153-160`).
 
 ## 9. Reader (`E2A:reader.py:9-56`, config `TML:config.json`)
@@ -276,4 +276,4 @@ not Apple Silicon.
   audio tower byte range (see `model-artifact-inventory.md`).
 - No golden activations from the training side exist in either repository (only random-weight tests). Request R2 in
   `requests-to-training.md`.
-- No conversion or accuracy result for TingMix-Large on Apple Silicon or Windows is claimed here; see teammates' reports.
+- No conversion or accuracy result for TingMix-Large on Apple Silicon or Windows is claimed here; see the backend reports in `docs/research/`.
