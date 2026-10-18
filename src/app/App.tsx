@@ -174,10 +174,10 @@ function Main({ settings, update, error, setError }: MainProps) {
       <main>
         {/* the live and file panels stay mounted so a recording and running jobs survive switching tabs */}
         <div role="tabpanel" id="panel-live" aria-labelledby="tab-live" hidden={tab !== "live"} className="panel live-panel">
-          {setupNeeded ? <SetupScreen backend={bs} onOpenModels={openSettings} onView={setSetup} /> : <LivePanel live={live} settings={settings} onSettings={update} backend={bs} shortcut={toggleKey} onOpenModels={openSettings} />}
+          {setupNeeded ? (tab !== "files" && <SetupScreen backend={bs} onOpenModels={openSettings} onView={setSetup} />) : <LivePanel live={live} settings={settings} onSettings={update} backend={bs} shortcut={toggleKey} onOpenModels={openSettings} />}
         </div>
         <div role="tabpanel" id="panel-files" aria-labelledby="tab-files" hidden={tab !== "files"} className="panel">
-          {setupNeeded ? <SetupScreen backend={bs} onOpenModels={openSettings} onView={setSetup} /> : <FilesPanel files={files} settings={settings} backend={bs} onOpenModels={openSettings} shortcut={label(MAC, "O")} />}
+          {setupNeeded ? (tab === "files" && <SetupScreen backend={bs} onOpenModels={openSettings} onView={setSetup} />) : <FilesPanel files={files} settings={settings} backend={bs} onOpenModels={openSettings} shortcut={label(MAC, "O")} />}
         </div>
         {tab === "history" && <div role="tabpanel" id="panel-history" aria-labelledby="tab-history" className="panel"><HistoryPanel settings={settings} /></div>}
         {tab === "settings" && <div role="tabpanel" id="panel-settings" aria-labelledby="tab-settings" className="panel"><SettingsPanel settings={settings} onSettings={update} mac={MAC} backend={bs} onOpenModels={openSettings} /></div>}

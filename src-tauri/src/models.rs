@@ -304,6 +304,17 @@ impl Models {
         let mf = m.manifest();
         mf.validate(self.loopback_http)
             .map_err(|e| crate::coded::model_error(&e))?;
+        // repeated catalog checks offer the same download: keep one pending entry per manifest id
+        let token = if source.is_none() {
+            self.pending
+                .lock()
+                .unwrap()
+                .iter()
+                .find(|(_, (p, src))| src.is_none() && p.manifest().id == mf.id)
+                .map_or(token, |(t, _)| t.clone())
+        } else {
+            token
+        };
         let missing = reg.missing_acceptances(mf);
         let out = PendingInstall {
             token: token.clone(),

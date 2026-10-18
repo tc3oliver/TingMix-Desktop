@@ -725,12 +725,13 @@ pub async fn setup_check(state: State<'_, AppState>) -> Result<crate::setup::Set
         allow_loopback_http: false,
     };
     let token = state.next_id("install");
-    Ok(crate::setup::check(
-        &state.models,
-        &state.runtimes,
-        &cfg,
-        token,
-    ))
+    let (models, runtimes) = (state.models.clone(), state.runtimes.clone());
+    // the catalog fetch blocks on the network: keep it off the async workers
+    tauri::async_runtime::spawn_blocking(move || {
+        crate::setup::check(&models, &runtimes, &cfg, token)
+    })
+    .await
+    .map_err(crate::coded::system)
 }
 
 /// Opens a licence page in the system browser. Only an https URL that appears in the licences of an offered or installed

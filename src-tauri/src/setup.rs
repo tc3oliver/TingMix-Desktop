@@ -326,6 +326,11 @@ mod tests {
             panic!("expected a download offer, got {view:?}")
         };
         assert_eq!(pending.id, "model-a");
+        // checking again reuses the pending entry instead of adding one per check
+        let SetupView::Download { pending: again } = check(&models, &rt, &cfg, "t1b".into()) else {
+            panic!("expected a download offer")
+        };
+        assert_eq!(again.token, "t1");
         assert!(pending.download_bytes > 200_000);
         assert!(pending
             .licenses
