@@ -1,4 +1,4 @@
-"""PyTorch MPS experiment for TingMix-Large (BRIEF section 5, Experiment A). Research only.
+"""PyTorch MPS experiment for TingMix-Large (goals.md section 5, Experiment A). Research only.
 
 Usage: uv run python run.py [--out ../../../benchmarks/apple/mps/results.json] [--runs 15]
 
