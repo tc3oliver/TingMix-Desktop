@@ -2,6 +2,7 @@
 //! capability-based runtime selection. Nothing here executes or unpickles model files.
 
 pub mod caps;
+pub mod catalog;
 pub mod error;
 pub mod fetch;
 pub mod import;

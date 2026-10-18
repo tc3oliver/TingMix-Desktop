@@ -38,6 +38,41 @@ impl Downloader {
         }
     }
 
+    /// GET a small document (a catalog) into memory. The body is capped; `https://` only, or loopback `http://` when
+    /// `allow_loopback_http` is set (tests).
+    pub fn get_small(
+        &self,
+        url: &str,
+        max_bytes: u64,
+        allow_loopback_http: bool,
+    ) -> Result<Vec<u8>> {
+        let loopback = url.starts_with("http://127.0.0.1:");
+        if !(url.starts_with("https://") || (allow_loopback_http && loopback)) {
+            return Err(Error::Invalid(format!(
+                "catalog URL must be https://: {url}"
+            )));
+        }
+        let resp = self.agent.get(url).call().map_err(|e| Error::Download {
+            url: url.into(),
+            reason: e.to_string(),
+        })?;
+        let mut body = Vec::new();
+        resp.into_reader()
+            .take(max_bytes + 1)
+            .read_to_end(&mut body)
+            .map_err(|e| Error::Download {
+                url: url.into(),
+                reason: e.to_string(),
+            })?;
+        if body.len() as u64 > max_bytes {
+            return Err(Error::Download {
+                url: url.into(),
+                reason: format!("document is larger than {max_bytes} bytes"),
+            });
+        }
+        Ok(body)
+    }
+
     /// Download every file of `m` into `tmp/<id>/`, resuming `.part` files, then verify and commit. Cancelling (or any
     /// error) leaves the staged bytes in place so the next call resumes. Licence acceptance is checked before any
     /// request is made.
