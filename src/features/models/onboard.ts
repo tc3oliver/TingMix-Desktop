@@ -81,9 +81,10 @@ export function etaText(seconds: number, n: (base: string, count: number) => str
   return seconds < 60 ? t("setup.under_minute") : n("setup.minutes", Math.round(seconds / 60));
 }
 
-/** The setup screen's "verifying and testing" step. Not while the check says the install is in a problem state: a finished
- * install that cannot be used would otherwise show the spinner forever. */
+/** The setup screen's "verifying and testing" step. The check reports Problem for an installed model that is not tested yet,
+ * so Problem hides the spinner only once nothing is running: a finished install that cannot be used must not spin forever,
+ * but the post-download test is still the "finishing" step. */
 export function isFinishing(op: ModelOp | null, usable: boolean, view: SetupView | null, downloading: boolean): boolean {
-  if (downloading || view?.state === "problem") return false;
+  if (downloading || (view?.state === "problem" && op?.state !== "running")) return false;
   return op?.state === "running" || (op?.state === "done" && op.kind !== "probe" && !usable);
 }

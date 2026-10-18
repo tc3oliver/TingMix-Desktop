@@ -88,7 +88,9 @@ describe("isFinishing", () => {
   });
   it("does not spin forever once the check reports a problem", () => {
     expect(isFinishing(done, false, { state: "problem", reason: "x" }, false)).toBe(false);
-    expect(isFinishing(op({ state: "running" }), false, { state: "problem", reason: "x" }, false)).toBe(false);
+  });
+  it("keeps spinning during the post-download probe even though the check says Problem", () => {
+    expect(isFinishing(op({ kind: "probe", state: "running" }), false, { state: "problem", reason: "x" }, false)).toBe(true);
   });
   it("is off while downloading and once usable", () => {
     expect(isFinishing(op({ state: "running" }), false, null, true)).toBe(false);
