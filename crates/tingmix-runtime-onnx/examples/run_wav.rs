@@ -43,6 +43,14 @@ fn main() {
     for c in wav.chunks(5120) {
         s.push(c).expect("step");
     }
+    // TINGMIX_HOLD_MS keeps the process alive so a tool can list its loaded modules
+    if let Some(ms) = std::env::var("TINGMIX_HOLD_MS")
+        .ok()
+        .and_then(|v| v.parse::<u64>().ok())
+    {
+        println!("pid {}", std::process::id());
+        std::thread::sleep(std::time::Duration::from_millis(ms));
+    }
     println!(
         "{:.1}s audio, {} ids, {:.0} ms total, ids: {:?}",
         wav.len() as f32 / 16e3,

@@ -37,13 +37,14 @@ fn onnx_matches_torch_logits_offline_and_at_every_chunk_size() {
             let (chunked, cids) = stream_logp(&m, &wav, 16 * ms);
             let e = max_abs_diff(&chunked, &offline);
             println!("{name}: chunk {ms} ms vs offline max|dlogp| = {e:.3e}");
-            assert!(e < 1e-4, "{ms} ms: {e}");
+            // ORT kernels may round differently per matrix shape (seen on x86 Windows: 1.3e-4, Apple: 1e-6); ids must still be identical
+            assert!(e < 5e-4, "{ms} ms: {e}");
             assert_eq!(cids, ids, "{ms} ms");
         }
         // odd chunk sizes exercise the sample remainder and the sub-4-frame mel buffer
         for odd in [1usize, 777, 3999] {
             let (chunked, cids) = stream_logp(&m, &wav, odd);
-            assert!(max_abs_diff(&chunked, &offline) < 1e-4, "chunk {odd}");
+            assert!(max_abs_diff(&chunked, &offline) < 5e-4, "chunk {odd}");
             assert_eq!(cids, ids);
         }
     }
