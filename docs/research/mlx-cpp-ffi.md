@@ -38,7 +38,7 @@ for `PM`) are reproduced, which is the point of parity; this says nothing about 
 Not covered: batch above 1 or padded batches (the encoder is not padding-invariant, see embed2asr notes), streaming, real
 speech corpora, audio longer than the 29.5 s window.
 
-## Latency, B=1, M4 Max 64 GB, macOS 27.0 (other agents ran GPU/CPU work concurrently, loadavg 7 to 8)
+## Latency, B=1, M4 Max 64 GB, macOS 27.0 (other processes ran GPU/CPU work concurrently, loadavg 7 to 8)
 
 fp32, GPU, 30 timed runs after 3 warmups; full tables for all dtypes in `benchmarks/apple/mlx/README.md`.
 
@@ -115,7 +115,7 @@ already within 1.3e-4 of the dumps (`tests/parity.rs`, my own dumps) and the MLX
 reference task's dumps (`experiments/macos/mlx/cross_check.py`).
 
 **Rust-side timings** (`cargo run --release -p tingmix-runtime-mlx --example bench`, raw `benchmarks/apple/mlx/rust-bench.json`),
-fp32, M4 Max, 30 runs after 3 warmups, loadavg 10 to 16 from other agents (a first run at loadavg 7 to 17 gave up to 2x higher
+fp32, M4 Max, 30 runs after 3 warmups, loadavg 10 to 16 from other processes (a first run at loadavg 7 to 17 gave up to 2x higher
 and noisier values, which is why contention must be assumed in every number here):
 
 | audio s | mel P50 ms | greedy e2e P50 / P95 / P99 ms | beam+LM e2e P50 / P95 / P99 ms | RTF P50 greedy / beam |

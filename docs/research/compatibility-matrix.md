@@ -8,7 +8,7 @@ Status words (CLAUDE.md): **VERIFIED** = measured with the real TingMix model; *
 parity or speed on TingMix not (fully) established; **BLOCKED** = missing op, artifact or permission. "Not run" means nothing was
 attempted. A VERIFIED/EXPERIMENTAL label here is never a claim about real-speech accuracy: all end-to-end parity uses the 8 synthetic TTS
 fixtures (`tests/fixtures/audio`, `experiments/macos/reference/README.md@12d72f3`), and every Apple timing is one machine
-(Mac Studio, Apple M4 Max 40-core GPU, 64 GB, macOS 27.0) that other agent jobs were using at the same time (loadavg 7 to 16;
+(Mac Studio, Apple M4 Max 40-core GPU, 64 GB, macOS 27.0) that other background jobs were using at the same time (loadavg 7 to 16;
 `benchmarks/apple/mlx/README.md@36eb69e`, `docs/research/mlx-cpp-ffi.md@946a03d`, `experiments/macos/mps/README.md@0569a5d`).
 
 Pins: TingMix-Large `75071a1`, google/embeddinggemma-2 `914f7f8`, tingmix `f44cbdb`, embed2asr `b582757` (`docs/research/PINNED.md`).

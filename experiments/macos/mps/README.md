@@ -47,7 +47,7 @@ Teacher-forced per-stage errors (zh_08s, mix_08s) are in the JSON under `stages`
 
 ## Caveats
 
-- Other agents ran CPU/GPU work concurrently (loadavg about 7 during the run), so timings are indicative; rerun on an
+- Other processes ran CPU/GPU work concurrently (loadavg about 7 during the run), so timings are indicative; rerun on an
   idle machine before quoting them. P99 over 15 runs is the max; use more `--runs` for tail claims.
 - Lengths are built by concatenating the fixture clips in manifest order and cropping (not real speech of that length).
 - Batch size 1 only. fp16/bf16 gain little over fp32 here because attention logits and softmax are computed in fp32

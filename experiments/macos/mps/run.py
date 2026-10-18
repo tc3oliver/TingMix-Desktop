@@ -258,7 +258,7 @@ def main():
            "artifacts_sha256": {f: sha(path / f) for f in ("model.safetensors", "encoder_delta.safetensors", "config.json", "tingmix.json", "units.json", C.LM_FILE)},
            "revisions": {"model": f"{C.LARGE_ID}@{C.LARGE_REV}", "encoder": "google/embeddinggemma-2@914f7f89142e33e77833254d9c9b90c3cef7303b"},
            "oracle_manifest_sha256": sha(ORACLE / "MANIFEST.sha256"), "tolerance_rel_rms_proposed": TOL,
-           "caveat": "Other agents ran GPU/CPU work concurrently; timings are indicative. loadavg recorded.",
+           "caveat": "Other processes ran GPU/CPU work concurrently; timings are indicative. loadavg recorded.",
            "loadavg_start": load_start, "loadavg_end": os.getloadavg(), "failures": FAILS, "stages": stages, "e2e": e2e_res, "bench": bench_res}
     Path(a.out).parent.mkdir(parents=True, exist_ok=True)
     Path(a.out).write_text(json.dumps(res, ensure_ascii=False, indent=1))

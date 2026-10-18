@@ -27,7 +27,7 @@
   6.759765625,
   4.66796875
  ],
- "note": "measured while other agents ran concurrent GPU/CPU work on the same machine (see loadavg); power not measured (powermetrics needs sudo)",
+ "note": "measured while other processes ran concurrent GPU/CPU work on the same machine (see loadavg); power not measured (powermetrics needs sudo)",
  "rows": [
   {
    "audio_s": 2,

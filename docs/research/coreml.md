@@ -10,7 +10,7 @@ ML Program. Weights: `google/embeddinggemma-2@914f7f8` plus `TingMix-Large@75071
 (F=2950, T=738). Stages 1 to 4 used a 2999-frame mel of the same clip (T=750) and `mix_08s` (F=751, T=188).
 Raw results (verbatim JSON, including error tracebacks): `benchmarks/apple/coreml/*.json`. Code: `experiments/macos/coreml/`
 (`cd experiments/macos/coreml && uv sync && uv run python oracle.py && uv run python stage{1,1b,2,3,4,5}_*.py`).
-Timings are median of 5 to 10 predictions after 3 warm-ups; the MLX agent used the GPU concurrently, so treat them as +-20 %.
+Timings are median of 5 to 10 predictions after 3 warm-ups; another job used the GPU concurrently, so treat them as +-20 %.
 Artifacts (`out/*.mlpackage`, 0.6 GB fp16 / 1.2 GB fp32) are not in git.
 
 ## Per-stage results

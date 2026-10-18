@@ -122,7 +122,7 @@ step graph + CTC; the first push is excluded from percentiles). Full JSON with c
 
 Caveats, in order of importance: (1) this is random-init weights of the right shape on a 16-core Apple Silicon Mac, not
 the Windows reference PC, so none of the acceptance targets is demonstrated; (2) the machine was shared with other
-agent jobs, so the p95/max and the 4/8-thread rows are contention noise (the 1-2 thread medians are the reliable
+background jobs, so the p95/max and the 4/8-thread rows are contention noise (the 1-2 thread medians are the reliable
 part); more threads did not help a batch-1 GRU-bound step; (3) one RTF of 0.01 means a step is far below the chunk
 duration, "pushes slower than chunk" was 0 everywhere, i.e. no backlog.
 A 3600 s soak (1 thread, 320 ms, `soak-3600s-fp32-1t-320ms.jsonl`): RTF 0.0080, p95 3.2 ms, 0 pushes slower than the

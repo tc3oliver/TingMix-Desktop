@@ -34,7 +34,7 @@
   "fp16": 0.02,
   "bf16": 0.05
  },
- "caveat": "Other agents ran GPU/CPU work concurrently; timings are indicative. loadavg recorded.",
+ "caveat": "Other processes ran GPU/CPU work concurrently; timings are indicative. loadavg recorded.",
  "loadavg_start": [
   7.8212890625,
   6.7421875,

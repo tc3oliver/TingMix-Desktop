@@ -85,7 +85,7 @@ out = dict(
     artifact_sha256_fp32=(OUT / "tingmix-large-mlx-fp32.sha256").read_text().split()[0],
     load_s=load_s, peak_rss_after_load_mib=rss_load, mlx_peak_after_load_mib=mem_load, peak_rss_final_mib=rss(),
     loadavg_end=os.getloadavg(),
-    note="measured while other agents ran concurrent GPU/CPU work on the same machine (see loadavg); power not measured (powermetrics needs sudo)",
+    note="measured while other processes ran concurrent GPU/CPU work on the same machine (see loadavg); power not measured (powermetrics needs sudo)",
     rows=rows,
 )
 dst = ROOT / "benchmarks" / "apple" / "mlx" / f"bench-{dname}{'-cpu' if dev == 'cpu' else ''}.json"
