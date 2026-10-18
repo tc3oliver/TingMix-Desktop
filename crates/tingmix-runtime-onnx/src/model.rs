@@ -235,3 +235,39 @@ fn argmax(row: &[f32]) -> u32 {
     }
     best as u32
 }
+
+/// Version string of the loaded ONNX Runtime library (`1.31.0`), as the library itself reports it; `None` when it cannot be
+/// loaded. Loads the library if it is not loaded yet (the same one `StepModel::load` / `OnnxLarge::load` would use).
+pub fn runtime_version() -> Option<String> {
+    environment().ok()?;
+    #[cfg(feature = "load-dynamic")]
+    let base = unsafe {
+        let path = LIBRARY.get().cloned().or_else(|| {
+            ["TINGMIX_ORT_DYLIB", "ORT_DYLIB_PATH"]
+                .iter()
+                .find_map(|k| {
+                    std::env::var_os(k)
+                        .filter(|v| !v.is_empty())
+                        .map(PathBuf::from)
+                })
+        })?;
+        let lib = libloading::Library::new(path).ok()?; // already loaded by `environment`: dlopen/LoadLibrary returns the same handle
+        let get: libloading::Symbol<unsafe extern "system" fn() -> *const ort::sys::OrtApiBase> =
+            lib.get(b"OrtGetApiBase").ok()?;
+        let base = get();
+        std::mem::forget(lib); // keep it mapped; ort holds the same module
+        base
+    };
+    #[cfg(not(feature = "load-dynamic"))]
+    let base = unsafe { ort::sys::OrtGetApiBase() };
+    if base.is_null() {
+        return None;
+    }
+    let s = unsafe { (*base).GetVersionString };
+    let p = unsafe { s() };
+    (!p.is_null()).then(|| {
+        unsafe { std::ffi::CStr::from_ptr(p) }
+            .to_string_lossy()
+            .into_owned()
+    })
+}

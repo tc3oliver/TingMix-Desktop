@@ -10,9 +10,13 @@ mod ctc;
 mod frontend;
 mod large;
 mod model;
+#[cfg(feature = "probe")]
+pub mod probe;
 
 pub use backend::{OnnxSmall, SmallStream, TokenDecoder};
 pub use ctc::Collapser;
 pub use frontend::{LogMel, MelStream, HOP, N_FFT, N_MELS, WIN};
 pub use large::{Decode, OnnxLarge, Provider};
-pub use model::{set_runtime_library, Error, SharedModel, StepModel, StepState, Streamer};
+pub use model::{
+    runtime_version, set_runtime_library, Error, SharedModel, StepModel, StepState, Streamer,
+};

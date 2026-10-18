@@ -4705,14 +4705,17 @@ version = "0.1.0"
 dependencies = [
  "hound",
  "libc",
+ "libloading 0.9.0",
  "ort",
  "rustfft",
  "serde",
  "serde_json",
+ "tempfile",
  "thiserror 2.0.21",
  "tingmix-core",
  "tingmix-decoder",
  "tingmix-frontend-gemma",
+ "tingmix-models",
  "tingmix-streaming",
 ]
 
