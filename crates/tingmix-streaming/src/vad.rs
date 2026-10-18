@@ -96,14 +96,16 @@ pub struct AdaptiveVadParams {
     pub hang_frames: u32,
     /// Frames heard before the first decision (the floor needs a baseline).
     pub warmup_frames: usize,
-    /// The first floor estimate is only trusted from a stretch that is stationary: the p90-p10 spread of the last
-    /// `settle_frames` smoothed levels must be at most `settle_spread_db`, and the stretch must either be quiet (median below
-    /// `settle_quiet_db`: a quiet room, nothing is being said) or last the whole `window_frames` (steady loud noise such as a
-    /// fan). Speech that starts the stream is loud and, over a second or more, not that stationary, so until a pause or a
-    /// long steady stretch the conservative prior floor stays and the speech is never learned as the noise floor.
+    /// The first floor estimate is only trusted from a stationary stretch: the p90-p10 spread of the last `settle_frames`
+    /// smoothed levels must be at most `settle_spread_db`. Silence and steady noise are within a few dB; speech modulates by
+    /// much more within a second, so until a pause or a steady stretch the conservative prior floor stays and speech that
+    /// starts the stream is never learned as the noise floor.
     pub settle_frames: usize,
     pub settle_spread_db: f32,
-    pub settle_quiet_db: f32,
+    /// A stationary stretch whose median level is above `settle_loud_db` is more likely a close talker than a noisy room, so it
+    /// has to stay stationary for `settle_loud_frames` before it counts as noise.
+    pub settle_loud_db: f32,
+    pub settle_loud_frames: usize,
 }
 
 impl Default for AdaptiveVadParams {
@@ -120,9 +122,10 @@ impl Default for AdaptiveVadParams {
             start_votes: 8,
             hang_frames: 10,
             warmup_frames: 25,
-            settle_frames: 50,
+            settle_frames: 30,
             settle_spread_db: 6.0,
-            settle_quiet_db: -40.0,
+            settle_loud_db: -18.0,
+            settle_loud_frames: 40,
         }
     }
 }
@@ -203,22 +206,25 @@ impl AdaptiveVad {
 impl AdaptiveVad {
     /// Silence or steady noise rather than speech; see [`AdaptiveVadParams::settle_frames`].
     fn looks_stationary(&self) -> bool {
-        let spread_and_median = |n: usize| {
+        let stats = |n: usize| {
             let mut v: Vec<f32> = self.window.iter().rev().take(n).copied().collect();
             v.sort_by(f32::total_cmp);
             let at = |q: f32| v[((v.len() - 1) as f32 * q).round() as usize];
             (at(0.9) - at(0.1), at(0.5))
         };
-        if self.window.len() < self.p.settle_frames {
+        let n = self.p.settle_frames.max(1);
+        if self.window.len() < n {
             return false;
         }
-        let (spread, median) = spread_and_median(self.p.settle_frames);
+        let (spread, median) = stats(n);
         if spread > self.p.settle_spread_db {
             return false;
         }
-        median < self.p.settle_quiet_db
-            || (self.window.len() >= self.p.window_frames
-                && spread_and_median(self.window.len()).0 <= self.p.settle_spread_db + 3.0)
+        if median <= self.p.settle_loud_db {
+            return true;
+        }
+        let m = self.p.settle_loud_frames.max(n);
+        self.window.len() >= m && stats(m).0 <= self.p.settle_spread_db
     }
 }
 
@@ -366,7 +372,7 @@ mod tests {
         // negative control: the previous behaviour (trust the first percentile) drags the floor up into the speech
         let mut a = AdaptiveVad::with_params(AdaptiveVadParams {
             settle_spread_db: f32::INFINITY,
-            settle_quiet_db: f32::INFINITY,
+            settle_loud_db: f32::INFINITY,
             ..Default::default()
         });
         let s = speechlike(&mut a, -25.0, -50.0, 300);

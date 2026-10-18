@@ -101,3 +101,17 @@ Python-parity goldens. The app wiring lives in `src-tauri` (decoder).
 
 Reproduce: `crates/tingmix-bench` with `--features mlx`; `benchmarks/streaming/noise/run_vad_matrix.py`,
 `run_mlx_matrix.py` (see their headers); raw JSON in `benchmarks/streaming/noise/`.
+
+## Speech that starts the stream (fix, 2026-10-18)
+
+The first floor estimate used to be taken from the first half second. Audio that began with speech (`mix_08s.wav`, speech at sample 0)
+made the floor equal to the speech, so the live preset lost the first ~2.4 s. The estimate is now trusted only from a stationary stretch
+(`AdaptiveVadParams::settle_*`): the p90-p10 spread of the last 30 smoothed frames (0.6 s) must be at most 6 dB, and a stretch whose
+median is above -18 dBFS (a close talker rather than a noisy room) must stay that stationary for 40 frames. Until then the conservative
+prior floor (-60 dBFS) stays, so speech is never learned as noise. Natural speech modulates by far more than 6 dB within 0.6 s; the TTS fixtures
+are stationary and loud, which is what the -18 dBFS clause is for. Tests: `speech_that_starts_the_stream_is_not_learned_as_the_noise_floor`,
+a negative control that reproduces the old behaviour, and `live_preset_keeps_speech_that_starts_at_sample_zero` (replay of mix_08s; fails on the old code).
+The model-free matrix re-run (`benchmarks/streaming/noise/vad-only-matrix-after-settle.json`) equals the committed one on all 98 rows (false segments, missed
+utterances, coverage, merges, detection delay). Tuning that was tried and rejected: a spread-only rule at 50 frames added one 1-1.5 s false segment at the start of
+every noisy recording (24 of 24 noisy runs), and a "must last 5 s if loud" rule delayed detection by up to 9 s under steady noise. Open: loud, modulated
+noise (babble) with speech starting immediately cannot be told apart by energy; real-speech and real-room recordings are not covered by these synthetic checks.

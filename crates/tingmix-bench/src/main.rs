@@ -106,6 +106,10 @@ fn avad_params(spec: Option<&str>) -> Result<tingmix_streaming::AdaptiveVadParam
             "start_votes" => p.start_votes = f as usize,
             "hang_frames" => p.hang_frames = f as u32,
             "warmup_frames" => p.warmup_frames = f as usize,
+            "settle_frames" => p.settle_frames = f as usize,
+            "settle_spread_db" => p.settle_spread_db = f as f32,
+            "settle_loud_db" => p.settle_loud_db = f as f32,
+            "settle_loud_frames" => p.settle_loud_frames = f as usize,
             _ => return Err(format!("--avad: unknown parameter {k}")),
         }
     }
