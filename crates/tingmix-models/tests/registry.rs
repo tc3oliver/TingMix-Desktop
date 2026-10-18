@@ -836,3 +836,30 @@ fn leftovers_of_another_file_set_in_staging_are_cleared() {
         .unwrap();
     assert!(reg.open_model("v1").is_ok());
 }
+
+#[test]
+fn open_settles_trash_left_by_a_crash() {
+    let srv = serve(&[("v1", 1)]);
+    let dir = tempfile::tempdir().unwrap();
+    let reg = registry(dir.path());
+    let m = signed(&manifest("v1", &srv.url, 1));
+    accept(&reg, &m);
+    Downloader::new(true)
+        .install(&reg, &m, &no_cancel(), |_| {})
+        .unwrap();
+    let trash = dir.path().join("trash");
+    std::fs::create_dir_all(&trash).unwrap();
+
+    // crash between commit and purge: the old install is still in trash, the new one is in place
+    std::fs::create_dir_all(trash.join("v1-123")).unwrap();
+    std::fs::write(trash.join("v1-123/old"), b"x").unwrap();
+    let reg = registry(dir.path());
+    assert_eq!(std::fs::read_dir(&trash).unwrap().count(), 0);
+    assert!(reg.open_model("v1").is_ok());
+
+    // crash between the move and the commit: nothing in versions/, so the trashed install comes back
+    std::fs::rename(dir.path().join("versions/v1"), trash.join("v1-456")).unwrap();
+    let reg = registry(dir.path());
+    assert_eq!(std::fs::read_dir(&trash).unwrap().count(), 0);
+    assert!(reg.open_model("v1").is_ok());
+}

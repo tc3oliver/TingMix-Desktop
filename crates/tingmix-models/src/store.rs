@@ -117,11 +117,36 @@ impl Registry {
         for p in ["active.tmp", "previous.tmp", "selection.tmp"] {
             let _ = fs::remove_file(root.join(p));
         }
-        Ok(Self {
+        let reg = Self {
             root,
             verifier,
             allow_loopback_http: false,
-        })
+        };
+        reg.sweep_trash();
+        Ok(reg)
+    }
+
+    /// Settle what a crash left in `trash/` (see `install_with`): restore an install whose replacement never committed,
+    /// delete one whose replacement is in place and opens, leave anything else alone.
+    fn sweep_trash(&self) {
+        let Ok(entries) = fs::read_dir(self.root.join("trash")) else {
+            return;
+        };
+        for e in entries.filter_map(|e| e.ok()) {
+            let name = e.file_name().to_string_lossy().into_owned();
+            let Some((id, ts)) = name.rsplit_once('-') else {
+                continue;
+            };
+            if id.is_empty() || ts.is_empty() || !ts.bytes().all(|b| b.is_ascii_digit()) {
+                continue;
+            }
+            let dest = self.version_dir(id);
+            if !dest.exists() {
+                let _ = fs::rename(e.path(), &dest);
+            } else if self.open_model(id).is_ok() {
+                let _ = fs::remove_dir_all(e.path());
+            }
+        }
     }
 
     /// Tests only: accept `http://127.0.0.1:<port>/` file URLs in manifests.
