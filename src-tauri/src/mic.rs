@@ -5,6 +5,8 @@ use serde::Serialize;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
+// the permission states are only produced by the macOS query
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 pub enum MicStatus {
     /// The user has not been asked yet.
     NotDetermined,
