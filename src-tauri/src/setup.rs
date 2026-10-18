@@ -12,21 +12,16 @@ use crate::backends::{self, Runtimes};
 use crate::coded::coded;
 use crate::models::{Models, PendingInstall};
 
-/// Where the signed manifest for a platform lives, fixed at build time. The manifest is signed with the release key and
-/// carries its own file URLs (pinned to a commit), sizes and hashes, so fetching it from `main` is safe: the signature and
-/// the serial protect it. `None`: no model exists for that platform yet.
-pub fn catalog_url_for(os: &str, arch: &str) -> Option<&'static str> {
-    match (os, arch) {
-        ("macos", "aarch64") => Some("https://huggingface.co/tc3oliver/TingMix-Desktop/resolve/main/tingmix-large-mlx-fp32-r75071a1/manifest.signed.json"),
-        // Windows x86_64: the ONNX package comes with task 28
-        _ => None,
-    }
-}
+/// The signed catalog, fixed at build time: a JSON array of manifests signed with the release key, each with file URLs pinned
+/// to a commit, sizes and hashes. Fetching it from `main` is safe: the signatures and serials protect it. Entries are
+/// filtered by OS and CPU after the fetch, so a platform without a package (Windows x86_64 until task 28) gets "not
+/// available for this computer yet".
+pub const DEFAULT_CATALOG_URL: &str =
+    "https://huggingface.co/tc3oliver/TingMix-Desktop/resolve/main/catalog.json";
 
-/// The catalog for this computer; `TINGMIX_CATALOG_URL` at compile time overrides it (builds that test another server).
-pub fn catalog_url() -> Option<&'static str> {
-    option_env!("TINGMIX_CATALOG_URL")
-        .or_else(|| catalog_url_for(std::env::consts::OS, std::env::consts::ARCH))
+/// `TINGMIX_CATALOG_URL` at compile time overrides the default (builds that test another server).
+pub fn catalog_url() -> &'static str {
+    option_env!("TINGMIX_CATALOG_URL").unwrap_or(DEFAULT_CATALOG_URL)
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -45,8 +40,7 @@ pub enum SetupView {
 }
 
 pub struct Catalog<'a> {
-    /// `None`: this platform has no catalog yet.
-    pub url: Option<&'a str>,
+    pub url: &'a str,
     pub allow_loopback_http: bool,
 }
 
@@ -81,9 +75,7 @@ pub fn check(
             reason: info.reason,
         };
     }
-    let Some(url) = catalog_cfg.url else {
-        return no_platform();
-    };
+    let url = catalog_cfg.url;
     let fetched = match models.reg() {
         Ok(reg) => catalog::fetch(url, reg.verifier(), catalog_cfg.allow_loopback_http)
             .map_err(|e| e.to_string()),
@@ -309,7 +301,7 @@ mod tests {
         let url = format!("{base}/catalog.json");
         let rt = onnx_runtime();
         let cfg = Catalog {
-            url: Some(&url),
+            url: &url,
             allow_loopback_http: true,
         };
 
@@ -377,20 +369,13 @@ mod tests {
         let (models, dir) = models("states");
         let rt = onnx_runtime();
 
-        // a platform without a catalog never touches the network
-        let none = Catalog {
-            url: None,
-            allow_loopback_http: true,
-        };
-        let SetupView::Unavailable { why, .. } = check(&models, &rt, &none, "n".into()) else {
-            panic!("no catalog")
-        };
-        assert_eq!(why, "platform");
-        assert!(catalog_url_for("macos", "aarch64").is_some_and(|u| u.starts_with("https://")));
-        assert_eq!(catalog_url_for("windows", "x86_64"), None);
+        assert!(
+            DEFAULT_CATALOG_URL.starts_with("https://")
+                && DEFAULT_CATALOG_URL.ends_with("/catalog.json")
+        );
 
         let cfg = Catalog {
-            url: Some("http://127.0.0.1:1/catalog.json"),
+            url: "http://127.0.0.1:1/catalog.json",
             allow_loopback_http: true,
         };
         assert!(matches!(
@@ -405,7 +390,7 @@ mod tests {
         )]));
         let url = format!("{base}/c.json");
         let cfg = Catalog {
-            url: Some(&url),
+            url: &url,
             allow_loopback_http: true,
         };
         let SetupView::Unavailable { why, .. } = check(&models, &rt, &cfg, "b".into()) else {
@@ -421,7 +406,7 @@ mod tests {
         )]));
         let url = format!("{base}/c.json");
         let cfg = Catalog {
-            url: Some(&url),
+            url: &url,
             allow_loopback_http: true,
         };
         if !backends::engine_available("mlx", &rt) {
@@ -436,7 +421,7 @@ mod tests {
         let base = serve(HashMap::from([("/c.json".to_string(), foreign)]));
         let url = format!("{base}/c.json");
         let cfg = Catalog {
-            url: Some(&url),
+            url: &url,
             allow_loopback_http: true,
         };
         assert!(matches!(

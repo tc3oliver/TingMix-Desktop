@@ -113,14 +113,14 @@ model, `BackendInfo.usable` is false, Live and Files are replaced by the setup s
 shown inside Models when nothing is installed) and starting a session fails with `setup.required`. The host
 (`setup::check`, command `setup_check`) fetches the **signed catalog** (`tingmix_models::catalog`: one signed manifest or an
 array, each entry verified against the trusted keys; plain http refused except loopback in tests) from `setup::catalog_url()`,
-a per-platform build-time constant (`setup::catalog_url_for`: macOS arm64 has the TingMix-Desktop manifest on Hugging Face, Windows x86_64 has none until the ONNX package of task 28; `TINGMIX_CATALOG_URL` at compile time overrides it). It keeps entries for this OS and CPU that
+a build-time constant (`setup::DEFAULT_CATALOG_URL`: the TingMix-Desktop `catalog.json` on Hugging Face, an array of manifests signed with the release key; `TINGMIX_CATALOG_URL` at compile time overrides it). Entries are filtered by OS and CPU after the fetch, so Windows x86_64 gets "not available yet" until the ONNX package of task 28 is added to the catalog. It keeps entries for this OS and CPU that
 are downloadable and whose engine this build contains, and answers one of: ready / download (licences to accept, size) /
 problem (a model is installed but unusable) / unavailable (`platform`: nothing for this computer yet, `build`: this build
 lacks the engine) / offline. The download is the existing `Models::install` (resumable ranges, cancel, hash check, signed
 manifest, atomic commit); when it finishes `onboard_core` activates the model and tests it, and the pushed backend event
 removes the screen. A cancelled or failed download keeps its bytes, and "Resume download" continues from them.
 **Not verified against the real server**: the macOS manifest lives in a private repo until it is reviewed and published, so
-the real URL has not been fetched from the app; until then a release build shows "TingMix can't reach the model server". Tests
+the real catalog has not been fetched from the app; until then a release build shows "TingMix can't reach the model server". Tests
 use a loopback server and a throwaway key (`setup.rs` tests, `tingmix-models/tests/catalog.rs`) plus the MLX end-to-end test.
 
 Live sessions use `SessionConfig::live_recommended()` (adaptive VAD, confidence suppression); file jobs keep `default()`. A
