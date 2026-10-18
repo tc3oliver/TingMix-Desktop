@@ -6,14 +6,14 @@ numbers are **pipeline-only** (seeded random-init weights, no TingMix-Small chec
 
 | Area | Status |
 |---|---|
-| Rust workspace builds and tests on Windows x64 (fmt, clippy, tests, whole workspace incl. the Tauri app crate, at 699e0ab) | VERIFIED except one open Windows-only test failure (finding 4) |
+| Rust workspace builds and tests on Windows x64 (fmt, clippy, tests, whole workspace incl. the Tauri app crate) | VERIFIED except one open Windows-only test failure (finding 4) |
 | Small ONNX backend with the pinned Microsoft ORT 1.31.0 win-x64 dll, loaded by absolute path | VERIFIED (pipeline-only weights) |
 | NSIS installer builds, installs per user without elevation, bundles the pinned `onnxruntime.dll` | VERIFIED (unsigned) |
 | Installed app starts, shows its window, responds and exits cleanly | VERIFIED (one launch, no interaction) |
 | Installed app loads `onnxruntime.dll` from its install directory | NOT VERIFIED in the app: ORT is loaded lazily and no model is installed, so the dll was not loaded at start-up (see below) |
 | CPU streaming performance of a Small-shaped model | EXPERIMENTAL (random weights, this PC only; no real checkpoint, so no acceptance gate is decided) |
 | GPU execution providers | EXPERIMENTAL probe through ORT Python wheels, not through the Rust/`ort` path |
-| Real first run on Windows: published catalog -> 1.4 GB ONNX download -> verify -> activate -> probe in `tingmix-onnx-worker` -> transcribe `mix_08s` equal to the oracle (11ccbd9, release build, native) | VERIFIED (2026-10-18) |
+| Real first run on Windows: published catalog -> 1.4 GB ONNX download -> verify -> activate -> probe in `tingmix-onnx-worker` -> transcribe `mix_08s` equal to the oracle (release build, native) | VERIFIED (2026-10-18) |
 | NSIS installer from `pnpm bundle:windows` contains the worker sidecar and the pinned `onnxruntime.dll` | VERIFIED (installed silently per user; app GUI not launched) |
 | Windows ML catalog EPs, microphone capture, UI, signing, SmartScreen, clean-VM install | NOT DONE |
 
@@ -39,16 +39,16 @@ The repo was moved with `git bundle` (sha256 checked) into `C:\Users\User\src\ti
 
 ## Findings (Windows-only failures and what was done)
 
-1. `crates/tingmix-runtime-mlx/examples/bench.rs` used `libc::getrusage`: `clippy`/`test --workspace` did not compile on Windows. Fixed (c8a377f).
-2. `crates/tingmix-runtime-onnx/examples/bench_cpu.rs`, same cause. Fixed (ef0741d): peak working set via kernel32, PowerShell for hardware, hash and ORT version.
-3. `src-tauri/src/mic.rs` `MicStatus` variants are only constructed on macOS, so `-D warnings` failed on Windows. Fixed upstream (2b3fcdd).
+1. `crates/tingmix-runtime-mlx/examples/bench.rs` used `libc::getrusage`: `clippy`/`test --workspace` did not compile on Windows. Fixed.
+2. `crates/tingmix-runtime-onnx/examples/bench_cpu.rs`, same cause. Fixed: peak working set via kernel32, PowerShell for hardware, hash and ORT version.
+3. `src-tauri/src/mic.rs` `MicStatus` variants are only constructed on macOS, so `-D warnings` failed on Windows. Fixed upstream.
 4. **Open (decoder owner):** `crates/tingmix-decoder/tests/golden.rs` `small_lm` calls `ps -o rss=` in `rss_mb()`; on Windows it fails with "program not found". Needs a `cfg(windows)` branch or no RSS assertion.
-5. Chunked-vs-offline log-prob agreement of the Small step graph is 1.3e-4 on this x86 PC (9.5e-7 on Apple silicon): ORT's CPU kernels round per matrix shape. CTC ids stay identical. The test tolerance went from 1e-4 to 5e-4 (22e8c4b).
+5. Chunked-vs-offline log-prob agreement of the Small step graph is 1.3e-4 on this x86 PC (9.5e-7 on Apple silicon): ORT's CPU kernels round per matrix shape. CTC ids stay identical. The test tolerance went from 1e-4 to 5e-4.
 6. Packaging nit: the Windows installer contains `en.lproj\InfoPlist.strings` and `zh-Hant.lproj\InfoPlist.strings`, which are macOS resources (harmless, 297 bytes).
-7. A workspace-wide test run unifies the `load-dynamic` feature that `src-tauri` requests, so the ONNX tests ran without a linked ORT and all 4 failed ("no ONNX Runtime library configured"). Same on macOS. Fixed in the tests (699e0ab: `TINGMIX_ORT_DYLIB`, else the `tools/ort-fetch` copy); CI and fresh checkouts must run `tools/ort-fetch/fetch.sh` before a workspace test run (`docs/release/onnxruntime.md`).
+7. A workspace-wide test run unifies the `load-dynamic` feature that `src-tauri` requests, so the ONNX tests ran without a linked ORT and all 4 failed ("no ONNX Runtime library configured"). Same on macOS. Fixed in the tests (`TINGMIX_ORT_DYLIB`, else the `tools/ort-fetch` copy); CI and fresh checkouts must run `tools/ort-fetch/fetch.sh` before a workspace test run (`docs/release/onnxruntime.md`).
 8. `cargo test --workspace` stops at the first failing test binary; use `--no-fail-fast` to see all results.
 
-Native result at 699e0ab, whole workspace including `tingmix-app`: `cargo fmt --all --check` exit 0; `cargo clippy --workspace
+Native result, whole workspace including `tingmix-app`: `cargo fmt --all --check` exit 0; `cargo clippy --workspace
 --all-targets -- -D warnings` exit 0; `cargo test --workspace --no-fail-fast`: 34 test binaries ok, 1 failed (`tingmix-decoder`
 `golden::small_lm`, item 4). Includes audio 8, core 6, streaming 12+5+7, runtime-onnx 6+1+4, models/registry 21+5+4+probe,
 bench 3; the ONNX tests also pass with `--no-default-features --features load-dynamic` and `TINGMIX_ORT_DYLIB` set to the
@@ -78,8 +78,8 @@ partial P50/P95 0.057/0.073 s from onset; final latency from speech end P50/P95 
 i.e. about 0 s after the endpoint because the final reuses the tail partial); streaming RTF 0.0079; max 1 pending final,
 nothing left pending, no drift of final latency (early 0.796 s, late 0.796 s), RSS max 115.5 MB with slope -14 MB/h, no stuck
 inference call, 0 backend errors. Caveats: random-init weights (the text means nothing), this run linked ort's own ORT 1.31.0 prebuilt
-(default `download-binaries`), not the pinned Microsoft dll; the binary was built at 22e8c4b and the report's `git_sha`
-(ffb0b91) is the checkout at the end of the run; a `cargo clippy/test` workspace build ran on the same PC around minute 5-10 of
+(default `download-binaries`), not the pinned Microsoft dll; the binary was built from an earlier checkout than the report's `git_sha`
+(the checkout at the end of the run); a `cargo clippy/test` workspace build ran on the same PC around minute 5-10 of
 the hour. Its `partial_staleness` metric (about 5.3 s, flat) is a property of the harness's definition for the Small model, not of drift.
 
 ## Execution-provider probe (`tools/ep-probe/probe.py`)
@@ -104,7 +104,7 @@ download through Windows Update.
 
 ## Installer (NSIS) and installed app
 
-- Build: `pnpm install --frozen-lockfile` then `pnpm bundle:windows` (= `tauri build --bundles nsis --config src-tauri/tauri.ort-windows.conf.json`), 1 m 51 s of Rust compile, built from 22e8c4b, output `target\release\bundle\nsis\TingMix_0.1.0_x64-setup.exe`, 10.54 MiB (11 052 493 bytes), sha256 `d8ea9b8fe5dff6260c43caeff4ad9461384f0bdb1da6a1f535c1762f8146c1ce`, **not signed** (Authenticode: NotSigned).
+- Build: `pnpm install --frozen-lockfile` then `pnpm bundle:windows` (= `tauri build --bundles nsis --config src-tauri/tauri.ort-windows.conf.json`), 1 m 51 s of Rust compile, built from an earlier checkout, output `target\release\bundle\nsis\TingMix_0.1.0_x64-setup.exe`, 10.54 MiB (11 052 493 bytes), sha256 `d8ea9b8fe5dff6260c43caeff4ad9461384f0bdb1da6a1f535c1762f8146c1ce`, **not signed** (Authenticode: NotSigned).
 - Silent per-user install (`/S`, no elevation, exit 0) to `C:\Users\User\AppData\Local\TingMix`: `tingmix-app.exe` 19.2 MB, `uninstall.exe`, `onnxruntime\onnxruntime.dll` (sha256 equals the pinned `0c42dc4e...`), `onnxruntime_providers_shared.dll`, `LICENSE`, `ThirdPartyNotices.txt`; uninstall entry under HKCU (`TingMix 0.1.0`).
 
 ## Installed app: one launch
@@ -124,7 +124,7 @@ The installed `tingmix-app.exe` was started once from
 
 ## Real first run on Windows (task 35, 2026-10-18)
 
-Native Windows process, release build of the `tingmix-app` lib tests at 11ccbd9 (`cargo test --release -p tingmix-app --lib --
+Native Windows process, release build of the `tingmix-app` lib tests (`cargo test --release -p tingmix-app --lib --
 --ignored real_first_run`), scratch registry under `C:\Users\User\src\scratch-home` (removed afterwards), published catalog
 `https://huggingface.co/tc3oliver/TingMix-Desktop/resolve/main/catalog.json`, the windows/x86_64 entry
 `tingmix-large-onnx-fp32-r75071a1` (release-signed), the pinned Microsoft `onnxruntime.dll` through `TINGMIX_ORT_DYLIB`, and the
