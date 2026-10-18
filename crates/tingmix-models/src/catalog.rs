@@ -65,6 +65,10 @@ pub fn parse(bytes: &[u8], verifier: &Verifier) -> Result<Catalog> {
 
 /// Download the catalog from `url` and verify it.
 pub fn fetch(url: &str, verifier: &Verifier, allow_loopback_http: bool) -> Result<Catalog> {
-    let bytes = Downloader::new().get_small(url, MAX_CATALOG_BYTES, allow_loopback_http)?;
+    let bytes = Downloader::new(allow_loopback_http).get_small(
+        url,
+        MAX_CATALOG_BYTES,
+        allow_loopback_http,
+    )?;
     parse(&bytes, verifier)
 }

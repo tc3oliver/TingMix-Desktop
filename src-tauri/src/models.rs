@@ -384,7 +384,7 @@ impl Models {
                 let total = m.manifest().download_size();
                 let mut last = Instant::now() - Duration::from_secs(1);
                 let r = this.reg().and_then(|reg| {
-                    Downloader::new()
+                    Downloader::new(this.loopback_http)
                         .install(reg, &m, &cancel, |p| {
                             if last.elapsed() >= Duration::from_millis(150) {
                                 last = Instant::now();

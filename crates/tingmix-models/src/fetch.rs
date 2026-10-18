@@ -23,14 +23,16 @@ pub struct Downloader {
 
 impl Default for Downloader {
     fn default() -> Self {
-        Self::new()
+        Self::new(false)
     }
 }
 
 impl Downloader {
-    pub fn new() -> Self {
+    /// `allow_loopback_http` (tests only) lifts the https-only rule, which otherwise also covers every redirect hop.
+    pub fn new(allow_loopback_http: bool) -> Self {
         Self {
             agent: ureq::AgentBuilder::new()
+                .https_only(!allow_loopback_http)
                 .timeout_connect(Duration::from_secs(15))
                 .timeout_read(Duration::from_secs(60))
                 .redirects(5)
@@ -169,6 +171,7 @@ impl Downloader {
             if !append {
                 have = 0;
             }
+            let before = have;
             let mut r = resp.into_reader();
             let mut buf = vec![0u8; 256 * 1024];
             loop {
@@ -188,10 +191,62 @@ impl Downloader {
                 on(have);
             }
             out.sync_all().map_err(io(part))?;
+            if have == before && have < size {
+                return Err(fail(format!(
+                    "server sent no data after {have} of {size} bytes"
+                )));
+            }
             if have < size && !append {
                 return Err(fail(format!("server closed after {have} of {size} bytes")));
             }
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::net::TcpListener;
+
+    /// Answers every request with `reply` and closes.
+    fn serve(reply: &'static str) -> String {
+        let l = TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("http://127.0.0.1:{}/f", l.local_addr().unwrap().port());
+        std::thread::spawn(move || {
+            for mut c in l.incoming().flatten() {
+                let mut buf = [0u8; 2048];
+                let _ = c.read(&mut buf);
+                let _ = c.write_all(reply.as_bytes());
+            }
+        });
+        url
+    }
+
+    #[test]
+    fn an_empty_206_is_an_error_not_an_endless_retry() {
+        let url =
+            serve("HTTP/1.1 206 Partial Content\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+        let dir = tempfile::tempdir().unwrap();
+        let part = dir.path().join("f.part");
+        fs::write(&part, b"abc").unwrap();
+        let e = Downloader::new(true)
+            .fetch_one(&url, &part, 10, &AtomicBool::new(false), |_| {})
+            .unwrap_err();
+        assert!(e.to_string().contains("no data"), "{e}");
+    }
+
+    #[test]
+    fn plain_http_is_refused_unless_loopback_is_allowed() {
+        let url = serve("HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nok");
+        let dir = tempfile::tempdir().unwrap();
+        let part = dir.path().join("f.part");
+        let cancel = AtomicBool::new(false);
+        assert!(Downloader::new(false)
+            .fetch_one(&url, &part, 2, &cancel, |_| {})
+            .is_err());
+        Downloader::new(true)
+            .fetch_one(&url, &part, 2, &cancel, |_| {})
+            .unwrap();
     }
 }

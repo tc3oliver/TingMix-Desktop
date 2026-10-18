@@ -22,7 +22,7 @@ fn download_verify_activate_and_offline_load() {
     let reg = registry(dir.path());
     let m = signed(&manifest("v1", &srv.url, 1));
     accept(&reg, &m);
-    let installed = Downloader::new()
+    let installed = Downloader::new(true)
         .install(&reg, &m, &no_cancel(), |_| {})
         .unwrap();
     assert!(installed.dir.join("model.safetensors").is_file());
@@ -44,7 +44,7 @@ fn licence_must_be_accepted_before_any_request() {
     let dir = tempfile::tempdir().unwrap();
     let reg = registry(dir.path());
     let m = signed(&manifest("v1", &srv.url, 1));
-    let e = Downloader::new()
+    let e = Downloader::new(true)
         .install(&reg, &m, &no_cancel(), |_| {})
         .unwrap_err();
     assert!(
@@ -63,7 +63,7 @@ fn truncated_download_resumes_with_range() {
     let m = signed(&manifest("v1", &srv.url, 1));
     accept(&reg, &m);
     srv.state.lock().unwrap().cut_next = Some(100_000);
-    let e = Downloader::new()
+    let e = Downloader::new(true)
         .install(&reg, &m, &no_cancel(), |_| {})
         .unwrap_err();
     assert!(matches!(e, Error::Download { .. }), "{e}");
@@ -74,7 +74,7 @@ fn truncated_download_resumes_with_range() {
         "nothing is installed from a partial download"
     );
 
-    Downloader::new()
+    Downloader::new(true)
         .install(&reg, &m, &no_cancel(), |_| {})
         .unwrap();
     let ranges: Vec<_> = srv
@@ -98,11 +98,11 @@ fn server_ignoring_range_restarts_cleanly() {
     let m = signed(&manifest("v1", &srv.url, 1));
     accept(&reg, &m);
     srv.state.lock().unwrap().cut_next = Some(50_000);
-    Downloader::new()
+    Downloader::new(true)
         .install(&reg, &m, &no_cancel(), |_| {})
         .unwrap_err();
     srv.state.lock().unwrap().ignore_range = true;
-    Downloader::new()
+    Downloader::new(true)
         .install(&reg, &m, &no_cancel(), |_| {})
         .unwrap();
     reg.verify_full("v1").unwrap();
@@ -116,20 +116,20 @@ fn corrupt_partial_is_rejected_and_discarded() {
     let m = signed(&manifest("v1", &srv.url, 1));
     accept(&reg, &m);
     srv.state.lock().unwrap().cut_next = Some(10_000);
-    Downloader::new()
+    Downloader::new(true)
         .install(&reg, &m, &no_cancel(), |_| {})
         .unwrap_err();
     let part = dir.path().join("tmp/v1/model.safetensors.part");
     let mut b = std::fs::read(&part).unwrap();
     b[5] ^= 0xff; // bit rot in the resumed prefix
     std::fs::write(&part, b).unwrap();
-    let e = Downloader::new()
+    let e = Downloader::new(true)
         .install(&reg, &m, &no_cancel(), |_| {})
         .unwrap_err();
     assert!(matches!(e, Error::HashMismatch { .. }), "{e}");
     assert!(!part.exists());
     assert!(reg.list().unwrap().is_empty());
-    Downloader::new()
+    Downloader::new(true)
         .install(&reg, &m, &no_cancel(), |_| {})
         .unwrap();
 }
@@ -147,7 +147,7 @@ fn tampered_server_content_is_rejected() {
     let reg = registry(dir.path());
     let m = signed(&manifest("v1", &srv.url, 1));
     accept(&reg, &m);
-    let e = Downloader::new()
+    let e = Downloader::new(true)
         .install(&reg, &m, &no_cancel(), |_| {})
         .unwrap_err();
     assert!(
@@ -165,7 +165,7 @@ fn cancel_keeps_partial_for_resume() {
     let m = signed(&manifest("v1", &srv.url, 1));
     accept(&reg, &m);
     let cancel = no_cancel();
-    let e = Downloader::new()
+    let e = Downloader::new(true)
         .install(&reg, &m, &cancel, |p| {
             if p.bytes_done > 1000 {
                 cancel.store(true, Ordering::Relaxed)
@@ -174,7 +174,7 @@ fn cancel_keeps_partial_for_resume() {
         .unwrap_err();
     assert!(matches!(e, Error::Cancelled));
     assert!(reg.list().unwrap().is_empty());
-    Downloader::new()
+    Downloader::new(true)
         .install(&reg, &m, &no_cancel(), |_| {})
         .unwrap();
 }
@@ -636,7 +636,7 @@ fn import_only_files_cannot_be_downloaded_but_can_be_imported() {
     m.files[0].url = String::new(); // unpublished converted artifact
     let m = signed(&m);
     accept(&reg, &m);
-    let e = Downloader::new()
+    let e = Downloader::new(true)
         .install(&reg, &m, &no_cancel(), |_| {})
         .unwrap_err();
     assert!(
