@@ -57,6 +57,7 @@ export const api = {
   micRequest: () => invoke<MicStatus>("mic_permission_request"),
   micOpenSettings: () => invoke<void>("mic_open_settings"),
   updaterInstall: () => invoke<void>("updater_install"),
+  openLicenceUrl: (url: string) => invoke<void>("open_licence_url", { url }),
   modelsVerify: (id: string) => invoke<void>("models_verify", { id }),
 };
 

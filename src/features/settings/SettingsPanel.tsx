@@ -3,7 +3,7 @@ import { LOCALES, useT, type Translate } from "../../i18n";
 import { hostText } from "../../i18n/host";
 import { api, errorText } from "../../lib/api";
 import { label } from "../../lib/shortcuts";
-import type { BackendState, Settings, UpdateInfo } from "../../types/protocol";
+import type { BackendState, Device, Settings, UpdateInfo } from "../../types/protocol";
 import { ModelsPanel } from "../models/ModelsPanel";
 import { DiagnosticsPanel } from "../diagnostics/DiagnosticsPanel";
 
@@ -61,6 +61,9 @@ export function SettingsPanel({ settings, onSettings, mac, backend, onOpenModels
     if (v !== settings.caption_size) onSettings({ ...settings, caption_size: v });
   };
   const [diag, setDiag] = useState(false);
+  const [devices, setDevices] = useState<Device[]>([]);
+  const loadDevices = () => api.listInputDevices().then(setDevices).catch(() => undefined);
+  useEffect(() => void loadDevices(), []);
 
   return (
     <section className="settings">
@@ -101,6 +104,18 @@ export function SettingsPanel({ settings, onSettings, mac, backend, onOpenModels
           />
         </label>
         <p className="sample" style={{ fontSize: size }}>{t("settings.sample")}</p>
+      </fieldset>
+
+      <fieldset>
+        <legend><h2>{t("settings.microphone")}</h2></legend>
+        <label>
+          <span className="visually-hidden">{t("live.mic")}</span>
+          <select value={devices.some((d) => d.id === settings.device_id) ? settings.device_id ?? "" : ""} onFocus={loadDevices} onChange={(e) => onSettings({ ...settings, device_id: e.target.value || null })}>
+            <option value="">{t("live.mic_default")}</option>
+            {devices.map((d) => <option key={d.id} value={d.id}>{d.is_default ? t("live.mic_default_device", { name: d.name }) : d.name}</option>)}
+          </select>
+        </label>
+        <p className="muted small">{t("settings.mic_note")}</p>
       </fieldset>
 
       <fieldset>

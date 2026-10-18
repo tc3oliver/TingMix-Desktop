@@ -124,3 +124,5 @@ table.kv th { text-align: left; padding-right: 16px; color: var(--muted); font-w
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
 }
+.preview { flex: 0 1 auto; max-width: 40ch; }
+.block button.link { margin-left: 8px; }

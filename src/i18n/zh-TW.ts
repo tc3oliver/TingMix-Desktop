@@ -148,6 +148,8 @@ export const zhTW: Record<Key, string> = {
   "settings.language.auto": "跟隨系統",
   "settings.caption_size": "字幕大小：{size}",
   "settings.sample": "字幕預覽 Caption preview",
+  "settings.microphone": "麥克風",
+  "settings.mic_note": "按「開始」時使用。也可以在「即時字幕」頁面更換。",
   "settings.history": "歷史",
   "settings.save_history": "將完成的逐字稿存入歷史",
   "settings.updates": "更新",
@@ -239,6 +241,7 @@ export const zhTW: Record<Key, string> = {
   "os.privacy_other": "設定 › 隱私權與安全性 › 麥克風",
   "setup.promise": "在這台電腦上把語音轉成文字，不會上傳任何內容。一次性下載後即可離線使用。",
   "setup.download_progress": "下載進度",
+  "setup.read_terms": "閱讀條款",
   "setup.pause": "暫停",
   "setup.progress": "已下載 {done} / {total}",
   "setup.progress_eta": "已下載 {done} / {total}・約剩 {time}",
@@ -261,6 +264,7 @@ export const zhTW: Record<Key, string> = {
   "diag.copied": "已複製",
 
   // codes added by the host for task #34 (docs/architecture/host-codes.md)
+  "host.system.url_not_allowed": "無法從這裡開啟該網頁。",
   "host.unknown": "發生問題。如果持續發生，請開啟「設定」並複製疑難排解資訊。",
   "host.live.no_device": "找不到麥克風。請接上麥克風後再試一次。",
   "host.live.device_not_found": "找不到所選的麥克風，請改選其他裝置。",

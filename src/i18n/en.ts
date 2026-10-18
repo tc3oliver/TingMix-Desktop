@@ -154,6 +154,8 @@ export const en = {
   "settings.language.auto": "Follow the system",
   "settings.caption_size": "Caption size: {size}",
   "settings.sample": "字幕預覽 Caption preview",
+  "settings.microphone": "Microphone",
+  "settings.mic_note": "Used when you press Start. You can also change it on the Live captions tab.",
   "settings.history": "History",
   "settings.save_history": "Save finished transcripts to History",
   "settings.updates": "Updates",
@@ -247,6 +249,7 @@ export const en = {
   "os.privacy_other": "Settings › Privacy & security › Microphone",
   "setup.promise": "Speech to text on this computer. Nothing is uploaded. After a one-time download, it works offline.",
   "setup.download_progress": "Download progress",
+  "setup.read_terms": "Read terms",
   "setup.pause": "Pause",
   "setup.progress": "{done} of {total}",
   "setup.progress_eta": "{done} of {total} · about {time} left",
@@ -269,6 +272,7 @@ export const en = {
   "diag.copied": "Copied",
 
   // codes added by the host for task #34 (docs/architecture/host-codes.md)
+  "host.system.url_not_allowed": "That page can't be opened from here.",
   "host.unknown": "Something went wrong. If it keeps happening, open Settings and copy the troubleshooting info.",
   "host.live.no_device": "No microphone was found. Connect one and try again.",
   "host.live.device_not_found": "The selected microphone isn't available. Choose another one.",

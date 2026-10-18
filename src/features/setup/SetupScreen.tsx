@@ -134,7 +134,7 @@ export function SetupScreen({ backend, onOpenModels, onView, first = false }: Pr
         {needed.map((l) => (
           <label key={l.id} className="block">
             <input type="checkbox" checked={accepted.includes(l.id)} onChange={(e) => setAccepted((a) => (e.target.checked ? [...a, l.id] : a.filter((x) => x !== l.id)))} /> {t("setup.agree", { name: `${l.name}${l.spdx ? ` (${l.spdx})` : ""}` })}
-            <div className="muted small">{l.url}</div>
+            <button className="link small" onClick={(e) => { e.preventDefault(); api.openLicenceUrl(l.url).catch((err) => setError(errorText(err))); }}>{t("setup.read_terms")}</button>
           </label>
         ))}
         {!ok && <p className="muted small">{t("setup.accept_hint")}</p>}

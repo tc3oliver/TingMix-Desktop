@@ -90,3 +90,13 @@ describe("host messages", () => {
     expect(hostCode(m)).toBe("backend.missing_engine");
   });
 });
+
+// every code in the host's table has a sentence in both languages: an unknown code would otherwise show the generic text
+const hostTable = Object.values(import.meta.glob("../../docs/architecture/host-codes.md", { query: "?raw", import: "default", eager: true }) as Record<string, string>)[0] ?? "";
+describe("host codes", () => {
+  const codes = [...hostTable.matchAll(/^\| `([a-z_]+\.[a-z_]+)` \|/gm)].map((m) => m[1]!);
+  it("finds the documented codes", () => expect(codes.length).toBeGreaterThan(50));
+  it("each has an entry in every language", () => {
+    for (const c of codes) for (const [id, l] of Object.entries(LOCALES)) expect(`host.${c}` in l.dict, `${id}: ${c}`).toBe(true);
+  });
+});

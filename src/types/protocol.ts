@@ -103,6 +103,8 @@ export interface HistorySummary {
   duration_s: number;
   backend: string;
   segments: number;
+  /** First text of the entry (≤ 80 characters), empty when there is none. */
+  first_line: string;
 }
 
 export interface HistoryEntry extends Omit<HistorySummary, "segments"> {

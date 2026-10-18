@@ -43,6 +43,7 @@ export function HistoryPanel({ settings }: { settings: Settings }) {
         {items.map((h) => (
           <li key={h.id} className="row between">
             <button className="link ellipsis" aria-current={open?.id === h.id} onClick={() => show(h.id)} title={entryName(h, t, date)}>{entryName(h, t, date)}</button>
+            {h.first_line && <span className="muted small preview ellipsis" title={h.first_line}>{h.first_line}</span>}
             <span className="muted small">
               {[...(h.source === "live" ? [] : [date(h.started_at)]), clock(h.duration_s), ...(isMock(h.backend) ? [t("prov.mock_short")] : [])].join(" · ")}
             </span>

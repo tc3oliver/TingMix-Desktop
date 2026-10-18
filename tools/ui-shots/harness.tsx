@@ -21,9 +21,10 @@ const info = (over: Partial<BackendState["info"]> = {}): BackendState["info"] =>
 const READY: BackendState = { info: info(), load: { loading: false, label: null, error: null } };
 const NOT_READY: BackendState = { info: info({ label: "Mock — not ASR", mock: true, usable: false, reason: JSON.stringify({ code: "backend.no_model", text: "No model installed" }) }), load: { loading: false, label: null, error: null } };
 
+const lic = (id: string, name: string, spdx: string | null) => ({ id, name, url: `https://example.org/licences/${id}`, spdx, acceptance_required: true, accepted: false, notes: "" });
 const download: SetupView = {
   state: "download",
-  pending: { token: "t", id: "tingmix-small-onnx-fp16-r1a2b3c4", family: "tingmix-small", backend: "onnx", precision: "fp16", download_bytes: 1_320_000_000, compat_status: "supported", licenses: [] },
+  pending: { token: "t", id: "tingmix-small-onnx-fp16-r1a2b3c4", family: "tingmix-small", backend: "onnx", precision: "fp16", download_bytes: 1_320_000_000, compat_status: "supported", licenses: [lic("apache-2.0", "Apache License 2.0", "Apache-2.0"), lic("tingmix-model", "TingMix Model Licence", null)] },
 };
 const op = (state: ModelOp["state"], done: number, message: string | null = null): ModelOp => ({ kind: "download", name: "tingmix-small-onnx-fp16-r1a2b3c4", state, message, bytes_done: done, bytes_total: 1_320_000_000 });
 
@@ -64,8 +65,9 @@ const job = (state: JobView["state"], name: string, audio_s: number, n: number):
   job_id: `j-${name}`, name, backend: `${MODEL_ID} (onnx) — EXPERIMENTAL`, state, audio_s, message: null,
   snapshot: { finals: finals.slice(0, n), open: [] },
 });
+const lines = lang === "en" ? ["Good morning everyone, thanks for joining the weekly sync.", "So the first thing I wanted to ask you about was how you got started…", "Today we are going to look at how speech recognition models are trained…"] : ["各位早安，感謝大家參加每週同步會議。", "我想先請你聊聊，當初是怎麼開始做這件事的……", "今天我們要來看語音辨識模型是怎麼訓練出來的……"];
 const hist = (i: number, source: "live" | "file", name: string, ago: number, dur: number): HistorySummary => ({
-  id: `h${i}`, source, name, started_at: Math.floor(Date.now() / 1000) - ago, duration_s: dur, backend: `${MODEL_ID} (onnx) — EXPERIMENTAL`, segments: 3 + i * 4,
+  id: `h${i}`, source, name, started_at: Math.floor(Date.now() / 1000) - ago, duration_s: dur, backend: `${MODEL_ID} (onnx) — EXPERIMENTAL`, segments: 3 + i * 4, first_line: lines[i - 1]!,
 });
 
 const STATES: Record<string, State> = {
