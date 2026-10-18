@@ -1,9 +1,9 @@
 import { useT } from "../i18n";
-import { isMock, labelText } from "../lib/provenance";
+import { isMock } from "../lib/provenance";
 
-/** Says which backend produced the transcript next to it, so a saved or screenshotted result carries it. */
+/** Warns when the words are placeholders (debug builds only). Real recognition shows nothing: a ready app does not talk about its engine. */
 export function Provenance({ label }: { label: string | null | undefined }) {
   const t = useT();
   if (isMock(label)) return <p className="mock-note" role="note">{t("prov.mock")}</p>;
-  return <p className="muted small">{t("prov.produced_by", { name: labelText(label, t) })}</p>;
+  return null;
 }

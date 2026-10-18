@@ -5,7 +5,7 @@ import { hostCode, hostText, reasonText } from "../../i18n/host";
 import { api, errorText, onBackend, onModelOp } from "../../lib/api";
 import { friendlyName } from "../../lib/format";
 import type { BackendState, ModelOp, ModelsOverview, PendingInstall } from "../../types/protocol";
-import { SetupScreen } from "../setup/SetupScreen";
+import { gigabytes, SetupScreen } from "../setup/SetupScreen";
 import { cardStatus, onboardStage } from "./onboard";
 
 interface Props {
@@ -84,22 +84,42 @@ export function ModelsPanel({ backend, onOpenModels }: Props) {
   const inUse = backend && !backend.info.mock ? o?.installed.find((m) => backend.info.label.startsWith(m.id)) : undefined;
   const hasPrevious = o?.installed.some((m) => m.previous) ?? false;
 
+  const target = inUse ?? o?.installed.find((m) => m.active) ?? o?.installed[0];
+
   return (
-    <section>
+    <fieldset>
+      <legend><h2>{t("settings.model")}</h2></legend>
       {error && <p className="error" role="alert">{error}</p>}
       {note && <p className="muted" role="status">{note}</p>}
 
       <article className="card summary">
-        {inUse ? (
-          <strong>{t("models.in_use", { name: friendlyName(inUse.id) })}</strong>
-        ) : (
+        {target ? (
           <>
-            <strong>{t("models.none")}</strong>
-            {backend && <p className="muted">{reasonText(backend.info.reason, t)}</p>}
+            <div className="row between">
+              <strong>{friendlyName(target.id)}</strong>
+              <button disabled={running} onClick={() => act(() => api.modelsProbe(target.id))}>{t("models.test_again")}</button>
+            </div>
+            <p className={inUse ? "ok small" : "muted small"}>{cardStatus(target, backend, op, t)} · {t("settings.model_size", { size: gigabytes(target.size_bytes, number) })}</p>
           </>
+        ) : (
+          o && <strong>{t("models.none")}</strong>
         )}
       </article>
 
+      {op && (o?.installed.length ?? 0) > 0 && (
+        <article className={`card stage ${stage?.phase ?? ""}`} aria-live="polite">
+          <div className="row">
+            <strong className="ellipsis" title={op.name}>{friendlyName(op.name)}</strong>
+            {running && <button onClick={() => act(api.modelsCancel)}>{t("common.cancel")}</button>}
+          </div>
+          {running && (op.bytes_total > 0 ? <progress max={op.bytes_total} value={op.bytes_done} /> : <progress />)}
+          {stage && <p className={stage.phase === "problem" ? "error" : stage.phase === "ready" ? "ok" : "muted"}>{stage.text}</p>}
+        </article>
+      )}
+
+      {o && o.installed.length === 0 && <SetupScreen backend={backend} onOpenModels={onOpenModels} />}
+      <details className="card advanced">
+        <summary>{t("models.advanced")}</summary>
       {pending && (
         <article className="card" aria-labelledby="licence-title" onKeyDown={(e) => e.key === "Escape" && closePending()}>
           <h2 id="licence-title" ref={heading} tabIndex={-1}>{t("models.licence_title", { name: friendlyName(pending.id) })}</h2>
@@ -128,18 +148,6 @@ export function ModelsPanel({ backend, onOpenModels }: Props) {
         </article>
       )}
 
-      {op && (o?.installed.length ?? 0) > 0 && (
-        <article className={`card stage ${stage?.phase ?? ""}`} aria-live="polite">
-          <div className="row">
-            <strong className="ellipsis" title={op.name}>{friendlyName(op.name)}</strong>
-            {running && <button onClick={() => act(api.modelsCancel)}>{t("common.cancel")}</button>}
-          </div>
-          {running && (op.bytes_total > 0 ? <progress max={op.bytes_total} value={op.bytes_done} /> : <progress />)}
-          {stage && <p className={stage.phase === "problem" ? "error" : stage.phase === "ready" ? "ok" : "muted"}>{stage.text}</p>}
-        </article>
-      )}
-
-      {o && o.installed.length === 0 && <SetupScreen backend={backend} onOpenModels={onOpenModels} />}
       {o?.installed.map((m) => {
         const inUseHere = !!backend && !backend.info.mock && backend.info.label.startsWith(m.id);
         const status = cardStatus(m, backend, op, t);
@@ -182,8 +190,6 @@ export function ModelsPanel({ backend, onOpenModels }: Props) {
       })}
       {o?.unreadable.map(([id, why]) => <p key={id} className="error">{id}: {why}</p>)}
 
-      <details className="card">
-        <summary>{t("models.advanced")}</summary>
         <h3>{t("models.add_title")}</h3>
       <div className="row">
         <button className="primary" onClick={() => begin(() => api.modelsBeginImport("folder"))} disabled={running || !o?.registry_available}>{t("models.add_folder")}</button>
@@ -208,6 +214,6 @@ export function ModelsPanel({ backend, onOpenModels }: Props) {
         {o && <p className="muted small">{hostText(o.note, t)}</p>}
         {o && <p className="muted small">{t("models.registry", { path: o.root })}</p>}
       </details>
-    </section>
+    </fieldset>
   );
 }

@@ -3,7 +3,8 @@ import { LOCALES, useT, type Translate } from "../../i18n";
 import { hostText } from "../../i18n/host";
 import { api, errorText } from "../../lib/api";
 import { label } from "../../lib/shortcuts";
-import type { Settings, UpdateInfo } from "../../types/protocol";
+import type { BackendState, Settings, UpdateInfo } from "../../types/protocol";
+import { ModelsPanel } from "../models/ModelsPanel";
 import { DiagnosticsPanel } from "../diagnostics/DiagnosticsPanel";
 
 function Updates({ t }: { t: Translate }) {
@@ -44,9 +45,11 @@ interface Props {
   settings: Settings;
   onSettings: (s: Settings) => void;
   mac: boolean;
+  backend: BackendState | null;
+  onOpenModels: () => void;
 }
 
-export function SettingsPanel({ settings, onSettings, mac }: Props) {
+export function SettingsPanel({ settings, onSettings, mac, backend, onOpenModels }: Props) {
   const t = useT();
   // the slider keeps its own value while dragging and saves once it settles, so replies from earlier saves cannot move it
   const [size, setSize] = useState(settings.caption_size);
@@ -107,13 +110,16 @@ export function SettingsPanel({ settings, onSettings, mac }: Props) {
         </label>
       </fieldset>
 
+      <ModelsPanel backend={backend} onOpenModels={onOpenModels} />
+
       <Updates t={t} />
 
       <fieldset>
         <legend><h2>{t("settings.about")}</h2></legend>
         <p className="muted small">
           {t("settings.shortcuts", {
-            tabs: `${label(mac, "1")}–${label(mac, "5")}`,
+            tabs: `${label(mac, "1")}–${label(mac, "3")}`,
+            settings: label(mac, ","),
             toggle: label(mac, "Enter"),
             choose: label(mac, "O"),
             caption: `${label(mac, "=")} / ${label(mac, "-")}`,

@@ -27,6 +27,8 @@ main { flex: 1; min-height: 0; overflow: auto; padding-bottom: 12px; }
 .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 8px 0; border-bottom: 1px solid var(--line); }
 nav { display: flex; gap: 4px; }
 nav button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; padding: 8px 12px; color: var(--muted); }
+nav button.end { margin-left: auto; }
+nav { flex: 1; }
 nav button.active { color: var(--fg); border-bottom-color: var(--accent); }
 .engine { max-width: 45%; flex: 0 1 auto; border-radius: 12px; padding: 2px 10px; font-size: 12px; display: inline-flex; margin-bottom: 4px; }
 .engine.warn { border-color: var(--warn); color: var(--warn); }
@@ -71,6 +73,17 @@ button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-v
 .notice.danger { border-color: var(--danger); color: var(--danger); }
 .notice p { margin: .25em 0 0; }
 .footer { justify-content: space-between; }
+.live .placeholder { text-align: center; padding: 12vh 8px 0; font-size: 16px; }
+.line.ghost { animation: fade-out 150ms ease-out forwards; } /* FADE_MS in TranscriptView */
+@keyframes fade-out { to { opacity: 0; } }
+.welcome { display: flex; align-items: center; justify-content: center; }
+.welcome-card { width: 100%; max-width: 520px; padding: 24px 0; }
+.welcome-card h2 { font-size: 1.6em; }
+.welcome-card .promise { font-size: 1.1em; color: var(--muted); margin: 0 0 20px; }
+.welcome-card button.primary { padding: 9px 20px; font-size: 1.05em; }
+.setup progress { height: 10px; margin: 8px 0; }
+.setup p { margin: 8px 0; }
+.setup .muted { font-variant-numeric: tabular-nums; }
 
 .transcript { position: relative; flex: 1; min-height: 160px; overflow-y: auto; padding: 12px 16px; background: var(--card); border: 1px solid var(--line); border-radius: 8px; }
 .card .transcript { flex: none; min-height: 0; max-height: 220px; margin: 8px 0; }

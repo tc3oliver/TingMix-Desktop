@@ -51,3 +51,32 @@ export function cardStatus(m: { id: string; active: boolean }, backend: BackendS
     default: return reasonText(info.reason, t);
   }
 }
+
+export interface RateSample {
+  at: number;
+  bytes: number;
+}
+
+const WINDOW_MS = 10_000;
+const MIN_SPAN_MS = 5_000;
+
+/** Keeps the last 10 s of download progress; a new download (bytes going backwards) starts over. */
+export function pushSample(samples: RateSample[], s: RateSample): RateSample[] {
+  const last = samples[samples.length - 1];
+  const kept = last && s.bytes < last.bytes ? [] : samples;
+  return [...kept, s].filter((x) => s.at - x.at <= WINDOW_MS);
+}
+
+/** Seconds left at the rate of the last 10 s, or null until 5 s of data exist or while nothing is arriving. */
+export function etaSeconds(samples: RateSample[], total: number): number | null {
+  const first = samples[0];
+  const last = samples[samples.length - 1];
+  if (!first || !last || last.at - first.at < MIN_SPAN_MS) return null;
+  const rate = (last.bytes - first.bytes) / ((last.at - first.at) / 1000);
+  return rate > 0 && total > last.bytes ? (total - last.bytes) / rate : null;
+}
+
+/** "about 3 minutes" is coarse on purpose: a second-by-second countdown would be noise. */
+export function etaText(seconds: number, n: (base: string, count: number) => string, t: Translate): string {
+  return seconds < 60 ? t("setup.under_minute") : n("setup.minutes", Math.round(seconds / 60));
+}

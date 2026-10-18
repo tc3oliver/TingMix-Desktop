@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { translator } from "../i18n";
 import type { BackendState } from "../types/protocol";
-import { demoBanner, engineChip, needsSetup } from "./engine";
+import { demoBanner, engineChip, isFirstRun, needsSetup } from "./engine";
 
 const t = translator("en");
 const coded = (code: string, text: string, params: Record<string, unknown> = {}) => JSON.stringify({ code, params, text });
@@ -12,16 +12,16 @@ const bs = (p: { mock: boolean; experimental?: boolean; label?: string; reason?:
 
 describe("engine chip", () => {
   it("covers every state of the brief", () => {
-    expect(engineChip(null, t)).toMatchObject({ text: "Checking engine…", tone: "neutral" });
+    expect(engineChip(null, t)).toBeNull();
     expect(engineChip(bs({ mock: true }), t)).toMatchObject({ text: "Demo mode", tone: "warn" });
-    expect(engineChip(bs({ mock: false, label: "tingmix-large-mlx-fp32-r75071a1 (mlx) — EXPERIMENTAL", experimental: true, loading: true }), t)).toMatchObject({ text: "Loading TingMix Large…", tone: "neutral" });
-    expect(engineChip(bs({ mock: false, error: "boom" }), t)).toMatchObject({ text: "Engine failed to load", tone: "danger", title: "boom" });
-    // the experimental status is for Advanced and Diagnostics: the chip shows just the model
-    expect(engineChip(bs({ mock: false, label: "tingmix-large-mlx-fp32-r75071a1 (mlx) — EXPERIMENTAL", experimental: true }), t)).toMatchObject({ text: "TingMix Large", tone: "neutral" });
-    expect(engineChip(bs({ mock: false, label: "m1 (mlx) — VALIDATED" }), t)).toMatchObject({ text: "M1", tone: "neutral" });
+    expect(engineChip(bs({ mock: false, label: "tingmix-large-mlx-fp32-r75071a1 (mlx) — EXPERIMENTAL", experimental: true, loading: true }), t)).toMatchObject({ text: "Getting ready…", tone: "neutral" });
+    expect(engineChip(bs({ mock: false, error: "boom" }), t)).toMatchObject({ text: "Speech recognition unavailable", tone: "danger", title: "boom" });
+    // a ready app shows no engine, model or status word at all
+    expect(engineChip(bs({ mock: false, label: "tingmix-large-mlx-fp32-r75071a1 (mlx) — EXPERIMENTAL", experimental: true }), t)).toBeNull();
+    expect(engineChip(bs({ mock: false, label: "m1 (mlx) — VALIDATED" }), t)).toBeNull();
   });
   it("speaks Traditional Chinese when asked to", () => {
-    expect(engineChip(bs({ mock: true }), translator("zh-TW")).text).toBe("示範模式");
+    expect(engineChip(bs({ mock: true }), translator("zh-TW"))?.text).toBe("示範模式");
   });
 });
 
@@ -33,9 +33,9 @@ describe("release builds", () => {
     expect(needsSetup(bs({ mock: false, release: true, label: "m1 (mlx) — EXPERIMENTAL" }))).toBe(false);
     expect(needsSetup(null)).toBe(false); // still loading: no flash of the setup screen
   });
-  it("show no demo banner and a Setup chip", () => {
+  it("show no demo banner and an unavailable chip", () => {
     expect(demoBanner(release, t).show).toBe(false);
-    expect(engineChip(release, t)).toMatchObject({ text: "Setup needed", tone: "warn" });
+    expect(engineChip(release, t)).toMatchObject({ text: "Speech recognition unavailable", tone: "danger" });
   });
 });
 
@@ -48,7 +48,18 @@ describe("demo banner", () => {
   it("explains why a chosen model is not in use", () => {
     const reason = coded("backend.cant_use", "m1 can't be used yet.", { model: "m1", why: coded("backend.untested", "x") });
     const b = demoBanner(bs({ mock: true, reason }), t);
-    expect(b.detail).toContain("hasn't been tested");
-    expect(b.openModelsLabel).toBe("Open Models");
+    expect(b.detail).toContain("hasn't checked the speech model");
+    expect(b.openModelsLabel).toBe("Open Settings");
+  });
+});
+
+describe("first run", () => {
+  const release = bs({ mock: true, release: true });
+  it("takes the whole window until a model is usable, but a broken install keeps the tabs", () => {
+    expect(isFirstRun(release, null)).toBe(true);
+    expect(isFirstRun(release, { state: "offline", reason: "x" })).toBe(true);
+    expect(isFirstRun(release, { state: "problem", reason: "x" })).toBe(false);
+    expect(isFirstRun(bs({ mock: false, label: "m1 (mlx) — VALIDATED" }), null)).toBe(false);
+    expect(isFirstRun(null, null)).toBe(false);
   });
 });

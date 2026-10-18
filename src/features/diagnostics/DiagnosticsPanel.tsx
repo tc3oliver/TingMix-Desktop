@@ -8,6 +8,7 @@ export function DiagnosticsPanel() {
   const t = useT();
   const [d, setD] = useState<Diagnostics | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   useEffect(() => {
     const load = () => api.diagnostics().then(setD).catch((e) => setError(errorText(e)));
     void load();
@@ -30,8 +31,13 @@ export function DiagnosticsPanel() {
     [t("diag.config"), d.config_dir],
     [t("diag.data"), d.data_dir],
   ];
+  const copy = () => {
+    const text = [...rows.map(([k, v]) => `${k}: ${v}`), ...d.recent_errors].join("\n");
+    navigator.clipboard.writeText(text).then(() => setCopied(true)).catch((e) => setError(errorText(e)));
+  };
   return (
     <section>
+      <button onClick={copy}>{copied ? t("diag.copied") : t("diag.copy")}</button>
       <table className="kv"><tbody>{rows.map(([k, v]) => <tr key={k}><th>{k}</th><td>{v}</td></tr>)}</tbody></table>
       <h3>{t("diag.devices")}</h3>
       {d.device_error && <p className="error">{d.device_error}</p>}

@@ -3,14 +3,18 @@ import { ConfirmDelete } from "../../components/ConfirmDelete";
 import { ExportButtons } from "../../components/ExportButtons";
 import { Provenance } from "../../components/Provenance";
 import { TranscriptView } from "../../components/TranscriptView";
-import { useI18n } from "../../i18n";
+import { useI18n, type Translate } from "../../i18n";
 import { api, errorText } from "../../lib/api";
 import { clock } from "../../lib/format";
-import { isMock, labelText } from "../../lib/provenance";
+import { isMock } from "../../lib/provenance";
 import type { HistoryEntry, HistorySummary, Settings } from "../../types/protocol";
 
+/** The host names every live session "Live session"; show a dated, translated title instead. */
+export const entryName = (e: { source: string; name: string; started_at: number }, t: Translate, date: (s: number) => string): string =>
+  e.source === "live" ? t("history.live_name", { date: date(e.started_at) }) : e.name;
+
 export function HistoryPanel({ settings }: { settings: Settings }) {
-  const { t, n, date } = useI18n();
+  const { t, date } = useI18n();
   const [items, setItems] = useState<HistorySummary[]>([]);
   const [open, setOpen] = useState<HistoryEntry | null>(null);
   const [confirm, setConfirm] = useState<string | null>(null);
@@ -38,15 +42,15 @@ export function HistoryPanel({ settings }: { settings: Settings }) {
       <ul className="list">
         {items.map((h) => (
           <li key={h.id} className="row between">
-            <button className="link ellipsis" aria-current={open?.id === h.id} onClick={() => show(h.id)} title={h.name}>{h.name}</button>
+            <button className="link ellipsis" aria-current={open?.id === h.id} onClick={() => show(h.id)} title={entryName(h, t, date)}>{entryName(h, t, date)}</button>
             <span className="muted small">
-              {[t(`history.source.${h.source}`), date(h.started_at), clock(h.duration_s), n("history.segments", h.segments), isMock(h.backend) ? t("prov.mock_short") : labelText(h.backend, t)].join(" · ")}
+              {[...(h.source === "live" ? [] : [date(h.started_at)]), clock(h.duration_s), ...(isMock(h.backend) ? [t("prov.mock_short")] : [])].join(" · ")}
             </span>
             <span className="spacer" />
             {confirm === h.id ? (
-              <ConfirmDelete question={t("history.confirm", { name: h.name })} onConfirm={() => remove(h.id)} onCancel={() => setConfirm(null)} />
+              <ConfirmDelete question={t("history.confirm", { name: entryName(h, t, date) })} onConfirm={() => remove(h.id)} onCancel={() => setConfirm(null)} />
             ) : (
-              <button onClick={() => setConfirm(h.id)} aria-label={t("history.delete_aria", { name: h.name })}>{t("common.delete")}</button>
+              <button onClick={() => setConfirm(h.id)} aria-label={t("history.delete_aria", { name: entryName(h, t, date) })}>{t("common.delete")}</button>
             )}
           </li>
         ))}
@@ -54,12 +58,12 @@ export function HistoryPanel({ settings }: { settings: Settings }) {
       {open && (
         <article className="card">
           <header className="row between">
-            <strong className="ellipsis" title={open.name}>{open.name}</strong>
+            <strong className="ellipsis" title={entryName(open, t, date)}>{entryName(open, t, date)}</strong>
             <span className="muted small">{date(open.started_at)}</span>
           </header>
           <Provenance label={open.backend} />
-          <TranscriptView label={t("history.transcript", { name: open.name })} finals={open.finals} size={Math.min(settings.caption_size, 20)} empty={t("history.empty")} resetKey={open.id} />
-          <ExportButtons name={open.name} segments={open.finals} backend={open.backend} />
+          <TranscriptView label={t("history.transcript", { name: entryName(open, t, date) })} finals={open.finals} size={Math.min(settings.caption_size, 20)} empty={t("history.empty")} resetKey={open.id} />
+          <ExportButtons name={open.source === "live" ? "live-transcript" : open.name} segments={open.finals} backend={open.backend} />
         </article>
       )}
     </section>

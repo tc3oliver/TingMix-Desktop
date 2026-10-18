@@ -4,17 +4,18 @@ import { useFiles } from "../features/files/useFiles";
 import { HistoryPanel } from "../features/history/HistoryPanel";
 import { LivePanel } from "../features/live/LivePanel";
 import { useLive } from "../features/live/useLive";
-import { ModelsPanel } from "../features/models/ModelsPanel";
 import { SetupScreen } from "../features/setup/SetupScreen";
 import { SettingsPanel } from "../features/settings/SettingsPanel";
 import { I18nProvider, resolveLocale, useT } from "../i18n";
 import { hostText } from "../i18n/host";
 import { api, errorText, onBackend, onDrag, onFilesDropped } from "../lib/api";
-import { demoBanner, engineChip, needsSetup } from "../lib/engine";
+import { demoBanner, engineChip, isFirstRun, needsSetup } from "../lib/engine";
 import { isMac, label, shortcutFor } from "../lib/shortcuts";
-import type { BackendState, Settings } from "../types/protocol";
+import type { BackendState, Settings, SetupView } from "../types/protocol";
 
-const TABS = ["live", "files", "history", "models", "settings"] as const;
+// Settings sits at the end of the same tablist but is not numbered: ⌘1–⌘3 are the three working tabs, ⌘, is Settings
+const TABS = ["live", "files", "history", "settings"] as const;
+const NUMBERED = 3;
 type Tab = (typeof TABS)[number];
 
 const DEFAULTS: Settings = { device_id: null, theme: "system", caption_size: 28, save_history: true, language: "auto" };
@@ -53,6 +54,7 @@ function Main({ settings, update, error, setError }: MainProps) {
   const [tab, setTab] = useState<Tab>("live");
   const [bs, setBs] = useState<BackendState | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [setup, setSetup] = useState<SetupView | null>(null);
   const live = useLive();
   const files = useFiles();
 
@@ -88,10 +90,11 @@ function Main({ settings, update, error, setError }: MainProps) {
       const target = e.target as HTMLElement | null;
       if (target && (target.tagName === "TEXTAREA" || (target.tagName === "INPUT" && /text|number|search/.test((target as HTMLInputElement).type)))) return;
       if (e.key === "Escape") return void setError(null);
-      const a = shortcutFor(e, MAC, TABS.length);
+      const a = shortcutFor(e, MAC, NUMBERED);
       if (!a) return;
       e.preventDefault();
       if (a.type === "tab") setTab(TABS[a.index]!);
+      else if (a.type === "settings") setTab("settings");
       else if (a.type === "toggle-live") toggleLive();
       else if (a.type === "choose-file") {
         setTab("files");
@@ -114,17 +117,26 @@ function Main({ settings, update, error, setError }: MainProps) {
 
   const chip = engineChip(bs, t);
   const banner = demoBanner(bs, t);
-  const openModels = () => setTab("models");
+  const openSettings = () => setTab("settings");
   const toggleKey = label(MAC, "Enter");
   // release builds never run on the placeholder engine: until a model is usable the first-run screen replaces Live and Files
   const setupNeeded = needsSetup(bs);
+  const firstRun = isFirstRun(bs, setup);
+
+  if (firstRun) {
+    return (
+      <div className="app">
+        <main className="welcome"><SetupScreen backend={bs} onOpenModels={openSettings} onView={setSetup} first /></main>
+      </div>
+    );
+  }
 
   return (
     <div className="app">
       {banner.show && (
         <div className="banner" role="note">
           <span>{t("banner.text")} {banner.detail}</span>
-          <button onClick={openModels}>{banner.openModelsLabel}</button>
+          <button onClick={openSettings}>{banner.openModelsLabel}</button>
         </div>
       )}
       <div className="top">
@@ -136,19 +148,21 @@ function Main({ settings, update, error, setError }: MainProps) {
               role="tab"
               aria-selected={id === tab}
               aria-controls={`panel-${id}`}
-              aria-keyshortcuts={label(MAC, String(i + 1))}
+              aria-keyshortcuts={id === "settings" ? label(MAC, ",") : label(MAC, String(i + 1))}
               tabIndex={id === tab ? 0 : -1}
-              className={id === tab ? "active" : ""}
-              title={`${t(`tab.${id}`)} (${label(MAC, String(i + 1))})`}
+              className={`${id === tab ? "active" : ""}${id === "settings" ? " end" : ""}`}
+              title={`${t(`tab.${id}`)} (${id === "settings" ? label(MAC, ",") : label(MAC, String(i + 1))})`}
               onClick={() => setTab(id)}
             >
               {t(`tab.${id}`)}
             </button>
           ))}
         </nav>
-        <button className={`engine ${chip.tone}`} onClick={openModels} title={chip.title} aria-label={t("engine.aria", { text: chip.text })}>
-          <span className="ellipsis">{chip.text}</span>
-        </button>
+        {chip && (
+          <button className={`engine ${chip.tone}`} onClick={openSettings} title={chip.title} aria-label={t("engine.aria", { text: chip.text })}>
+            <span className="ellipsis">{chip.text}</span>
+          </button>
+        )}
       </div>
       {bs?.load.error && <p className="error" role="alert">{t("app.load_error", { detail: hostText(bs.load.error, t) })}</p>}
       {error && (
@@ -160,14 +174,13 @@ function Main({ settings, update, error, setError }: MainProps) {
       <main>
         {/* the live and file panels stay mounted so a recording and running jobs survive switching tabs */}
         <div role="tabpanel" id="panel-live" aria-labelledby="tab-live" hidden={tab !== "live"} className="panel live-panel">
-          {setupNeeded ? <SetupScreen backend={bs} onOpenModels={openModels} /> : <LivePanel live={live} settings={settings} onSettings={update} backend={bs} shortcut={toggleKey} onOpenModels={openModels} />}
+          {setupNeeded ? <SetupScreen backend={bs} onOpenModels={openSettings} onView={setSetup} /> : <LivePanel live={live} settings={settings} onSettings={update} backend={bs} shortcut={toggleKey} onOpenModels={openSettings} />}
         </div>
         <div role="tabpanel" id="panel-files" aria-labelledby="tab-files" hidden={tab !== "files"} className="panel">
-          {setupNeeded ? <SetupScreen backend={bs} onOpenModels={openModels} /> : <FilesPanel files={files} settings={settings} backend={bs} onOpenModels={openModels} shortcut={label(MAC, "O")} />}
+          {setupNeeded ? <SetupScreen backend={bs} onOpenModels={openSettings} onView={setSetup} /> : <FilesPanel files={files} settings={settings} backend={bs} onOpenModels={openSettings} shortcut={label(MAC, "O")} />}
         </div>
         {tab === "history" && <div role="tabpanel" id="panel-history" aria-labelledby="tab-history" className="panel"><HistoryPanel settings={settings} /></div>}
-        {tab === "models" && <div role="tabpanel" id="panel-models" aria-labelledby="tab-models" className="panel"><ModelsPanel backend={bs} onOpenModels={openModels} /></div>}
-        {tab === "settings" && <div role="tabpanel" id="panel-settings" aria-labelledby="tab-settings" className="panel"><SettingsPanel settings={settings} onSettings={update} mac={MAC} /></div>}
+        {tab === "settings" && <div role="tabpanel" id="panel-settings" aria-labelledby="tab-settings" className="panel"><SettingsPanel settings={settings} onSettings={update} mac={MAC} backend={bs} onOpenModels={openSettings} /></div>}
       </main>
       {dragging && <div className="drop-overlay" aria-hidden="true"><p>{t("app.drop_overlay")}</p></div>}
     </div>

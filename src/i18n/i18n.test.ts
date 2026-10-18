@@ -52,11 +52,27 @@ describe("formatting", () => {
   });
 });
 
+describe("platform words", () => {
+  it("say this Mac only on macOS, and use the platform's own settings path", () => {
+    const mac = translator("en", () => true);
+    const win = translator("en", () => false);
+    expect(mac("mic.restricted")).toContain("on this Mac");
+    expect(win("mic.restricted")).toContain("on this computer");
+    expect(mac("mic.denied")).toContain("System Settings › Privacy & Security › Microphone");
+    expect(win("mic.denied")).toContain("Settings › Privacy & security › Microphone");
+    expect(translator("zh-TW", () => false)("mic.restricted")).toBe("這台電腦限制了麥克風存取（描述檔或家長監護）。");
+    expect(win("mic.open_settings")).toBe("Open Settings");
+  });
+  it("never leave a host detail in user-facing text", () => {
+    for (const k of ["host.live.disconnected", "host.setup.offline", "files.failed", "app.load_error", "host.backend.unreadable"] as const) expect(en[k], k).not.toContain("{detail}");
+  });
+});
+
 describe("host messages", () => {
   const coded = (code: string, text: string, params: Record<string, unknown> = {}) => JSON.stringify({ code, params, text });
   it("translate by code and keep plain text as it is", () => {
     const m = coded("mic.denied", "English fallback");
-    expect(hostText(m, translator("en"))).toContain("Microphone access is denied");
+    expect(hostText(m, translator("en"))).toContain("can't use the microphone");
     expect(hostText(m, translator("zh-TW"))).toContain("麥克風");
     expect(hostText("io error at /x", translator("zh-TW"))).toBe("io error at /x");
     expect(hostText(null)).toBe("");

@@ -3,9 +3,8 @@ import { ExportButtons } from "../../components/ExportButtons";
 import { Provenance } from "../../components/Provenance";
 import { TranscriptView } from "../../components/TranscriptView";
 import { useT } from "../../i18n";
-import { hostText } from "../../i18n/host";
+import { hostCode, hostText } from "../../i18n/host";
 import { clock } from "../../lib/format";
-import { labelText } from "../../lib/provenance";
 import { initialSignal, observe, warningFor } from "../../lib/signal";
 import type { BackendState, Settings } from "../../types/protocol";
 import { finalsOf, openOf } from "./reducer";
@@ -43,6 +42,9 @@ export function LivePanel({ live, settings, onSettings, backend, shortcut, onOpe
   const meterValue = Math.round(Math.max(-80, Math.min(0, status.level_db)));
   const meterPct = status.state === "recording" ? ((meterValue + 80) / 80) * 100 : 0;
   const mock = !backend || backend.info.mock;
+  // before the first session the host reports the placeholder label; the backend in use is the truth until a session has run
+  const label = status.session_id ? status.backend : backend?.info.label;
+  const disconnected = status.state === "error" && hostCode(status.message) === "live.disconnected";
 
   return (
     <section className="live">
@@ -101,22 +103,24 @@ export function LivePanel({ live, settings, onSettings, backend, shortcut, onOpe
       )}
       {devices !== null && list.length === 0 && <p className="muted">{t("live.no_mic")}</p>}
       {error && <p className="error" role="alert">{error}</p>}
-      {status.message && <p className="muted small">{hostText(status.message, t)}</p>}
-      {warning && (
+      {disconnected && (
+        <div className="notice danger" role="alert">
+          <span>{t("live.disconnected")}</span>
+          <button onClick={() => start(selected)}>{t("live.start_again")}</button>
+        </div>
+      )}
+      {status.message && !disconnected && <p className="muted small">{hostText(status.message, t)}</p>}
+      {warning === "silence" && <p className="muted small" role="status">{t("signal.hint")}</p>}
+      {warning === "no_data" && (
         <div className="notice warn" role="alert">
           <div>
-            <strong>
-              {warning === "silence"
-                ? device ? t("signal.silence_title", { device }) : t("signal.silence_title_default")
-                : device ? t("signal.no_data", { device }) : t("signal.no_data_default")}
-            </strong>
-            {warning === "silence" && <p>{t("signal.silence_body")}</p>}
+            <strong>{device ? t("signal.no_data", { device }) : t("signal.no_data_default")}</strong>
           </div>
           <button onClick={stopAndChoose}>{t("signal.stop_choose")}</button>
         </div>
       )}
 
-      <Provenance label={status.backend} />
+      {backend && <Provenance label={label} />}
       <TranscriptView
         label={t("live.captions")}
         finals={finals}
@@ -132,16 +136,13 @@ export function LivePanel({ live, settings, onSettings, backend, shortcut, onOpe
               <button onClick={onOpenModels}>{t("banner.setup")}</button>
             </>
           ) : (
-            <p>{t("live.empty_real", { shortcut })}</p>
+            <p>{status.state === "recording" ? t("live.listening") : t("live.tip", { shortcut })}</p>
           )
         }
       />
       <div className="row footer">
-        <ExportButtons name="live-transcript" segments={finals} backend={status.backend} />
-        <span className="muted small ellipsis" title={`${status.device} ${labelText(status.backend, t)}`}>
-          {status.device ? `${status.device} · ` : ""}
-          {labelText(status.backend, t)}
-        </span>
+        <ExportButtons name="live-transcript" segments={finals} backend={label} />
+        <span className="muted small ellipsis" title={status.device}>{status.device}</span>
         {status.overflow_samples > 0 && <span className="chip warn small">{t("live.dropped")}</span>}
       </div>
     </section>

@@ -1,5 +1,6 @@
 export type Action =
   | { type: "tab"; index: number }
+  | { type: "settings" }
   | { type: "toggle-live" }
   | { type: "choose-file" }
   | { type: "caption"; delta: 2 | -2 };
@@ -19,6 +20,7 @@ export function shortcutFor(e: Key, mac: boolean, tabCount: number): Action | nu
   const mod = mac ? e.metaKey && !e.ctrlKey : e.ctrlKey && !e.metaKey;
   if (!mod || e.altKey) return null;
   if (/^[1-9]$/.test(e.key) && Number(e.key) <= tabCount && !e.shiftKey) return { type: "tab", index: Number(e.key) - 1 };
+  if (e.key === "," && !e.shiftKey) return { type: "settings" };
   if (e.key === "Enter") return { type: "toggle-live" };
   if (e.key.toLowerCase() === "o" && !e.shiftKey) return { type: "choose-file" };
   if (e.key === "=" || e.key === "+") return { type: "caption", delta: 2 };

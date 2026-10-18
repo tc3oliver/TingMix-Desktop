@@ -2,7 +2,6 @@ import { ExportButtons } from "../../components/ExportButtons";
 import { Provenance } from "../../components/Provenance";
 import { TranscriptView } from "../../components/TranscriptView";
 import { useT, type Translate } from "../../i18n";
-import { hostText } from "../../i18n/host";
 import { clock } from "../../lib/format";
 import type { BackendState, Settings } from "../../types/protocol";
 import { finalsOf, openOf } from "../live/reducer";
@@ -54,6 +53,7 @@ export function FilesPanel({ files, settings, backend, onOpenModels, shortcut }:
               <span className={`pill ${j.state}`}>{t(`files.state.${j.state}`)}</span>
               <span className="muted small">{t("files.audio_done", { time: clock(j.audioS) })}</span>
               <span className="spacer" />
+              {j.state !== "running" && j.state !== "failed" && <ExportButtons name={j.name.replace(/\.[^.]+$/, "")} segments={finals} backend={j.backend} />}
               {j.state === "running" ? (
                 <button onClick={() => cancel(j.id)}>{t("common.cancel")}</button>
               ) : (
@@ -61,13 +61,10 @@ export function FilesPanel({ files, settings, backend, onOpenModels, shortcut }:
               )}
             </header>
             {j.state === "running" && <progress aria-label={t("files.progress", { name: j.name })} />}
-            {j.state === "failed" && <p className="error" role="alert">{t("files.failed", { detail: hostText(j.message, t) })}</p>}
+            {j.state === "failed" && <p className="error" role="alert">{t("files.failed")}</p>}
             <Provenance label={j.backend} />
-            <TranscriptView label={t("files.transcript", { name: j.name })} finals={finals} open={openOf(j.transcript)} size={Math.min(settings.caption_size, 20)} follow={j.state === "running"} empty={emptyText(j, t)} resetKey={j.id} />
-            <div className="row">
-              <ExportButtons name={j.name.replace(/\.[^.]+$/, "")} segments={finals} backend={j.backend} />
-              {j.state === "done" && settings.save_history && finals.length > 0 && <span className="muted small">{t("files.saved_history")}</span>}
-            </div>
+            {j.state !== "failed" && <TranscriptView label={t("files.transcript", { name: j.name })} finals={finals} open={openOf(j.transcript)} size={Math.min(settings.caption_size, 20)} follow={j.state === "running"} empty={emptyText(j, t)} resetKey={j.id} />}
+            {j.state === "done" && settings.save_history && finals.length > 0 && <p className="muted small">{t("files.saved_history")}</p>}
           </article>
         );
       })}

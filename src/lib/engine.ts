@@ -1,7 +1,6 @@
 import type { Translate } from "../i18n";
 import { hostCode, hostText, reasonText } from "../i18n/host";
-import type { BackendState } from "../types/protocol";
-import { friendlyName } from "./format";
+import type { BackendState, SetupView } from "../types/protocol";
 
 export type Tone = "neutral" | "warn" | "danger";
 
@@ -12,15 +11,14 @@ export interface Chip {
   title: string;
 }
 
-/** The single engine status next to the tabs (state table of the UI brief, P0-2). */
-export function engineChip(bs: BackendState | null, t: Translate): Chip {
-  if (!bs) return { text: t("engine.checking"), tone: "neutral", title: t("engine.checking_title") };
+/** The one status next to the tabs, or null when everything works: a ready app shows no engine name at all. */
+export function engineChip(bs: BackendState | null, t: Translate): Chip | null {
+  if (!bs) return null;
   if (bs.load.error) return { text: t("engine.failed"), tone: "danger", title: hostText(bs.load.error, t) };
   const { info, load } = bs;
-  if (info.mock) return { text: info.usable ? t("engine.demo") : t("engine.setup"), tone: "warn", title: reasonText(info.reason, t) };
-  const name = friendlyName(info.label.split(" (")[0] ?? info.label);
-  if (load.loading) return { text: t("engine.loading", { name }), tone: "neutral", title: info.label };
-  return { text: name, tone: "neutral", title: info.label };
+  if (info.mock) return info.usable ? { text: t("engine.demo"), tone: "warn", title: reasonText(info.reason, t) } : { text: t("engine.failed"), tone: "danger", title: reasonText(info.reason, t) };
+  if (load.loading) return { text: t("engine.loading"), tone: "neutral", title: info.label };
+  return null;
 }
 
 /** Whether the full-width demo banner shows, and the sentence after it. A chosen-but-unusable model explains itself. */
@@ -33,3 +31,9 @@ export function demoBanner(bs: BackendState | null, t: Translate): { show: boole
 
 /** Release builds never run on the placeholder engine: until a model is usable the first-run screen replaces Live and Files. */
 export const needsSetup = (bs: BackendState | null): boolean => bs !== null && !bs.info.usable;
+
+/**
+ * First run uses the whole window with no tab bar: nothing usable yet and no installed model that merely failed.
+ * A broken installed model ("problem") keeps the tabs so History stays reachable.
+ */
+export const isFirstRun = (bs: BackendState | null, setup: SetupView | null): boolean => needsSetup(bs) && setup?.state !== "problem";

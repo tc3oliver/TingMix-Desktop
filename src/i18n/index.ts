@@ -28,9 +28,13 @@ export function format(template: string, params: Params = {}): string {
   return template.replace(/\{(\w+)\}/g, (m, k: string) => (k in params ? String(params[k]) : m));
 }
 
-export function translator(locale: LocaleId): Translate {
+/** `{computer}`, `{system_settings}` and `{privacy_path}` in any string follow the OS: "this Mac" only on macOS. */
+const onMac = (): boolean => typeof navigator !== "undefined" && /mac|iphone|ipad/i.test(navigator.platform ?? "");
+
+export function translator(locale: LocaleId, mac: () => boolean = onMac): Translate {
   const dict = LOCALES[locale].dict;
-  return (key, params) => format(dict[key] ?? en[key], params);
+  const word = (name: "computer" | "settings" | "privacy") => dict[`os.${name}_${mac() ? "mac" : "other"}` as Key];
+  return (key, params) => format(dict[key] ?? en[key], { computer: word("computer"), system_settings: word("settings"), privacy_path: word("privacy"), ...params });
 }
 
 /** Plural form chosen with `Intl.PluralRules` for the locale: `<base>_one` / `<base>_other`, with `{count}` filled in. */

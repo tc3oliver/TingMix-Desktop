@@ -20,6 +20,7 @@ interface Props {
 }
 
 const NEAR_BOTTOM_PX = 48;
+const FADE_MS = 150; // keep equal to `.line.ghost` in styles.css
 
 export function TranscriptView({ finals, open = [], size, empty, label, follow = false, live = false, resetKey = null }: Props) {
   const t = useT();
@@ -27,6 +28,16 @@ export function TranscriptView({ finals, open = [], size, empty, label, follow =
   const atBottom = useRef(true);
   const [away, setAway] = useState(false);
   const count = finals.length + open.length;
+  // a partial that vanishes without a final was retracted as noise: it fades out instead of blinking away
+  const prevOpen = useRef<PartialEvent[]>([]);
+  const [ghosts, setGhosts] = useState<PartialEvent[]>([]);
+  useEffect(() => {
+    const gone = prevOpen.current.filter((p) => !open.some((o) => o.segment_id === p.segment_id) && !finals.some((f) => f.segment_id === p.segment_id));
+    prevOpen.current = open;
+    if (gone.length === 0) return;
+    setGhosts((g) => [...g, ...gone]);
+    window.setTimeout(() => setGhosts((g) => g.filter((x) => !gone.includes(x))), FADE_MS); // not cleared: a newer update must not strand the ghost
+  }, [open, finals]);
   const signature = `${finals.length}:${open.map((p) => `${p.segment_id}.${p.revision}`).join(",")}`;
 
   useEffect(() => {
@@ -67,6 +78,12 @@ export function TranscriptView({ finals, open = [], size, empty, label, follow =
         ))}
       </div>
       <div className="partials">
+        {ghosts.map((p) => (
+          <p key={`ghost-${p.segment_id}-${p.revision}`} className="line partial ghost" aria-hidden="true">
+            <time>{clock(p.start)}</time>
+            <span>{p.text}</span>
+          </p>
+        ))}
         {open.map((p) => {
           const chars = [...p.text];
           return (
