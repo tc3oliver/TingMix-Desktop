@@ -28,7 +28,10 @@ pub struct LiveStatus {
     /// RMS level of the latest audio block in dBFS (-120 for digital silence).
     pub level_db: f64,
     pub device: String,
+    /// Label of the engine of the latest session; empty before any session has run.
     pub backend: String,
+    /// The latest session ran on the placeholder engine (debug builds only). The UI marks its output as demo data.
+    pub demo: bool,
     pub coalesced_partials: u64,
     pub message: Option<String>,
 }

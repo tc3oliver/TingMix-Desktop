@@ -75,7 +75,9 @@ impl Store {
 
     pub fn load_history(&self, id: &str) -> Result<HistoryEntry, String> {
         let b = fs::read(self.history_path(id)?).map_err(|e| e.to_string())?;
-        serde_json::from_slice(&b).map_err(|e| e.to_string())
+        serde_json::from_slice(&b)
+            .map(legacy_name)
+            .map_err(|e| e.to_string())
     }
 
     pub fn delete_history(&self, id: &str) -> Result<(), String> {
@@ -91,6 +93,7 @@ impl Store {
             .flatten()
             .filter(|f| f.path().extension().is_some_and(|x| x == "json"))
             .filter_map(|f| serde_json::from_slice::<HistoryEntry>(&fs::read(f.path()).ok()?).ok())
+            .map(legacy_name)
             .map(|e| HistorySummary {
                 segments: e.finals.len(),
                 id: e.id,
@@ -104,6 +107,15 @@ impl Store {
         out.sort_by(|a, b| b.started_at.cmp(&a.started_at).then(b.id.cmp(&a.id)));
         out
     }
+}
+
+/// Live entries saved by earlier builds are named "Live session" in English; live entries now have no name and the UI titles
+/// them from the start time in the user's language.
+fn legacy_name(mut e: HistoryEntry) -> HistoryEntry {
+    if e.source == "live" && e.name == "Live session" {
+        e.name.clear();
+    }
+    e
 }
 
 #[cfg(test)]
@@ -150,6 +162,32 @@ mod tests {
         assert_eq!(s.settings().caption_size, 96);
         fs::write(s.config_dir().join("settings.json"), b"{broken").unwrap();
         assert_eq!(s.settings().caption_size, 28);
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn live_entries_saved_with_the_old_english_name_read_back_nameless() {
+        let (s, dir) = store("legacy");
+        let mut old = entry("live-9", 9);
+        old.name = "Live session".into();
+        let mut file = entry("job-9", 8);
+        file.source = "file".into();
+        file.name = "Live session".into(); // a file really named like that keeps its name
+        s.save_history(&old).unwrap();
+        s.save_history(&file).unwrap();
+        assert_eq!(s.load_history("live-9").unwrap().name, "");
+        let names: Vec<_> = s
+            .list_history()
+            .into_iter()
+            .map(|h| (h.id, h.name))
+            .collect();
+        assert_eq!(
+            names,
+            [
+                ("live-9".to_string(), String::new()),
+                ("job-9".to_string(), "Live session".to_string())
+            ]
+        );
         fs::remove_dir_all(dir).unwrap();
     }
 

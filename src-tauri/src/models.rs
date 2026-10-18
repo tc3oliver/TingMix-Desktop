@@ -237,18 +237,18 @@ impl Models {
     ) -> Result<PendingInstall, String> {
         let bytes = if zip {
             let mut z =
-                zip::ZipArchive::new(std::fs::File::open(&path).map_err(|e| e.to_string())?)
-                    .map_err(|e| e.to_string())?;
+                zip::ZipArchive::new(std::fs::File::open(&path).map_err(crate::coded::system)?)
+                    .map_err(crate::coded::system)?;
             let mut b = Vec::new();
             std::io::Read::read_to_end(
                 &mut std::io::Read::take(
                     z.by_name(tingmix_models::store::MANIFEST_FILE)
-                        .map_err(|e| e.to_string())?,
+                        .map_err(crate::coded::system)?,
                     1 << 20,
                 ),
                 &mut b,
             )
-            .map_err(|e| e.to_string())?;
+            .map_err(crate::coded::system)?;
             b
         } else {
             read_manifest_file(&path.join(tingmix_models::store::MANIFEST_FILE))?
@@ -257,7 +257,7 @@ impl Models {
             .reg()?
             .verifier()
             .parse(&bytes)
-            .map_err(|e| e.to_string())?;
+            .map_err(crate::coded::system)?;
         self.pending_for(m, token, Some((path, zip)))
     }
 
@@ -278,7 +278,8 @@ impl Models {
     ) -> Result<PendingInstall, String> {
         let reg = self.reg()?;
         let mf = m.manifest();
-        mf.validate(self.loopback_http).map_err(|e| e.to_string())?;
+        mf.validate(self.loopback_http)
+            .map_err(|e| crate::coded::model_error(&e))?;
         let missing = reg.missing_acceptances(mf);
         let out = PendingInstall {
             token: token.clone(),
@@ -343,8 +344,9 @@ impl Models {
         let cancel = self.start_op(kind, &m.manifest().id, notify.clone())?;
         for l in &missing {
             if let Err(e) = reg.record_acceptance(&m, l) {
-                self.finish_op(Err(e.to_string()), &notify);
-                return Err(e.to_string());
+                let e = crate::coded::model_error(&e);
+                self.finish_op(Err(e.clone()), &notify);
+                return Err(e);
             }
         }
         self.pending.lock().unwrap().remove(token);
@@ -366,7 +368,7 @@ impl Models {
                             }
                         })
                         .map(|_| ())
-                        .map_err(|e| e.to_string())
+                        .map_err(|e| crate::coded::model_error(&e))
                 });
                 this.finish_op(r, &notify);
             })
@@ -392,7 +394,7 @@ impl Models {
                     } else {
                         import_dir(reg, &path)
                     };
-                    r.map(|_| ()).map_err(|e| e.to_string())
+                    r.map(|_| ()).map_err(|e| crate::coded::model_error(&e))
                 });
                 this.finish_op(r, &notify);
             })
@@ -413,20 +415,28 @@ impl Models {
     }
 
     pub fn activate(&self, id: &str) -> Result<(), String> {
-        self.reg()?.activate(id).map_err(|e| e.to_string())
+        self.reg()?
+            .activate(id)
+            .map_err(|e| crate::coded::model_error(&e))
     }
 
     pub fn rollback(&self) -> Result<String, String> {
-        self.reg()?.rollback().map_err(|e| e.to_string())
+        self.reg()?
+            .rollback()
+            .map_err(|e| crate::coded::model_error(&e))
     }
 
     pub fn remove(&self, id: &str) -> Result<(), String> {
-        self.reg()?.remove(id).map_err(|e| e.to_string())
+        self.reg()?
+            .remove(id)
+            .map_err(|e| crate::coded::model_error(&e))
     }
 
     /// Re-hash every file of an installed version (slow for large models).
     pub fn verify(&self, id: &str) -> Result<(), String> {
-        self.reg()?.verify_full(id).map_err(|e| e.to_string())
+        self.reg()?
+            .verify_full(id)
+            .map_err(|e| crate::coded::model_error(&e))
     }
 
     pub(crate) fn start_op(
@@ -491,11 +501,15 @@ impl Models {
 }
 
 pub fn read_manifest_file(path: &Path) -> Result<Vec<u8>, String> {
-    let md = std::fs::metadata(path).map_err(|e| e.to_string())?;
+    let md = std::fs::metadata(path).map_err(crate::coded::system)?;
     if md.len() > 1 << 20 {
-        return Err("manifest file is larger than 1 MiB".into());
+        return Err(crate::coded::coded(
+            "models.manifest_too_large",
+            serde_json::json!({}),
+            "manifest file is larger than 1 MiB",
+        ));
     }
-    std::fs::read(path).map_err(|e| e.to_string())
+    std::fs::read(path).map_err(crate::coded::system)
 }
 
 #[cfg(test)]

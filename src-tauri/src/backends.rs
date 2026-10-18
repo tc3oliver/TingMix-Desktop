@@ -342,8 +342,9 @@ pub fn plain(why: &str, backend: &str) -> String {
             f.to_uppercase().collect::<String>() + c.as_str()
         })
     };
-    use crate::coded::coded;
+    use crate::coded::{coded, computer};
     use serde_json::json;
+    let (computer, mac) = (computer(), cfg!(target_os = "macos"));
     if why.contains("not registered in this build") || why.contains("not available in this build") {
         let hint = if backend == MLX {
             " Use the MLX build of TingMix (tools/bundle-mlx.sh)."
@@ -360,30 +361,79 @@ pub fn plain(why: &str, backend: &str) -> String {
     } else if why.contains("no verified compatibility probe") {
         coded(
             "backend.untested",
-            json!({}),
-            "This model hasn't been tested on this Mac yet. Press “Test on this Mac”.",
+            json!({ "mac": mac }),
+            format!("This model hasn't been tested on {computer} yet. Press “Test on this Mac”."),
         )
     } else if why.contains("compatibility probe failed") {
         coded(
             "backend.test_failed",
-            json!({}),
-            "The test run on this Mac failed, so the model is not used. See the Models tab for the details.",
+            json!({ "mac": mac }),
+            format!("The test run on {computer} failed, so the model is not used. See the Models tab for the details."),
         )
     } else if why.contains("is not available") && why.contains("runtime") {
         coded(
             "backend.runtime_missing",
-            json!({ "engine": engine }),
-            format!("The {engine} runtime is not available on this Mac (its library is missing)."),
+            json!({ "engine": engine, "mac": mac }),
+            format!(
+                "The {engine} runtime is not available on {computer} (its library is missing)."
+            ),
         )
     } else if let Some(d) = why.strip_prefix("probe failed: ") {
         coded(
             "backend.test_failed_detail",
-            json!({ "detail": sentence(d) }),
-            format!("The test run on this Mac failed: {}", sentence(d)),
+            json!({ "detail": sentence(d), "mac": mac }),
+            format!("The test run on {computer} failed: {}", sentence(d)),
+        )
+    } else if let Some((need, have)) = parse_ram(why) {
+        coded(
+            "backend.ram",
+            json!({ "need": need, "have": have }),
+            format!("This model needs {need} GiB of memory; {computer} has {have} GiB."),
+        )
+    } else if why.starts_with("built for ") || why.contains("this machine is") {
+        coded(
+            "backend.platform",
+            json!({ "mac": mac }),
+            format!("This model was built for a different system than {computer}."),
+        )
+    } else if let Some(f) = why.strip_prefix("CPU lacks required feature ") {
+        coded(
+            "backend.cpu",
+            json!({ "feature": f.trim() }),
+            format!(
+                "The processor of {computer} lacks a feature this model needs ({}).",
+                f.trim()
+            ),
+        )
+    } else if why.starts_with("needs Apple M") {
+        coded(
+            "backend.chip",
+            json!({}),
+            "This model needs a newer Apple chip than this one.",
+        )
+    } else if why.contains("is older than the required") {
+        coded(
+            "backend.runtime_old",
+            json!({ "engine": engine }),
+            format!("The {engine} runtime on {computer} is too old for this model."),
         )
     } else {
-        sentence(why)
+        coded(
+            "backend.unknown",
+            json!({ "detail": sentence(why) }),
+            format!("This model can't be used: {}", sentence(why)),
+        )
     }
+}
+
+/// "needs 16 GiB RAM, machine has 8 GiB" -> (16, 8)
+fn parse_ram(why: &str) -> Option<(u64, u64)> {
+    let rest = why.strip_prefix("needs ")?;
+    let (need, rest) = rest.split_once(" GiB RAM, machine has ")?;
+    Some((
+        need.trim().parse().ok()?,
+        rest.trim().strip_suffix(" GiB")?.trim().parse().ok()?,
+    ))
 }
 
 pub fn decide(models: &Models, rt: &Runtimes) -> Decision {
@@ -508,8 +558,13 @@ pub fn resolve(models: &Models, rt: &Runtimes) -> Result<Resolved, String> {
         });
     };
     let model = models.reg()?.open_model(&id).map_err(|e| e.to_string())?;
-    let backend = Dyn::spawn(move || build(&model, &backend))
-        .map_err(|e| format!("could not load {id}: {e}"))?;
+    let backend = Dyn::spawn(move || build(&model, &backend)).map_err(|e| {
+        crate::coded::coded(
+            "backend.load_failed",
+            serde_json::json!({ "model": id, "detail": e }),
+            format!("could not load {id}: {e}"),
+        )
+    })?;
     Ok(Resolved {
         backend,
         label: i.label,
@@ -882,7 +937,11 @@ fn probe_mlx(
             2,
         )
         .map_err(|e| e.to_string()),
-        Err(e) => Err(format!("MLX probe worker unavailable: {e}")),
+        Err(e) => Err(crate::coded::failure(
+            "backend.worker_missing",
+            "The MLX test helper is missing",
+            e,
+        )),
     })
 }
 
@@ -919,7 +978,11 @@ fn probe_onnx_large(
             2,
         )
         .map_err(|e| e.to_string()),
-        Err(e) => Err(format!("ONNX probe worker unavailable: {e}")),
+        Err(e) => Err(crate::coded::failure(
+            "backend.worker_missing",
+            "The ONNX test helper is missing",
+            e,
+        )),
     })
 }
 
@@ -1085,6 +1148,46 @@ mod tests {
     }
 
     #[test]
+    fn every_rejection_reason_gets_a_code_and_wording_that_names_the_computer() {
+        let c = |why: &str| serde_json::from_str::<serde_json::Value>(&plain(why, MLX)).unwrap();
+        assert_eq!(
+            c("needs 16 GiB RAM, machine has 8 GiB")["params"],
+            serde_json::json!({ "need": 16, "have": 8 })
+        );
+        assert_eq!(
+            c("built for macos/aarch64, this machine is windows/x86_64")["code"],
+            "backend.platform"
+        );
+        assert_eq!(
+            c("CPU lacks required feature avx2")["params"]["feature"],
+            "avx2"
+        );
+        assert_eq!(
+            c("needs Apple M3 or newer, no Apple Silicon found")["code"],
+            "backend.chip"
+        );
+        assert_eq!(
+            c("runtime mlx 0.1 is older than the required 0.2")["code"],
+            "backend.runtime_old"
+        );
+        assert_eq!(c("something new we never saw")["code"], "backend.unknown");
+        // the English fallback follows the platform; the flag lets the UI do the same
+        let v = c("no verified compatibility probe result for this backend");
+        assert_eq!(v["params"]["mac"], cfg!(target_os = "macos"));
+        let text = v["text"].as_str().unwrap();
+        assert_eq!(
+            text.contains("this Mac yet"),
+            cfg!(target_os = "macos"),
+            "{text}"
+        );
+        assert_eq!(
+            text.contains("this computer yet"),
+            !cfg!(target_os = "macos"),
+            "{text}"
+        );
+    }
+
+    #[test]
     fn selection_reasons_are_plain_language() {
         let mlx = plain("backend mlx is not registered in this build", MLX);
         assert!(
@@ -1107,10 +1210,7 @@ mod tests {
         );
         assert!(plain("backend mlx is not registered in this build", MLX)
             .contains("\"backend.missing_engine\""));
-        assert_eq!(
-            plain("needs 16 GiB RAM, machine has 8 GiB", MLX),
-            "Needs 16 GiB RAM, machine has 8 GiB"
-        );
+        assert!(plain("needs 16 GiB RAM, machine has 8 GiB", MLX).contains("backend.ram"));
     }
 
     #[test]

@@ -68,11 +68,11 @@ mod imp {
         std::process::Command::new("/usr/bin/open")
             .arg("x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")
             .status()
-            .map_err(|e| e.to_string())
+            .map_err(crate::coded::system)
             .and_then(|s| {
                 s.success()
                     .then_some(())
-                    .ok_or_else(|| format!("open exited with {s}"))
+                    .ok_or_else(|| crate::coded::system(format!("open exited with {s}")))
             })
     }
 }
@@ -88,10 +88,11 @@ mod imp {
         MicStatus::Unsupported
     }
     pub fn open_settings() -> Result<(), String> {
-        Err(
-            "there is no per-app microphone setting on this system; check the OS privacy settings"
-                .into(),
-        )
+        Err(crate::coded::coded(
+            "mic.no_app_setting",
+            serde_json::json!({}),
+            "there is no per-app microphone setting on this system; check the OS privacy settings",
+        ))
     }
 }
 
@@ -111,7 +112,7 @@ pub fn ensure_access() -> Result<(), String> {
         MicStatus::Restricted => Err(coded(
             "mic.restricted",
             json!({}),
-            "Microphone access is restricted by a profile or parental controls on this Mac.",
+            format!("Microphone access is restricted by a profile or parental controls on {}.", crate::coded::computer()),
         )),
         MicStatus::NotDetermined => Err(coded(
             "mic.unanswered",

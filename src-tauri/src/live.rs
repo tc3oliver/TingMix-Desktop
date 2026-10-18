@@ -35,8 +35,24 @@ struct MicSource {
 impl MicSource {
     fn open(device_id: Option<String>) -> Result<Self, String> {
         // two seconds of ring: the pump drains every few ms, so this only absorbs a stalled thread
-        let (guard, reader) =
-            start_capture(device_id.as_deref(), 2.0).map_err(|e| e.to_string())?;
+        let (guard, reader) = start_capture(device_id.as_deref(), 2.0).map_err(|e| {
+            use crate::coded::{coded, failure};
+            use tingmix_audio::AudioError as A;
+            match &e {
+                A::NoInputDevice => coded("live.no_device", serde_json::json!({}), e.to_string()),
+                A::DeviceNotFound(_) => coded(
+                    "live.device_not_found",
+                    serde_json::json!({}),
+                    e.to_string(),
+                ),
+                A::PermissionDenied => coded("mic.denied", serde_json::json!({}), e.to_string()),
+                _ => failure(
+                    "live.device_error",
+                    "The microphone could not be opened",
+                    &e,
+                ),
+            }
+        })?;
         Ok(Self {
             _guard: guard,
             reader,
@@ -101,6 +117,7 @@ impl Shared {
             state: LiveState::Starting,
             session_id: Some(id.clone()),
             level_db: -120.0,
+            demo: label.starts_with("Mock"),
             backend: label,
             ..LiveStatus::default()
         };
@@ -180,7 +197,7 @@ impl Live {
                     let _ = ready_tx.send(Err(e));
                 }
             })
-            .map_err(|e| e.to_string())?;
+            .map_err(crate::coded::system)?;
         match ready_rx.recv() {
             Ok(Ok(())) => Ok(Self {
                 shared,
@@ -191,7 +208,11 @@ impl Live {
                 let _ = thread.join();
                 Err(e)
             }
-            Err(_) => Err("capture thread died while starting".into()),
+            Err(_) => Err(crate::coded::coded(
+                "live.start_failed",
+                serde_json::json!({}),
+                "capture thread died while starting",
+            )),
         }
     }
 
@@ -454,6 +475,10 @@ mod tests {
         assert!(snap.open.is_empty());
         assert_eq!(persisted.lock().unwrap().last(), Some(&1));
         let st = live.shared.status();
+        assert!(
+            st.demo,
+            "a session on the placeholder engine is flagged as demo"
+        );
         assert_eq!(
             (st.state, st.device.as_str(), st.backend.as_str()),
             (LiveState::Idle, "synthetic", BACKEND_LABEL)

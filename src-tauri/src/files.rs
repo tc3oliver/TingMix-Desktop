@@ -52,7 +52,11 @@ pub fn run(
         Err(e) => Outcome {
             state: JobState::Failed,
             audio_s,
-            message: Some(e.to_string()),
+            message: Some(crate::coded::failure(
+                "files.decode_failed",
+                "The file could not be decoded",
+                e,
+            )),
         },
         Ok(()) if cancel.load(Ordering::SeqCst) => Outcome {
             state: JobState::Cancelled,

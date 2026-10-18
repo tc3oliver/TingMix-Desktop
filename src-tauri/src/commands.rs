@@ -32,7 +32,7 @@ fn now_s() -> u64 {
 #[tauri::command]
 pub async fn list_input_devices() -> Result<Vec<DeviceDto>, String> {
     tingmix_audio::list_input_devices()
-        .map_err(|e| e.to_string())
+        .map_err(crate::coded::system)
         .map(|d| {
             d.into_iter()
                 .map(|d| DeviceDto {
@@ -85,7 +85,8 @@ pub async fn live_start(
             let entry = HistoryEntry {
                 id: id.clone(),
                 source: "live".into(),
-                name: "Live session".into(),
+                // the UI titles live entries from `started_at` in its own language
+                name: String::new(),
                 started_at: started,
                 duration_s: dur,
                 backend: label.clone(),
@@ -146,7 +147,7 @@ pub async fn live_snapshot(state: State<'_, AppState>) -> Result<LiveSnapshot, S
         },
         None => LiveSnapshot {
             status: LiveStatus {
-                backend: BACKEND_LABEL.into(),
+                backend: String::new(),
                 level_db: -120.0,
                 ..Default::default()
             },
@@ -172,9 +173,9 @@ pub async fn file_pick(
         )
         .blocking_pick_file();
     let Some(p) = picked else { return Ok(None) };
-    Ok(Some(
-        state.register_file(p.into_path().map_err(|e| e.to_string())?),
-    ))
+    Ok(Some(state.register_file(
+        p.into_path().map_err(crate::coded::system)?,
+    )))
 }
 
 #[tauri::command]
@@ -214,7 +215,7 @@ pub async fn file_start(
     std::thread::Builder::new()
         .name("tingmix-file".into())
         .spawn(move || run_job(app, jid, name, path, cancel, resolved))
-        .map_err(|e| e.to_string())?;
+        .map_err(crate::coded::system)?;
     Ok(JobStarted {
         job_id,
         backend: backend_label,
@@ -262,7 +263,11 @@ fn run_job(
     .unwrap_or_else(|_| files::Outcome {
         state: JobState::Failed,
         audio_s: 0.0,
-        message: Some("decoder crashed on this file".into()),
+        message: Some(coded(
+            "files.crashed",
+            json!({}),
+            "decoder crashed on this file",
+        )),
     });
     if let Some((_, j)) = st
         .jobs
@@ -367,8 +372,10 @@ pub async fn export_text(
         .add_filter(extension.to_uppercase(), &[extension.as_str()])
         .blocking_save_file();
     let Some(p) = picked else { return Ok(None) };
-    let path = p.into_path().map_err(|e| e.to_string())?;
-    std::fs::write(&path, content).map_err(|e| e.to_string())?;
+    let path = p.into_path().map_err(crate::coded::system)?;
+    std::fs::write(&path, content).map_err(|e| {
+        crate::coded::failure("export.write_failed", "The file could not be saved", e)
+    })?;
     Ok(Some(path.display().to_string()))
 }
 
@@ -383,7 +390,10 @@ pub async fn settings_set(
     state: State<'_, AppState>,
     settings: Settings,
 ) -> Result<Settings, String> {
-    let saved = state.store.save_settings(settings)?;
+    let saved = state
+        .store
+        .save_settings(settings)
+        .map_err(crate::coded::system)?;
     crate::update_tray_language(&app);
     backends::preload(&app);
     Ok(saved)
@@ -396,12 +406,15 @@ pub async fn history_list(state: State<'_, AppState>) -> Result<Vec<HistorySumma
 
 #[tauri::command]
 pub async fn history_load(state: State<'_, AppState>, id: String) -> Result<HistoryEntry, String> {
-    state.store.load_history(&id)
+    state.store.load_history(&id).map_err(crate::coded::system)
 }
 
 #[tauri::command]
 pub async fn history_delete(state: State<'_, AppState>, id: String) -> Result<(), String> {
-    state.store.delete_history(&id)
+    state
+        .store
+        .delete_history(&id)
+        .map_err(crate::coded::system)
 }
 
 #[tauri::command]
@@ -496,7 +509,7 @@ pub async fn models_import(
         other => return Err(format!("unknown import kind {other:?}")),
     };
     let Some(p) = picked else { return Ok(None) };
-    let path = p.into_path().map_err(|e| e.to_string())?;
+    let path = p.into_path().map_err(crate::coded::system)?;
     state
         .models
         .begin_import(path, kind == "zip", state.next_id("install"))
@@ -517,7 +530,7 @@ pub async fn models_begin_install(
         .add_filter(tr(lang(&state), Text::FilterManifest), &["json"])
         .blocking_pick_file();
     let Some(p) = picked else { return Ok(None) };
-    let bytes = crate::models::read_manifest_file(&p.into_path().map_err(|e| e.to_string())?)?;
+    let bytes = crate::models::read_manifest_file(&p.into_path().map_err(crate::coded::system)?)?;
     state
         .models
         .begin_install(&bytes, state.next_id("install"))
@@ -630,10 +643,10 @@ pub async fn updater_check(
     use tauri_plugin_updater::UpdaterExt;
     let update = app
         .updater()
-        .map_err(|e| e.to_string())?
+        .map_err(|e| crate::coded::failure("update.failed", "The update check failed", e))?
         .check()
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| crate::coded::failure("update.failed", "The update check failed", e))?;
     Ok(match update {
         Some(u) => UpdateInfo {
             enabled: true,
@@ -672,15 +685,15 @@ pub async fn updater_install(app: AppHandle, state: State<'_, AppState>) -> Resu
     use tauri_plugin_updater::UpdaterExt;
     let update = app
         .updater()
-        .map_err(|e| e.to_string())?
+        .map_err(|e| crate::coded::failure("update.failed", "The update check failed", e))?
         .check()
         .await
-        .map_err(|e| e.to_string())?
+        .map_err(|e| crate::coded::failure("update.failed", "The update check failed", e))?
         .ok_or_else(|| coded("update.current", json!({}), "already up to date"))?;
     update
         .download_and_install(|_, _| {}, || {})
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|e| crate::coded::failure("update.failed", "The update check failed", e))
 }
 
 #[tauri::command]

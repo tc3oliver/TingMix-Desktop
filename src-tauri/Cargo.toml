@@ -1,5 +1,6 @@
 [package]
 name = "tingmix-app"
+publish = false
 description = "TingMix desktop host: typed commands and events over the Rust pipeline"
 version.workspace = true
 edition.workspace = true
@@ -33,7 +34,7 @@ tingmix-runtime-onnx = { path = "../crates/tingmix-runtime-onnx", default-featur
 tingmix-runtime-mlx = { path = "../crates/tingmix-runtime-mlx", optional = true }
 tauri-plugin-updater = "=2.14.0"
 sys-locale = "=0.3.2"
-zip = { version = "7.3.0", default-features = false, features = ["deflate"] }
+zip = { version = "9.0.5", default-features = false, features = ["deflate"] }
 
 [dev-dependencies]
 hound = "3.5.1"
