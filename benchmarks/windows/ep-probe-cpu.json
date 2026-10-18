@@ -1,0 +1,48 @@
+{
+ "what": "ORT EP probe on the Small step graph, 320 ms steps over a real log-mel fixture; random-init weights (pipeline-only)",
+ "model": "tools\\small-export\\out\\prod.onnx",
+ "mel": "tests\\fixtures\\small\\mel_zh_08s.npy",
+ "frames": 857,
+ "onnxruntime": "1.31.0",
+ "device": "CPU",
+ "available_providers": [
+  "AzureExecutionProvider",
+  "CPUExecutionProvider"
+ ],
+ "python": "3.12.11",
+ "platform": "Windows-11-10.0.26200-SP0",
+ "note": "uv --with numpy onnxruntime",
+ "rows": [
+  {
+   "provider": "AzureExecutionProvider",
+   "runs_entirely_on_provider": false,
+   "error_strict": "[ONNXRuntimeError] : 1 : FAIL : This session contains graph nodes that are assigned to the default CPU EP, but fallback to CPU EP has been explicitly disabled by the user.",
+   "init_ok": true,
+   "runs_with_cpu_fallback": true,
+   "active_providers": [
+    "AzureExecutionProvider",
+    "CPUExecutionProvider"
+   ],
+   "max_abs_dlogp_vs_cpu": 0.0,
+   "mean_abs_dlogp_vs_cpu": 0.0,
+   "argmax_agreement_vs_cpu": 1.0,
+   "step_ms_p50": 2.067249995889142,
+   "step_ms_p95": 2.6199750282103196,
+   "cpu_step_ms_p50": 2.178850001655519
+  },
+  {
+   "provider": "CPUExecutionProvider",
+   "init_ok": true,
+   "runs_entirely_on_provider": true,
+   "active_providers": [
+    "CPUExecutionProvider"
+   ],
+   "max_abs_dlogp_vs_cpu": 0.0,
+   "mean_abs_dlogp_vs_cpu": 0.0,
+   "argmax_agreement_vs_cpu": 1.0,
+   "step_ms_p50": 2.2277500247582793,
+   "step_ms_p95": 2.55612499313429,
+   "cpu_step_ms_p50": 2.178850001655519
+  }
+ ]
+}

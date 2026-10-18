@@ -1,0 +1,63 @@
+{
+ "what": "ORT EP probe on the Small step graph, 320 ms steps over a real log-mel fixture; random-init weights (pipeline-only)",
+ "model": "tools\\small-export\\out\\prod.onnx",
+ "mel": "tests\\fixtures\\small\\mel_zh_08s.npy",
+ "frames": 857,
+ "onnxruntime": "1.31.0",
+ "device": "GPU",
+ "available_providers": [
+  "TensorrtExecutionProvider",
+  "CUDAExecutionProvider",
+  "CPUExecutionProvider"
+ ],
+ "python": "3.12.11",
+ "platform": "Windows-11-10.0.26200-SP0",
+ "note": "uv --with numpy onnxruntime-gpu[cuda,cudnn]",
+ "rows": [
+  {
+   "provider": "TensorrtExecutionProvider",
+   "runs_entirely_on_provider": false,
+   "error_strict": "[ONNXRuntimeError] : 2 : INVALID_ARGUMENT : Conflicting session configuration: explicitly added the CPU EP to the session, but also disabled fallback to the CPU EP via session configuration options.",
+   "init_ok": true,
+   "runs_with_cpu_fallback": true,
+   "active_providers": [
+    "CPUExecutionProvider"
+   ],
+   "max_abs_dlogp_vs_cpu": 0.0,
+   "mean_abs_dlogp_vs_cpu": 0.0,
+   "argmax_agreement_vs_cpu": 1.0,
+   "step_ms_p50": 2.6680000009946525,
+   "step_ms_p95": 3.3097749983426183,
+   "cpu_step_ms_p50": 2.0938499947078526
+  },
+  {
+   "provider": "CUDAExecutionProvider",
+   "init_ok": true,
+   "runs_entirely_on_provider": true,
+   "active_providers": [
+    "CUDAExecutionProvider",
+    "CPUExecutionProvider"
+   ],
+   "max_abs_dlogp_vs_cpu": 0.0001926422119140625,
+   "mean_abs_dlogp_vs_cpu": 3.152576755383052e-05,
+   "argmax_agreement_vs_cpu": 1.0,
+   "step_ms_p50": 1.5550999960396439,
+   "step_ms_p95": 2.0618250273400918,
+   "cpu_step_ms_p50": 2.0938499947078526
+  },
+  {
+   "provider": "CPUExecutionProvider",
+   "init_ok": true,
+   "runs_entirely_on_provider": true,
+   "active_providers": [
+    "CPUExecutionProvider"
+   ],
+   "max_abs_dlogp_vs_cpu": 0.0,
+   "mean_abs_dlogp_vs_cpu": 0.0,
+   "argmax_agreement_vs_cpu": 1.0,
+   "step_ms_p50": 3.0971999804023653,
+   "step_ms_p95": 5.2749249880434945,
+   "cpu_step_ms_p50": 2.0938499947078526
+  }
+ ]
+}

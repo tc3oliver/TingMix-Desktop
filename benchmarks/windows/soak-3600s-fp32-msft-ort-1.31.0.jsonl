@@ -1,0 +1,2 @@
+{"threads":1,"chunk_ms":320,"audio_s":3600.00,"wall_s":51.300,"rtf":0.0142,"push_ms_p50":4.318,"push_ms_p95":5.755,"push_ms_p99":10.842,"push_ms_max":16.964,"first_output_push_ms":4.051,"pushes_slower_than_chunk":0,"peak_rss_mb":340.1}
+{"threads":4,"chunk_ms":320,"audio_s":3600.00,"wall_s":38.108,"rtf":0.0106,"push_ms_p50":2.964,"push_ms_p95":5.747,"push_ms_p99":6.573,"push_ms_max":10.181,"first_output_push_ms":3.406,"pushes_slower_than_chunk":0,"peak_rss_mb":340.6}

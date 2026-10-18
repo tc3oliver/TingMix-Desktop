@@ -1,0 +1,46 @@
+{
+ "what": "ORT EP probe on the Small step graph, 320 ms steps over a real log-mel fixture; random-init weights (pipeline-only)",
+ "model": "tools\\small-export\\out\\prod.onnx",
+ "mel": "tests\\fixtures\\small\\mel_zh_08s.npy",
+ "frames": 857,
+ "onnxruntime": "1.24.4",
+ "device": "CPU-DML",
+ "available_providers": [
+  "DmlExecutionProvider",
+  "CPUExecutionProvider"
+ ],
+ "python": "3.12.11",
+ "platform": "Windows-11-10.0.26200-SP0",
+ "note": "uv --with numpy onnxruntime-directml",
+ "rows": [
+  {
+   "provider": "DmlExecutionProvider",
+   "init_ok": true,
+   "runs_entirely_on_provider": true,
+   "active_providers": [
+    "DmlExecutionProvider",
+    "CPUExecutionProvider"
+   ],
+   "max_abs_dlogp_vs_cpu": 1.52587890625e-05,
+   "mean_abs_dlogp_vs_cpu": 4.5706727291872085e-07,
+   "argmax_agreement_vs_cpu": 1.0,
+   "step_ms_p50": 0.8905499998945743,
+   "step_ms_p95": 1.249099979759194,
+   "cpu_step_ms_p50": 2.6769000105559826
+  },
+  {
+   "provider": "CPUExecutionProvider",
+   "init_ok": true,
+   "runs_entirely_on_provider": true,
+   "active_providers": [
+    "CPUExecutionProvider"
+   ],
+   "max_abs_dlogp_vs_cpu": 0.0,
+   "mean_abs_dlogp_vs_cpu": 0.0,
+   "argmax_agreement_vs_cpu": 1.0,
+   "step_ms_p50": 2.228500001365319,
+   "step_ms_p95": 2.530075013055466,
+   "cpu_step_ms_p50": 2.6769000105559826
+  }
+ ]
+}

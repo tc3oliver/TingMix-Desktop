@@ -1,0 +1,22 @@
+{
+ "label":"PIPELINE-ONLY: random-init weights at production-like shape (d=512, hidden=640, layers=5, vocab=4096 placeholder); not accuracy. Windows 11, Ryzen 7 9700X, Microsoft ONNX Runtime 1.31.0 win-x64 CPU EP loaded by absolute path",
+ "command":"C:\\Users\\User\\src\\tingmix-desktop\\target\\ort-dynamic\\release\\examples\\bench_cpu.exe tools\\small-export\\out\\prod.onnx C:\\Users\\User\\tm\\bench-fp32-prod-windows.json PIPELINE-ONLY: random-init weights at production-like shape (d=512, hidden=640, layers=5, vocab=4096 placeholder); not accuracy. Windows 11, Ryzen 7 9700X, Microsoft ONNX Runtime 1.31.0 win-x64 CPU EP loaded by absolute path 60",
+ "model":"tools\\small-export\\out\\prod.onnx",
+ "model_sha256":"10b9a6b3737988b3cfbf5b551ba2d79ecb87ce18902b62010f6dfc01606d55c6",
+ "onnxruntime":"load-dynamic: C:\\Users\\User\\src\\tingmix-desktop\\vendor\\onnxruntime\\windows-x64\\lib\\onnxruntime.dll (1.31.0.20261008.6.402979a)",
+ "hardware":{"cpu":"AMD Ryzen 7 9700X 8-Core Processor","logical_cpus":"16","memory_bytes":"66156556288","os":"Microsoft Windows 11 專業版 10.0.26200"},
+ "results":[
+  {"threads":1,"chunk_ms":160,"audio_s":60.00,"wall_s":1.200,"rtf":0.0200,"push_ms_p50":3.088,"push_ms_p95":3.769,"push_ms_p99":5.901,"push_ms_max":9.892,"first_output_push_ms":3.136,"pushes_slower_than_chunk":0,"peak_rss_mb":107.7},
+  {"threads":1,"chunk_ms":320,"audio_s":60.00,"wall_s":0.868,"rtf":0.0145,"push_ms_p50":4.291,"push_ms_p95":5.346,"push_ms_p99":13.627,"push_ms_max":15.045,"first_output_push_ms":4.462,"pushes_slower_than_chunk":0,"peak_rss_mb":108.7},
+  {"threads":1,"chunk_ms":640,"audio_s":60.00,"wall_s":0.637,"rtf":0.0106,"push_ms_p50":6.727,"push_ms_p95":7.548,"push_ms_p99":7.788,"push_ms_max":7.903,"first_output_push_ms":7.465,"pushes_slower_than_chunk":0,"peak_rss_mb":108.7},
+  {"threads":2,"chunk_ms":160,"audio_s":60.00,"wall_s":0.995,"rtf":0.0166,"push_ms_p50":2.363,"push_ms_p95":5.280,"push_ms_p99":5.794,"push_ms_max":6.460,"first_output_push_ms":2.984,"pushes_slower_than_chunk":0,"peak_rss_mb":108.9},
+  {"threads":2,"chunk_ms":320,"audio_s":60.00,"wall_s":0.632,"rtf":0.0105,"push_ms_p50":3.123,"push_ms_p95":4.364,"push_ms_p99":7.935,"push_ms_max":8.453,"first_output_push_ms":3.968,"pushes_slower_than_chunk":0,"peak_rss_mb":108.9},
+  {"threads":2,"chunk_ms":640,"audio_s":60.00,"wall_s":0.521,"rtf":0.0087,"push_ms_p50":4.892,"push_ms_p95":8.844,"push_ms_p99":13.344,"push_ms_max":16.406,"first_output_push_ms":4.795,"pushes_slower_than_chunk":0,"peak_rss_mb":108.9},
+  {"threads":4,"chunk_ms":160,"audio_s":60.00,"wall_s":0.688,"rtf":0.0115,"push_ms_p50":1.817,"push_ms_p95":2.323,"push_ms_p99":2.567,"push_ms_max":2.904,"first_output_push_ms":2.725,"pushes_slower_than_chunk":0,"peak_rss_mb":109.1},
+  {"threads":4,"chunk_ms":320,"audio_s":60.00,"wall_s":0.469,"rtf":0.0078,"push_ms_p50":2.406,"push_ms_p95":3.035,"push_ms_p99":3.340,"push_ms_max":5.244,"first_output_push_ms":2.718,"pushes_slower_than_chunk":0,"peak_rss_mb":109.1},
+  {"threads":4,"chunk_ms":640,"audio_s":60.00,"wall_s":0.321,"rtf":0.0054,"push_ms_p50":3.286,"push_ms_p95":4.051,"push_ms_p99":4.167,"push_ms_max":4.339,"first_output_push_ms":3.712,"pushes_slower_than_chunk":0,"peak_rss_mb":109.1},
+  {"threads":8,"chunk_ms":160,"audio_s":60.00,"wall_s":0.715,"rtf":0.0119,"push_ms_p50":1.815,"push_ms_p95":2.584,"push_ms_p99":3.430,"push_ms_max":4.667,"first_output_push_ms":2.493,"pushes_slower_than_chunk":0,"peak_rss_mb":109.4},
+  {"threads":8,"chunk_ms":320,"audio_s":60.00,"wall_s":0.378,"rtf":0.0063,"push_ms_p50":1.987,"push_ms_p95":2.307,"push_ms_p99":2.489,"push_ms_max":2.682,"first_output_push_ms":2.715,"pushes_slower_than_chunk":0,"peak_rss_mb":109.5},
+  {"threads":8,"chunk_ms":640,"audio_s":60.00,"wall_s":0.301,"rtf":0.0050,"push_ms_p50":3.136,"push_ms_p95":3.703,"push_ms_p99":3.844,"push_ms_max":4.507,"first_output_push_ms":3.984,"pushes_slower_than_chunk":0,"peak_rss_mb":109.4}
+ ]
+}
