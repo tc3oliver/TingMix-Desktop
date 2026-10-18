@@ -53,6 +53,19 @@ impl Default for SessionConfig {
     }
 }
 
+impl SessionConfig {
+    /// The live-capture setup measured in docs/research/vad-noise.md: adaptive VAD, confidence suppression and a
+    /// quiet-point cut at the segment cap. `Default` stays Python-identical (file mode, goldens).
+    pub fn live_recommended() -> Self {
+        Self {
+            vad: VadKind::Adaptive,
+            suppression: Some(Suppression::RECOMMENDED),
+            max_cut_search_s: 3.0,
+            ..Self::default()
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum JobKind {
     Partial,

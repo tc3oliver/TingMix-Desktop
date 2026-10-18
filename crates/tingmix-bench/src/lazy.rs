@@ -1,6 +1,6 @@
 //! Builds a backend on the thread that first calls it (for runtimes whose handles are thread-bound, like MLX).
 
-use tingmix_core::{AsrBackend, AsrStream, BackendError, BackendInfo};
+use tingmix_core::{AsrBackend, AsrStream, BackendError, BackendInfo, Transcription};
 
 pub struct Lazy<B, F> {
     pub info: BackendInfo,
@@ -28,6 +28,13 @@ impl<B: AsrBackend, F: FnOnce() -> Result<B, String> + Send> AsrBackend for Lazy
 
     fn transcribe_batch(&mut self, wavs: &[&[f32]]) -> Result<Vec<String>, BackendError> {
         self.get()?.transcribe_batch(wavs)
+    }
+
+    fn transcribe_batch_scored(
+        &mut self,
+        wavs: &[&[f32]],
+    ) -> Result<Vec<Transcription>, BackendError> {
+        self.get()?.transcribe_batch_scored(wavs)
     }
 
     fn new_stream(&mut self) -> Result<Box<dyn AsrStream>, BackendError> {

@@ -24,7 +24,7 @@ use probe::{Rec, Sim};
 use run::{RunCfg, RunOut};
 
 const USAGE: &str = "usage: tingmix-bench [--backend mock|onnx|mlx] [--duration-s 120] [--chunk-ms 20] [--seed 1] [--gap-min 1.0] [--gap-max 4.0]
-  [--noise-dbfs -70] [--clips id,id] [--tail-s 4] [--mock-native] [--tail-partial on|off|live]\n  [--noise none|white|pink|fan|babble] [--snr-db N | --noise-dbfs N] [--no-speech] [--vad energy|adaptive] [--suppress on|off]\n  [--sup-min C] [--sup-short-chars N] [--sup-short-min C] [--speed X] [--vad-only] [--wav FILE (segment a recording, no model)] [--cut-search S] [--oracle FILE|prompt] [--avad key=value,...] [--oracle FILE] [--discard-first N] [--mock-delay-ms 0] [--sim-base-ms 0] [--sim-rtf 0]
+  [--noise-dbfs -70] [--clips id,id] [--tail-s 4] [--mock-native] [--tail-partial on|off|live]\n  [--noise none|white|pink|fan|babble] [--snr-db N | --noise-dbfs N] [--no-speech] [--vad energy|adaptive] [--suppress on|off]\n  [--sup-min C] [--sup-partial-min C] [--sup-short-chars N] [--sup-short-min C] [--speed X] [--fixtures DIR (manifest.jsonl + wavs)] [--vad-only] [--wav FILE (segment a recording, no model)] [--cut-search S] [--oracle FILE|prompt] [--avad key=value,...] [--oracle FILE] [--discard-first N] [--mock-delay-ms 0] [--sim-base-ms 0] [--sim-rtf 0]
   [--artifact PATH] [--model onnx] [--units units.json --dtype f16 --lm charlm.json.gz] [--scenario NAME] [--soak] --out FILE.json";
 
 struct Args(std::collections::HashMap<String, String>);
@@ -118,7 +118,9 @@ fn real_main() -> Result<(), String> {
     let only: Option<Vec<String>> = a
         .s("clips")
         .map(|c| c.split(',').map(String::from).collect());
-    let fixtures = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/audio");
+    let fixtures = a.s("fixtures").map(PathBuf::from).unwrap_or_else(|| {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/audio")
+    });
     let clips = source::load_clips(&fixtures, only.as_deref())?;
     let (duration_s, chunk_ms) = (a.f("duration-s", 120.0)?, a.f("chunk-ms", 20.0)? as u64);
     let prompts: std::collections::HashMap<String, String> = clips
@@ -161,7 +163,8 @@ fn real_main() -> Result<(), String> {
         suppression: match a.s("suppress") {
             None | Some("off") => None,
             Some("on") => Some(tingmix_streaming::Suppression {
-                min_confidence: a.f("sup-min", 0.4)? as f32,
+                min_confidence: a.f("sup-min", 0.5)? as f32,
+                partial_min_confidence: a.f("sup-partial-min", 0.3)? as f32,
                 short_chars: a.f("sup-short-chars", 2.0)? as usize,
                 short_min_confidence: a.f("sup-short-min", 0.9)? as f32,
             }),

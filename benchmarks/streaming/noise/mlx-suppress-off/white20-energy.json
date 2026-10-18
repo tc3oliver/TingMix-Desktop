@@ -1,0 +1,1718 @@
+{
+  "command": "<target>/release/tingmix-bench --backend mlx --artifact <repo>/experiments/macos/mlx/out/tingmix-large-mlx-fp32.safetensors --units $HF_HOME/hub/models--tc3oliver--TingMix-Large/snapshots/75071a1260fb21874f150df6ebd53716ac423f13/units.json --lm $HF_HOME/hub/models--tc3oliver--TingMix-Large/snapshots/75071a1260fb21874f150df6ebd53716ac423f13/lm/lmCN_cv_parl_ascend_ntuml.charlm.json.gz --dtype f32 --speed 2 --seed 5 --suppress off --vad energy --duration-s 120 --scenario white20-energy-suppress-off --out benchmarks/streaming/noise/mlx-suppress-off/white20-energy.json --noise white --snr-db 20",
+  "scenario": "white20-energy-suppress-off",
+  "backend": "mlx",
+  "backend_info": {
+    "decode": "beam+lm (alpha 0.35 beta 1.5 beam 16 defaults)",
+    "dtype": "f32",
+    "max_window_s": 29.5,
+    "name": "tingmix-large-mlx",
+    "note": "model loaded on the first inference call, so the first utterance includes load time and is excluded from the distributions (discard_first >= 1)",
+    "streaming_native": false
+  },
+  "artifacts_sha256": {
+    "<repo>/experiments/macos/mlx/out/tingmix-large-mlx-fp32.safetensors": "9737153e4631bc773481ec458f34f242cc7800ccc6ae6ea1c509d895181fc7ec"
+  },
+  "env": {
+    "cpu": "Apple M4 Max",
+    "ram_gb": 64.0,
+    "os": "Darwin macOS 27.0",
+    "git_sha": "cc83069efdb175ebd233c5f0ab0b1604ebf05188",
+    "git_dirty": false,
+    "rustc": "rustc 1.99.0 (b940084d7 2026-09-28) (Homebrew)",
+    "profile": "release"
+  },
+  "config": {
+    "chunk_ms": 20,
+    "duration_s": 120.0,
+    "gap_s": [
+      1.0,
+      4.0
+    ],
+    "latency_valid": false,
+    "no_speech": false,
+    "noise": "Some(NoiseSpec { kind: White, level: SnrDb(20.0) })",
+    "seed": 5.0,
+    "session": "SessionConfig { hop_ms: 480.0, silence_ms: 600.0, max_segment_s: 25.0, preroll_ms: 800.0, tail_pad_ms: 0.0, stability_k: 2, max_load: 0.5, vad_threshold_db: -50.0, vad: Energy, adaptive_vad: AdaptiveVadParams { floor_percentile: 0.2, window_frames: 250, rise_db_per_s: 4.0, smooth_frames: 3, start_margin_db: 10.0, stay_margin_db: 5.0, abs_min_db: -55.0, start_window: 12, start_votes: 8, hang_frames: 10, warmup_frames: 25 }, suppression: None, tail_partial: false, max_cut_search_s: 0.0 }",
+    "sim_base_ms": 0.0,
+    "sim_rtf": 0.0,
+    "speed": 2.0,
+    "suppress": "off",
+    "tail_partial": "live",
+    "vad": "energy"
+  },
+  "note": "Wall-clock real-time replay. Times are inference-side (audio in -> event received); UI render time is not included. Mock backends recognise nothing and emit text even for silence, so mock first-partial latency is optimistic: with --backend mock these numbers characterise the harness, scheduler and queue only. Other processes ran on the machine; see env. Gates apply to real backends only.",
+  "gates_large_initial_targets": [
+    {
+      "metric": "first partial P95 from speech onset (s)",
+      "target_large": "<= 1.5",
+      "measured_p95": 1.8595986659999966,
+      "met": false
+    },
+    {
+      "metric": "final latency P95 after endpoint = speech end + silence_ms (s)",
+      "target_large": "<= 1.0",
+      "measured_p95": 4.0948974999999965,
+      "met": false
+    },
+    {
+      "metric": "streaming RTF (inference busy time / audio time)",
+      "target_large": "< 1.0",
+      "measured_p95": 0.2754375983419255,
+      "met": true
+    }
+  ],
+  "soak_assertions": null,
+  "wall_s": 71.994449375,
+  "audio_s": 143.54,
+  "utterances": [
+    {
+      "n": 0,
+      "clip": "mix_08s",
+      "lang": "mix",
+      "onset_s": 3.2303125,
+      "end_s": 10.5503125,
+      "first_partial_from_onset_s": 2.5418987499999997,
+      "final_from_speech_end_s": null,
+      "partials": 13,
+      "finals": 0,
+      "text": "",
+      "confidence": null,
+      "cer": 1.0
+    },
+    {
+      "n": 1,
+      "clip": "mix_29s",
+      "lang": "mix",
+      "onset_s": 13.8915,
+      "end_s": 48.3315,
+      "first_partial_from_onset_s": 1.2755052500000001,
+      "final_from_speech_end_s": 2.5338071660000026,
+      "partials": 72,
+      "finals": 2,
+      "text": "我覺得這個jline有點太敢了我們要不要先跟pn討論一下再決定大家好今天的meting主要有三個topic第一個是上週的reelas狀況qa回報了幾個其中兩個已經 第二個是新的fature規劃我們希望下個spreen可以完成cott tide第三個是herformance的問題目前在winddows上面的leglency還是太高需要再做一些hfining跟opttimiisation最後請家記得更新自己的k狀態謝謝大家",
+      "confidence": null,
+      "cer": 0.3684210526315789
+    },
+    {
+      "n": 2,
+      "clip": "en_08s",
+      "lang": "en",
+      "onset_s": 51.189375,
+      "end_s": 56.129375,
+      "first_partial_from_onset_s": 0.4036437500000005,
+      "final_from_speech_end_s": null,
+      "partials": 12,
+      "finals": 0,
+      "text": "",
+      "confidence": null,
+      "cer": 1.0
+    },
+    {
+      "n": 3,
+      "clip": "en_02s",
+      "lang": "en",
+      "onset_s": 59.727375,
+      "end_s": 60.927375,
+      "first_partial_from_onset_s": 0.6275104999999996,
+      "final_from_speech_end_s": null,
+      "partials": 4,
+      "finals": 0,
+      "text": "",
+      "confidence": null,
+      "cer": 1.0
+    },
+    {
+      "n": 4,
+      "clip": "zh_08s",
+      "lang": "zh",
+      "onset_s": 64.31925,
+      "end_s": 72.71925,
+      "first_partial_from_onset_s": 1.8595986659999966,
+      "final_from_speech_end_s": 3.126391831999996,
+      "partials": 17,
+      "finals": 1,
+      "text": "the quick brown fox jumps over the lazy dog while the weather stays common clear all afternoon good morning everyone立法院今天下午召開會議討論明年度中央政府總預算案以及多項重要的民生法案",
+      "confidence": null,
+      "cer": 2.7222222222222223
+    },
+    {
+      "n": 5,
+      "clip": "mix_04s",
+      "lang": "mix",
+      "onset_s": 75.4705,
+      "end_s": 78.8305,
+      "first_partial_from_onset_s": 0.4137703319999986,
+      "final_from_speech_end_s": null,
+      "partials": 9,
+      "finals": 0,
+      "text": "",
+      "confidence": null,
+      "cer": 1.0
+    },
+    {
+      "n": 6,
+      "clip": "zh_16s",
+      "lang": "zh",
+      "onset_s": 80.3184375,
+      "end_s": 100.5384375,
+      "first_partial_from_onset_s": 1.2017520819999987,
+      "final_from_speech_end_s": 0.36877450000000067,
+      "partials": 41,
+      "finals": 1,
+      "text": "今天我們來review這個i的設計語音辨識系統需要處理不同的口音警造應以及說話速度為了讓模型在桌面電腦上即時運作我們必須仔細設計串流架構去保每一段處理一次並且在使用者停止說話之後儘快輸出最終",
+      "confidence": null,
+      "cer": 0.30952380952380953
+    },
+    {
+      "n": 7,
+      "clip": "zh_02s",
+      "lang": "zh",
+      "onset_s": 101.7931875,
+      "end_s": 103.2931875,
+      "first_partial_from_onset_s": 0.8137377500000014,
+      "final_from_speech_end_s": null,
+      "partials": 4,
+      "finals": 0,
+      "text": "",
+      "confidence": null,
+      "cer": 1.0
+    },
+    {
+      "n": 8,
+      "clip": "en_02s",
+      "lang": "en",
+      "onset_s": 104.6879375,
+      "end_s": 105.8879375,
+      "first_partial_from_onset_s": 0.8878437500000018,
+      "final_from_speech_end_s": null,
+      "partials": 3,
+      "finals": 0,
+      "text": "",
+      "confidence": null,
+      "cer": 1.0
+    },
+    {
+      "n": 9,
+      "clip": "mix_08s",
+      "lang": "mix",
+      "onset_s": 109.7055,
+      "end_s": 117.0255,
+      "first_partial_from_onset_s": 0.723845831999995,
+      "final_from_speech_end_s": null,
+      "partials": 18,
+      "finals": 0,
+      "text": "",
+      "confidence": null,
+      "cer": 1.0
+    },
+    {
+      "n": 10,
+      "clip": "zh_16s",
+      "lang": "zh",
+      "onset_s": 119.074,
+      "end_s": 139.294,
+      "first_partial_from_onset_s": 0.5523050820000037,
+      "final_from_speech_end_s": 4.694897499999996,
+      "partials": 43,
+      "finals": 2,
+      "text": "結果今天天氣很好goodorn everyone我覺得這個有點太趕了我們要要先跟討論一下再決定語音辨識系統需要處理不同的口音警到應以及說話速度 為了讓模型在桌面電腦上即時運作我們必須仔細設計串流架構確保每一段訊只處理一次並且在使用者停止說話之後儘快輸出最終結果",
+      "confidence": null,
+      "cer": 0.5952380952380952
+    }
+  ],
+  "samples": [
+    {
+      "t_s": 0.977732332,
+      "rss_mb": 19.046875,
+      "pending_finals": 0,
+      "oldest_pending_age_s": 0.0,
+      "partial_staleness_s": null,
+      "inflight_age_s": null,
+      "calls_done": 0,
+      "coalesced": 0
+    },
+    {
+      "t_s": 1.986693,
+      "rss_mb": 66.4375,
+      "pending_finals": 0,
+      "oldest_pending_age_s": 0.0,
+      "partial_staleness_s": null,
+      "inflight_age_s": 0.5043098749999999,
+      "calls_done": 0,
+      "coalesced": 2
+    },
+    {
+      "t_s": 3.0074194160000003,
+      "rss_mb": 133.203125,
+      "pending_finals": 0,
+      "oldest_pending_age_s": 0.0,
+      "partial_staleness_s": null,
+      "inflight_age_s": 1.014713916,
+      "calls_done": 0,
+      "coalesced": 4
+    },
+    {
+      "t_s": 4.026683082,
+      "rss_mb": 143.875,
+      "pending_finals": 0,
+      "oldest_pending_age_s": 0.0,
+      "partial_staleness_s": 0.7963705819999998,
+      "inflight_age_s": 1.5243445409999998,
+      "calls_done": 0,
+      "coalesced": 6
+    },
+    {
+      "t_s": 5.046738082,
+      "rss_mb": 153.65625,
+      "pending_finals": 0,
+      "oldest_pending_age_s": 0.0,
+      "partial_staleness_s": 1.816425582,
+      "inflight_age_s": 2.034379583,
+      "calls_done": 0,
+      "coalesced": 8
+    },
+    {
+      "t_s": 6.069746666,
+      "rss_mb": 1907.203125,
+      "pending_finals": 0,
+      "oldest_pending_age_s": 0.0,
+      "partial_staleness_s": 0.2897466660000001,
+      "inflight_age_s": null,
+      "calls_done": 3,
+      "coalesced": 9
+    },
+    {
+      "t_s": 7.06976225,
+      "rss_mb": 1931.453125,
+      "pending_finals": 0,
+      "oldest_pending_age_s": 0.0,
+      "partial_staleness_s": 0.3297622499999999,
+      "inflight_age_s": null,
+      "calls_done": 5,
+      "coalesced": 9
+    },
+    {
+      "t_s": 8.0867095,
+      "rss_mb": 1956.890625,
+      "pending_finals": 0,
+      "oldest_pending_age_s": 0.0,
+      "partial_staleness_s": 0.3867094999999994,
+      "inflight_age_s": null,
+      "calls_done": 7,
+      "coalesced": 9
+    },
+    {
+      "t_s": 9.106687332,
+      "rss_mb": 1984.671875,
+      "pending_finals": 0,
+      "oldest_pending_age_s": 0.0,
+      "partial_staleness_s": 0.44668733199999977,
+      "inflight_age_s": null,
+      "calls_done": 9,
+      "coalesced": 9
+    },
+    {
+      "t_s": 10.126387,
+      "rss_mb": 1953.203125,
+      "pending_finals": 0,
+      "oldest_pending_age_s": 0.0,
+      "partial_staleness_s": 0.5063870000000001,
+      "inflight_age_s": 0.011733708000000398,
+      "calls_done": 11,
+      "coalesced": 9
+    },
+    {
+      "t_s": 11.126639916,
+      "rss_mb": 1990.21875,
+      "pending_finals": 0,
+      "oldest_pending_age_s": 0.0,
+      "partial_staleness_s": null,
+      "inflight_age_s": 0.02990462500000035,
+      "calls_done": 13,
+      "coalesced": 9
+    },
+    {
+      "t_s": 12.127149582,
+      "rss_mb": 2026.140625,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 0.9768370819999994,
+      "partial_staleness_s": null,
+      "inflight_age_s": 0.04999025000000046,
+      "calls_done": 15,
+      "coalesced": 9
+    },
+    {
+      "t_s": 13.143258832,
+      "rss_mb": 2064.75,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 1.9929463320000007,
+      "partial_staleness_s": null,
+      "inflight_age_s": 0.07831058400000046,
+      "calls_done": 17,
+      "coalesced": 9
+    },
+    {
+      "t_s": 14.147815832,
+      "rss_mb": 2126.578125,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 2.997503331999999,
+      "partial_staleness_s": 0.2563158319999985,
+      "inflight_age_s": 0.10079912499999999,
+      "calls_done": 19,
+      "coalesced": 9
+    },
+    {
+      "t_s": 15.166747,
+      "rss_mb": 2173.453125,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 4.016434500000001,
+      "partial_staleness_s": 1.2752470000000002,
+      "inflight_age_s": null,
+      "calls_done": 21,
+      "coalesced": 9
+    },
+    {
+      "t_s": 16.169156832,
+      "rss_mb": 2223.4375,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 5.018844331999999,
+      "partial_staleness_s": 0.3091568319999993,
+      "inflight_age_s": null,
+      "calls_done": 24,
+      "coalesced": 9
+    },
+    {
+      "t_s": 17.169281,
+      "rss_mb": 2277.6875,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 6.0189685000000015,
+      "partial_staleness_s": 0.3492810000000013,
+      "inflight_age_s": null,
+      "calls_done": 26,
+      "coalesced": 9
+    },
+    {
+      "t_s": 18.186649832,
+      "rss_mb": 2332.71875,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 7.036337332,
+      "partial_staleness_s": 0.4066498319999994,
+      "inflight_age_s": null,
+      "calls_done": 28,
+      "coalesced": 9
+    },
+    {
+      "t_s": 19.2069255,
+      "rss_mb": 2137.796875,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 8.056613,
+      "partial_staleness_s": 0.4669255000000021,
+      "inflight_age_s": null,
+      "calls_done": 30,
+      "coalesced": 9
+    },
+    {
+      "t_s": 20.227270916,
+      "rss_mb": 2201.21875,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 9.076958415999998,
+      "partial_staleness_s": 0.5272709159999991,
+      "inflight_age_s": 0.01927912500000062,
+      "calls_done": 32,
+      "coalesced": 9
+    },
+    {
+      "t_s": 21.246707916,
+      "rss_mb": 2264.703125,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 10.096395415999998,
+      "partial_staleness_s": 0.5867079159999982,
+      "inflight_age_s": 0.04990887499999985,
+      "calls_done": 34,
+      "coalesced": 9
+    },
+    {
+      "t_s": 22.266694166,
+      "rss_mb": 2330.703125,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 11.116381666,
+      "partial_staleness_s": 0.6466941659999996,
+      "inflight_age_s": 0.07983283299999933,
+      "calls_done": 36,
+      "coalesced": 9
+    },
+    {
+      "t_s": 23.2823815,
+      "rss_mb": 2400.28125,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 12.132069,
+      "partial_staleness_s": 0.7023815000000013,
+      "inflight_age_s": 0.11003808299999918,
+      "calls_done": 38,
+      "coalesced": 9
+    },
+    {
+      "t_s": 24.309087666,
+      "rss_mb": 2507.421875,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 13.158775166,
+      "partial_staleness_s": 0.7690876660000008,
+      "inflight_age_s": 0.14041687499999966,
+      "calls_done": 40,
+      "coalesced": 9
+    },
+    {
+      "t_s": 25.325256832,
+      "rss_mb": 2587.96875,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 14.174944332,
+      "partial_staleness_s": 0.8252568320000009,
+      "inflight_age_s": 0.16906679199999886,
+      "calls_done": 42,
+      "coalesced": 9
+    },
+    {
+      "t_s": 26.328848916,
+      "rss_mb": 2627.5625,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 15.178536415999998,
+      "partial_staleness_s": 0.3288489159999983,
+      "inflight_age_s": null,
+      "calls_done": 46,
+      "coalesced": 9
+    },
+    {
+      "t_s": 27.34706275,
+      "rss_mb": 2632.25,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 16.19675025,
+      "partial_staleness_s": 0.38706274999999835,
+      "inflight_age_s": null,
+      "calls_done": 48,
+      "coalesced": 9
+    },
+    {
+      "t_s": 28.349771832,
+      "rss_mb": 2635.90625,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 17.199459331999996,
+      "partial_staleness_s": 0.4297718319999966,
+      "inflight_age_s": null,
+      "calls_done": 50,
+      "coalesced": 9
+    },
+    {
+      "t_s": 29.364708916,
+      "rss_mb": 2641.515625,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 18.214396416,
+      "partial_staleness_s": 0.48470891600000243,
+      "inflight_age_s": 0.0002085419999993121,
+      "calls_done": 52,
+      "coalesced": 9
+    },
+    {
+      "t_s": 30.386685166,
+      "rss_mb": 2656.046875,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 19.236372666,
+      "partial_staleness_s": 0.5466851659999996,
+      "inflight_age_s": 0.029147625000000232,
+      "calls_done": 54,
+      "coalesced": 9
+    },
+    {
+      "t_s": 31.401956416,
+      "rss_mb": 2673.390625,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 20.251643916,
+      "partial_staleness_s": 0.6019564160000002,
+      "inflight_age_s": 0.0559015830000007,
+      "calls_done": 56,
+      "coalesced": 9
+    },
+    {
+      "t_s": 32.406526582,
+      "rss_mb": 2703.5625,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 21.256214082,
+      "partial_staleness_s": 0.6465265819999964,
+      "inflight_age_s": 0.07877870800000153,
+      "calls_done": 58,
+      "coalesced": 9
+    },
+    {
+      "t_s": 33.426683916,
+      "rss_mb": 2727.34375,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 22.276371416000003,
+      "partial_staleness_s": 0.7066839160000029,
+      "inflight_age_s": null,
+      "calls_done": 60,
+      "coalesced": 9
+    },
+    {
+      "t_s": 34.427480916,
+      "rss_mb": 2753.859375,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 23.277168416000002,
+      "partial_staleness_s": 0.2674809160000038,
+      "inflight_age_s": null,
+      "calls_done": 63,
+      "coalesced": 9
+    },
+    {
+      "t_s": 35.446332,
+      "rss_mb": 2764.40625,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 24.2960195,
+      "partial_staleness_s": 0.32633200000000073,
+      "inflight_age_s": null,
+      "calls_done": 65,
+      "coalesced": 9
+    },
+    {
+      "t_s": 36.446568,
+      "rss_mb": 2776.171875,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 25.2962555,
+      "partial_staleness_s": 0.3665680000000009,
+      "inflight_age_s": null,
+      "calls_done": 67,
+      "coalesced": 9
+    },
+    {
+      "t_s": 37.467138166,
+      "rss_mb": 2788.46875,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 26.316825666,
+      "partial_staleness_s": 0.4271381659999989,
+      "inflight_age_s": null,
+      "calls_done": 69,
+      "coalesced": 9
+    },
+    {
+      "t_s": 38.487251166,
+      "rss_mb": 2802.046875,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 27.336938666,
+      "partial_staleness_s": 0.48725116600000007,
+      "inflight_age_s": 0.0001830000000033749,
+      "calls_done": 71,
+      "coalesced": 9
+    },
+    {
+      "t_s": 39.506664082,
+      "rss_mb": 2816.765625,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 28.356351582000002,
+      "partial_staleness_s": 0.5466640819999995,
+      "inflight_age_s": 0.02992791700000197,
+      "calls_done": 73,
+      "coalesced": 9
+    },
+    {
+      "t_s": 40.5066695,
+      "rss_mb": 2832.671875,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 29.356357000000003,
+      "partial_staleness_s": 0.5866694999999993,
+      "inflight_age_s": 0.049880166999997755,
+      "calls_done": 75,
+      "coalesced": 9
+    },
+    {
+      "t_s": 41.526704,
+      "rss_mb": 2849.625,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 30.376391500000004,
+      "partial_staleness_s": 0.6467039999999997,
+      "inflight_age_s": 0.07971970799999895,
+      "calls_done": 77,
+      "coalesced": 9
+    },
+    {
+      "t_s": 42.546684082,
+      "rss_mb": 2874.71875,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 31.396371582,
+      "partial_staleness_s": 0.7066840819999953,
+      "inflight_age_s": 0.11001849999999891,
+      "calls_done": 79,
+      "coalesced": 9
+    },
+    {
+      "t_s": 43.546705,
+      "rss_mb": 2894.359375,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 32.396392500000005,
+      "partial_staleness_s": 0.7467050000000057,
+      "inflight_age_s": 0.12984895900000026,
+      "calls_done": 81,
+      "coalesced": 9
+    },
+    {
+      "t_s": 44.546707416,
+      "rss_mb": 2915.1875,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 33.396394916,
+      "partial_staleness_s": 0.7867074159999987,
+      "inflight_age_s": 0.14982787499999972,
+      "calls_done": 83,
+      "coalesced": 9
+    },
+    {
+      "t_s": 45.561641666,
+      "rss_mb": 2937.453125,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 34.411329166,
+      "partial_staleness_s": 0.36164166599999703,
+      "inflight_age_s": null,
+      "calls_done": 86,
+      "coalesced": 9
+    },
+    {
+      "t_s": 46.565823082,
+      "rss_mb": 2960.421875,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 35.415510582,
+      "partial_staleness_s": 0.40582308200000483,
+      "inflight_age_s": null,
+      "calls_done": 88,
+      "coalesced": 9
+    },
+    {
+      "t_s": 47.587479416,
+      "rss_mb": 2984.453125,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 36.437166916,
+      "partial_staleness_s": 0.4674794160000033,
+      "inflight_age_s": null,
+      "calls_done": 90,
+      "coalesced": 9
+    },
+    {
+      "t_s": 48.604676082,
+      "rss_mb": 3008.734375,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 37.454363582,
+      "partial_staleness_s": null,
+      "inflight_age_s": 0.018824666000000434,
+      "calls_done": 92,
+      "coalesced": 9
+    },
+    {
+      "t_s": 49.60976,
+      "rss_mb": 3034.75,
+      "pending_finals": 2,
+      "oldest_pending_age_s": 38.4594475,
+      "partial_staleness_s": null,
+      "inflight_age_s": 0.04144499999999951,
+      "calls_done": 94,
+      "coalesced": 9
+    },
+    {
+      "t_s": 50.626684666,
+      "rss_mb": 3061.125,
+      "pending_finals": 2,
+      "oldest_pending_age_s": 39.476372166000004,
+      "partial_staleness_s": null,
+      "inflight_age_s": 0.09700208299999957,
+      "calls_done": 96,
+      "coalesced": 9
+    },
+    {
+      "t_s": 51.628288332,
+      "rss_mb": 3062.109375,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 40.477975832,
+      "partial_staleness_s": 0.12828833199999679,
+      "inflight_age_s": null,
+      "calls_done": 100,
+      "coalesced": 9
+    },
+    {
+      "t_s": 52.646481166,
+      "rss_mb": 3064.46875,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 41.496168666,
+      "partial_staleness_s": 0.1864811660000001,
+      "inflight_age_s": null,
+      "calls_done": 102,
+      "coalesced": 9
+    },
+    {
+      "t_s": 53.666853916,
+      "rss_mb": 3067.875,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 42.516541416,
+      "partial_staleness_s": 0.24685391599999917,
+      "inflight_age_s": null,
+      "calls_done": 104,
+      "coalesced": 9
+    },
+    {
+      "t_s": 54.681900832,
+      "rss_mb": 3072.296875,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 43.531588332,
+      "partial_staleness_s": 0.30190083199999407,
+      "inflight_age_s": null,
+      "calls_done": 106,
+      "coalesced": 9
+    },
+    {
+      "t_s": 55.68671,
+      "rss_mb": 3077.65625,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 44.5363975,
+      "partial_staleness_s": 0.3467099999999945,
+      "inflight_age_s": null,
+      "calls_done": 108,
+      "coalesced": 9
+    },
+    {
+      "t_s": 56.686727832,
+      "rss_mb": 3084.015625,
+      "pending_finals": 1,
+      "oldest_pending_age_s": 45.536415332000004,
+      "partial_staleness_s": null,
+      "inflight_age_s": null,
+      "calls_done": 110,
+      "coalesced": 9
+    },
+    {
+      "t_s": 57.70681525,
+      "rss_mb": 3087.796875,
+      "pending_finals": 2,
+      "oldest_pending_age_s": 46.55650275,
+      "partial_staleness_s": null,
+      "inflight_age_s": null,
+      "calls_done": 112,
+      "coalesced": 9
+    },
+    {
+      "t_s": 58.728366332,
+      "rss_mb": 3088.578125,
+      "pending_finals": 2,
+      "oldest_pending_age_s": 47.578053832,
+      "partial_staleness_s": null,
+      "inflight_age_s": 0.012748250000001349,
+      "calls_done": 114,
+      "coalesced": 9
+    },
+    {
+      "t_s": 59.746739,
+      "rss_mb": 3093.640625,
+      "pending_finals": 2,
+      "oldest_pending_age_s": 48.5964265,
+      "partial_staleness_s": 0.01936399999999594,
+      "inflight_age_s": 0.039970874999998074,
+      "calls_done": 116,
+      "coalesced": 9
+    },
+    {
+      "t_s": 60.76689675,
+      "rss_mb": 3094.671875,
+      "pending_finals": 2,
+      "oldest_pending_age_s": 49.61658425,
+      "partial_staleness_s": 0.6268967500000002,
+      "inflight_age_s": 0.07000700000000037,
+      "calls_done": 118,
+      "coalesced": 9
+    },
+    {
+      "t_s": 61.78668075,
+      "rss_mb": 3100.84375,
+      "pending_finals": 3,
+      "oldest_pending_age_s": 50.636368250000004,
+      "partial_staleness_s": null,
+      "inflight_age_s": 0.09989787499999991,
+      "calls_done": 120,
+      "coalesced": 9
+    },
+    {
+      "t_s": 62.7869535,
+      "rss_mb": 3101.453125,
+      "pending_finals": 3,
+      "oldest_pending_age_s": 51.636641000000004,
+      "partial_staleness_s": null,
+      "inflight_age_s": null,
+      "calls_done": 123,
+      "coalesced": 9
+    },
+    {
+      "t_s": 63.80671175,
+      "rss_mb": 3102.09375,
+      "pending_finals": 3,
+      "oldest_pending_age_s": 52.65639925,
+      "partial_staleness_s": null,
+      "inflight_age_s": null,
+      "calls_done": 125,
+      "coalesced": 9
+    },
+    {
+      "t_s": 64.826708582,
+      "rss_mb": 3103.484375,
+      "pending_finals": 3,
+      "oldest_pending_age_s": 53.676396082,
+      "partial_staleness_s": 0.5074585819999982,
+      "inflight_age_s": null,
+      "calls_done": 127,
+      "coalesced": 9
+    },
+    {
+      "t_s": 65.826717916,
+      "rss_mb": 3111.515625,
+      "pending_finals": 3,
+      "oldest_pending_age_s": 54.67640541600001,
+      "partial_staleness_s": 1.5074679160000102,
+      "inflight_age_s": null,
+      "calls_done": 129,
+      "coalesced": 9
+    },
+    {
+      "t_s": 66.846716832,
+      "rss_mb": 3112.734375,
+      "pending_finals": 3,
+      "oldest_pending_age_s": 55.696404332,
+      "partial_staleness_s": 0.466716832000003,
+      "inflight_age_s": null,
+      "calls_done": 131,
+      "coalesced": 9
+    },
+    {
+      "t_s": 67.866825332,
+      "rss_mb": 3122.78125,
+      "pending_finals": 3,
+      "oldest_pending_age_s": 56.71651283200001,
+      "partial_staleness_s": 0.5268253320000014,
+      "inflight_age_s": 0.019914458000002355,
+      "calls_done": 133,
+      "coalesced": 9
+    },
+    {
+      "t_s": 68.886651916,
+      "rss_mb": 3125.109375,
+      "pending_finals": 3,
+      "oldest_pending_age_s": 57.73633941600001,
+      "partial_staleness_s": 0.5866519160000081,
+      "inflight_age_s": 0.049885541000001865,
+      "calls_done": 135,
+      "coalesced": 9
+    },
+    {
+      "t_s": 69.886834,
+      "rss_mb": 3135.859375,
+      "pending_finals": 3,
+      "oldest_pending_age_s": 58.736521499999995,
+      "partial_staleness_s": 0.6268339999999881,
+      "inflight_age_s": 0.06988083400000278,
+      "calls_done": 137,
+      "coalesced": 9
+    },
+    {
+      "t_s": 70.906668,
+      "rss_mb": 3138.203125,
+      "pending_finals": 3,
+      "oldest_pending_age_s": 59.7563555,
+      "partial_staleness_s": 0.6866679999999974,
+      "inflight_age_s": 0.09983354199999894,
+      "calls_done": 139,
+      "coalesced": 9
+    },
+    {
+      "t_s": 71.906683,
+      "rss_mb": 3140.578125,
+      "pending_finals": 3,
+      "oldest_pending_age_s": 60.7563705,
+      "partial_staleness_s": 0.7266829999999942,
+      "inflight_age_s": 0.11982933399999496,
+      "calls_done": 141,
+      "coalesced": 9
+    },
+    {
+      "t_s": 72.926704082,
+      "rss_mb": 3143.5625,
+      "pending_finals": 3,
+      "oldest_pending_age_s": 61.776391582,
+      "partial_staleness_s": null,
+      "inflight_age_s": 0.1497206250000005,
+      "calls_done": 143,
+      "coalesced": 9
+    },
+    {
+      "t_s": 73.946786166,
+      "rss_mb": 3144.921875,
+      "pending_finals": 4,
+      "oldest_pending_age_s": 62.796473666,
+      "partial_staleness_s": null,
+      "inflight_age_s": 0.18101891700000294,
+      "calls_done": 145,
+      "coalesced": 9
+    },
+    {
+      "t_s": 74.96673075,
+      "rss_mb": 3146.40625,
+      "pending_finals": 4,
+      "oldest_pending_age_s": 63.81641825,
+      "partial_staleness_s": null,
+      "inflight_age_s": null,
+      "calls_done": 148,
+      "coalesced": 9
+    },
+    {
+      "t_s": 75.986789082,
+      "rss_mb": 3150.71875,
+      "pending_finals": 3,
+      "oldest_pending_age_s": 64.836476582,
+      "partial_staleness_s": 0.4267890819999991,
+      "inflight_age_s": null,
+      "calls_done": 151,
+      "coalesced": 9
+    },
+    {
+      "t_s": 77.002379,
+      "rss_mb": 3153.171875,
+      "pending_finals": 3,
+      "oldest_pending_age_s": 65.8520665,
+      "partial_staleness_s": 0.4823790000000088,
+      "inflight_age_s": 0.00044737500000024966,
+      "calls_done": 153,
+      "coalesced": 9
+    },
+    {
+      "t_s": 78.00624925,
+      "rss_mb": 3155.203125,
+      "pending_finals": 3,
+      "oldest_pending_age_s": 66.85593675,
+      "partial_staleness_s": 0.5262492499999922,
+      "inflight_age_s": 0.02017933300000152,
+      "calls_done": 155,
+      "coalesced": 9
+    },
+    {
+      "t_s": 79.022044082,
+      "rss_mb": 3158.84375,
+      "pending_finals": 3,
+      "oldest_pending_age_s": 67.871731582,
+      "partial_staleness_s": null,
+      "inflight_age_s": 0.047487249999996095,
+      "calls_done": 157,
+      "coalesced": 9
+    },
+    {
+      "t_s": 80.028836166,
+      "rss_mb": 3165.390625,
+      "pending_finals": 4,
+      "oldest_pending_age_s": 68.878523666,
+      "partial_staleness_s": null,
+      "inflight_age_s": 0.0720003329999983,
+      "calls_done": 159,
+      "coalesced": 9
+    },
+    {
+      "t_s": 81.0467085,
+      "rss_mb": 3168.78125,
+      "pending_finals": 4,
+      "oldest_pending_age_s": 69.896396,
+      "partial_staleness_s": 0.7282709999999923,
+      "inflight_age_s": 0.1015830830000013,
+      "calls_done": 161,
+      "coalesced": 9
+    },
+    {
+      "t_s": 82.049355832,
+      "rss_mb": 3172.609375,
+      "pending_finals": 4,
+      "oldest_pending_age_s": 70.899043332,
+      "partial_staleness_s": 0.24935583200000622,
+      "inflight_age_s": null,
+      "calls_done": 164,
+      "coalesced": 9
+    },
+    {
+      "t_s": 83.066771916,
+      "rss_mb": 3176.59375,
+      "pending_finals": 4,
+      "oldest_pending_age_s": 71.916459416,
+      "partial_staleness_s": 0.3067719159999882,
+      "inflight_age_s": null,
+      "calls_done": 166,
+      "coalesced": 9
+    },
+    {
+      "t_s": 84.0679455,
+      "rss_mb": 3182.140625,
+      "pending_finals": 4,
+      "oldest_pending_age_s": 72.917633,
+      "partial_staleness_s": 0.34794549999999447,
+      "inflight_age_s": null,
+      "calls_done": 168,
+      "coalesced": 9
+    },
+    {
+      "t_s": 85.086719,
+      "rss_mb": 3182.765625,
+      "pending_finals": 4,
+      "oldest_pending_age_s": 73.9364065,
+      "partial_staleness_s": 0.4067189999999954,
+      "inflight_age_s": null,
+      "calls_done": 170,
+      "coalesced": 9
+    },
+    {
+      "t_s": 86.106717916,
+      "rss_mb": 3183.9375,
+      "pending_finals": 4,
+      "oldest_pending_age_s": 74.956405416,
+      "partial_staleness_s": 0.46671791599999324,
+      "inflight_age_s": null,
+      "calls_done": 172,
+      "coalesced": 9
+    },
+    {
+      "t_s": 87.12680225,
+      "rss_mb": 3184.140625,
+      "pending_finals": 4,
+      "oldest_pending_age_s": 75.97648975,
+      "partial_staleness_s": 0.5268022500000029,
+      "inflight_age_s": 0.02004370800000288,
+      "calls_done": 174,
+      "coalesced": 9
+    },
+    {
+      "t_s": 88.146679082,
+      "rss_mb": 3185.71875,
+      "pending_finals": 4,
+      "oldest_pending_age_s": 76.99636658200001,
+      "partial_staleness_s": 0.5866790820000034,
+      "inflight_age_s": 0.04989241699999525,
+      "calls_done": 176,
+      "coalesced": 9
+    },
+    {
+      "t_s": 89.147699666,
+      "rss_mb": 3186.796875,
+      "pending_finals": 4,
+      "oldest_pending_age_s": 77.997387166,
+      "partial_staleness_s": 0.627699665999998,
+      "inflight_age_s": 0.07051991600000207,
+      "calls_done": 178,
+      "coalesced": 9
+    },
+    {
+      "t_s": 90.16667825,
+      "rss_mb": 3188.484375,
+      "pending_finals": 4,
+      "oldest_pending_age_s": 79.01636575,
+      "partial_staleness_s": 0.6866782499999999,
+      "inflight_age_s": 0.09982179200000019,
+      "calls_done": 180,
+      "coalesced": 9
+    },
+    {
+      "t_s": 91.1666805,
+      "rss_mb": 3189.6875,
+      "pending_finals": 4,
+      "oldest_pending_age_s": 80.016368,
+      "partial_staleness_s": 0.7266805000000005,
+      "inflight_age_s": 0.11983841699999687,
+      "calls_done": 182,
+      "coalesced": 9
+    },
+    {
+      "t_s": 92.183812582,
+      "rss_mb": 3199.15625,
+      "pending_finals": 4,
+      "oldest_pending_age_s": 81.033500082,
+      "partial_staleness_s": 0.30381258200000616,
+      "inflight_age_s": null,
+      "calls_done": 185,
+      "coalesced": 9
+    },
+    {
+      "t_s": 93.1897035,
+      "rss_mb": 3200.390625,
+      "pending_finals": 4,
+      "oldest_pending_age_s": 82.039391,
+      "partial_staleness_s": 0.34970349999998973,
+      "inflight_age_s": null,
+      "calls_done": 187,
+      "coalesced": 9
+    },
+    {
+      "t_s": 94.206712666,
+      "rss_mb": 3202.265625,
+      "pending_finals": 4,
+      "oldest_pending_age_s": 83.056400166,
+      "partial_staleness_s": 0.8867126660000082,
+      "inflight_age_s": null,
+      "calls_done": 189,
+      "coalesced": 9
+    },
+    {
+      "t_s": 95.226760582,
+      "rss_mb": 3213.609375,
+      "pending_finals": 4,
+      "oldest_pending_age_s": 84.076448082,
+      "partial_staleness_s": 0.46676058199999204,
+      "inflight_age_s": null,
+      "calls_done": 191,
+      "coalesced": 9
+    },
+    {
+      "t_s": 96.246818916,
+      "rss_mb": 3217.4375,
+      "pending_finals": 4,
+      "oldest_pending_age_s": 85.096506416,
+      "partial_staleness_s": 0.5268189159999963,
+      "inflight_age_s": 0.019992250000001377,
+      "calls_done": 193,
+      "coalesced": 9
+    },
+    {
+      "t_s": 97.2668285,
+      "rss_mb": 3219.90625,
+      "pending_finals": 4,
+      "oldest_pending_age_s": 86.116516,
+      "partial_staleness_s": 0.5868284999999958,
+      "inflight_age_s": 0.05250995800000169,
+      "calls_done": 195,
+      "coalesced": 9
+    },
+    {
+      "t_s": 98.286698916,
+      "rss_mb": 3221.625,
+      "pending_finals": 4,
+      "oldest_pending_age_s": 87.13638641600001,
+      "partial_staleness_s": 0.6466989160000054,
+      "inflight_age_s": 0.08002466700000355,
+      "calls_done": 197,
+      "coalesced": 9
+    },
+    {
+      "t_s": 99.306822,
+      "rss_mb": 3222.125,
+      "pending_finals": 4,
+      "oldest_pending_age_s": 88.1565095,
+      "partial_staleness_s": 0.7068220000000025,
+      "inflight_age_s": 0.10986691699999795,
+      "calls_done": 199,
+      "coalesced": 9
+    },
+    {
+      "t_s": 100.326675416,
+      "rss_mb": 3225.140625,
+      "pending_finals": 4,
+      "oldest_pending_age_s": 89.176362916,
+      "partial_staleness_s": 0.7666754159999982,
+      "inflight_age_s": 0.13981387500000153,
+      "calls_done": 201,
+      "coalesced": 9
+    },
+    {
+      "t_s": 101.34594325,
+      "rss_mb": 3227.859375,
+      "pending_finals": 4,
+      "oldest_pending_age_s": 90.19563075,
+      "partial_staleness_s": null,
+      "inflight_age_s": null,
+      "calls_done": 205,
+      "coalesced": 9
+    },
+    {
+      "t_s": 102.345974582,
+      "rss_mb": 3228.0625,
+      "pending_finals": 4,
+      "oldest_pending_age_s": 91.195662082,
+      "partial_staleness_s": 0.5527870819999947,
+      "inflight_age_s": null,
+      "calls_done": 207,
+      "coalesced": 9
+    },
+    {
+      "t_s": 103.346469416,
+      "rss_mb": 3231.4375,
+      "pending_finals": 4,
+      "oldest_pending_age_s": 92.196156916,
+      "partial_staleness_s": null,
+      "inflight_age_s": null,
+      "calls_done": 209,
+      "coalesced": 9
+    },
+    {
+      "t_s": 104.367397332,
+      "rss_mb": 3235.78125,
+      "pending_finals": 5,
+      "oldest_pending_age_s": 93.217084832,
+      "partial_staleness_s": null,
+      "inflight_age_s": null,
+      "calls_done": 211,
+      "coalesced": 9
+    },
+    {
+      "t_s": 105.387677332,
+      "rss_mb": 3240.71875,
+      "pending_finals": 5,
+      "oldest_pending_age_s": 94.237364832,
+      "partial_staleness_s": 0.6997398319999917,
+      "inflight_age_s": 0.0006972079999982839,
+      "calls_done": 213,
+      "coalesced": 9
+    },
+    {
+      "t_s": 106.406171082,
+      "rss_mb": 3244.421875,
+      "pending_finals": 5,
+      "oldest_pending_age_s": 95.255858582,
+      "partial_staleness_s": null,
+      "inflight_age_s": 0.03223091699999969,
+      "calls_done": 215,
+      "coalesced": 9
+    },
+    {
+      "t_s": 107.406487332,
+      "rss_mb": 3247.765625,
+      "pending_finals": 6,
+      "oldest_pending_age_s": 96.256174832,
+      "partial_staleness_s": null,
+      "inflight_age_s": 0.05020150000000001,
+      "calls_done": 217,
+      "coalesced": 9
+    },
+    {
+      "t_s": 108.406651332,
+      "rss_mb": 3252.0,
+      "pending_finals": 6,
+      "oldest_pending_age_s": 97.256338832,
+      "partial_staleness_s": null,
+      "inflight_age_s": 0.06803908299999506,
+      "calls_done": 219,
+      "coalesced": 9
+    },
+    {
+      "t_s": 109.406680332,
+      "rss_mb": 3257.015625,
+      "pending_finals": 6,
+      "oldest_pending_age_s": 98.256367832,
+      "partial_staleness_s": null,
+      "inflight_age_s": 0.08989545800000087,
+      "calls_done": 221,
+      "coalesced": 9
+    },
+    {
+      "t_s": 110.4274595,
+      "rss_mb": 3257.984375,
+      "pending_finals": 6,
+      "oldest_pending_age_s": 99.277147,
+      "partial_staleness_s": 0.721959499999997,
+      "inflight_age_s": 0.11901166600000579,
+      "calls_done": 223,
+      "coalesced": 9
+    },
+    {
+      "t_s": 111.44638225,
+      "rss_mb": 3258.84375,
+      "pending_finals": 6,
+      "oldest_pending_age_s": 100.29606975,
+      "partial_staleness_s": 0.30638224999999863,
+      "inflight_age_s": null,
+      "calls_done": 226,
+      "coalesced": 9
+    },
+    {
+      "t_s": 112.46732525,
+      "rss_mb": 3259.4375,
+      "pending_finals": 6,
+      "oldest_pending_age_s": 101.31701275,
+      "partial_staleness_s": 0.3673252500000075,
+      "inflight_age_s": null,
+      "calls_done": 228,
+      "coalesced": 9
+    },
+    {
+      "t_s": 113.4866945,
+      "rss_mb": 3260.078125,
+      "pending_finals": 6,
+      "oldest_pending_age_s": 102.336382,
+      "partial_staleness_s": 0.4266944999999964,
+      "inflight_age_s": null,
+      "calls_done": 230,
+      "coalesced": 9
+    },
+    {
+      "t_s": 114.486697332,
+      "rss_mb": 3261.4375,
+      "pending_finals": 6,
+      "oldest_pending_age_s": 103.33638483200001,
+      "partial_staleness_s": 0.4666973320000096,
+      "inflight_age_s": null,
+      "calls_done": 232,
+      "coalesced": 9
+    },
+    {
+      "t_s": 115.500974916,
+      "rss_mb": 3262.921875,
+      "pending_finals": 6,
+      "oldest_pending_age_s": 104.350662416,
+      "partial_staleness_s": 0.5209749160000001,
+      "inflight_age_s": 0.0170142910000024,
+      "calls_done": 234,
+      "coalesced": 9
+    },
+    {
+      "t_s": 116.507216082,
+      "rss_mb": 3263.703125,
+      "pending_finals": 6,
+      "oldest_pending_age_s": 105.356903582,
+      "partial_staleness_s": 0.5672160820000016,
+      "inflight_age_s": 0.04102033299999874,
+      "calls_done": 236,
+      "coalesced": 9
+    },
+    {
+      "t_s": 117.526859332,
+      "rss_mb": 3271.8125,
+      "pending_finals": 6,
+      "oldest_pending_age_s": 106.376546832,
+      "partial_staleness_s": null,
+      "inflight_age_s": 0.06992779200000143,
+      "calls_done": 238,
+      "coalesced": 9
+    },
+    {
+      "t_s": 118.546691166,
+      "rss_mb": 3272.734375,
+      "pending_finals": 7,
+      "oldest_pending_age_s": 107.396378666,
+      "partial_staleness_s": null,
+      "inflight_age_s": 0.09978304199999855,
+      "calls_done": 240,
+      "coalesced": 9
+    },
+    {
+      "t_s": 119.566682832,
+      "rss_mb": 3282.875,
+      "pending_finals": 7,
+      "oldest_pending_age_s": 108.416370332,
+      "partial_staleness_s": 0.49268283199999985,
+      "inflight_age_s": 0.12982591600000148,
+      "calls_done": 242,
+      "coalesced": 9
+    },
+    {
+      "t_s": 120.566788332,
+      "rss_mb": 3284.0,
+      "pending_finals": 7,
+      "oldest_pending_age_s": 109.416475832,
+      "partial_staleness_s": 0.7867883320000004,
+      "inflight_age_s": 0.1498763330000017,
+      "calls_done": 244,
+      "coalesced": 9
+    },
+    {
+      "t_s": 121.58077025,
+      "rss_mb": 3286.109375,
+      "pending_finals": 7,
+      "oldest_pending_age_s": 110.43045775,
+      "partial_staleness_s": 0.3607702500000016,
+      "inflight_age_s": null,
+      "calls_done": 247,
+      "coalesced": 9
+    },
+    {
+      "t_s": 122.58987425,
+      "rss_mb": 3288.25,
+      "pending_finals": 7,
+      "oldest_pending_age_s": 111.43956175,
+      "partial_staleness_s": 0.40987424999998723,
+      "inflight_age_s": null,
+      "calls_done": 249,
+      "coalesced": 9
+    },
+    {
+      "t_s": 123.606933666,
+      "rss_mb": 3289.40625,
+      "pending_finals": 7,
+      "oldest_pending_age_s": 112.456621166,
+      "partial_staleness_s": 0.46693366600000275,
+      "inflight_age_s": null,
+      "calls_done": 251,
+      "coalesced": 9
+    },
+    {
+      "t_s": 124.626870666,
+      "rss_mb": 3290.703125,
+      "pending_finals": 7,
+      "oldest_pending_age_s": 113.476558166,
+      "partial_staleness_s": 0.5268706660000078,
+      "inflight_age_s": 0.019848916999997357,
+      "calls_done": 253,
+      "coalesced": 9
+    },
+    {
+      "t_s": 125.646591582,
+      "rss_mb": 3293.296875,
+      "pending_finals": 7,
+      "oldest_pending_age_s": 114.496279082,
+      "partial_staleness_s": 0.586591581999997,
+      "inflight_age_s": 0.08432700000000182,
+      "calls_done": 255,
+      "coalesced": 9
+    },
+    {
+      "t_s": 126.66993425,
+      "rss_mb": 3295.4375,
+      "pending_finals": 7,
+      "oldest_pending_age_s": 115.51962175,
+      "partial_staleness_s": 0.1099342499999949,
+      "inflight_age_s": null,
+      "calls_done": 259,
+      "coalesced": 9
+    },
+    {
+      "t_s": 127.68550875,
+      "rss_mb": 3297.296875,
+      "pending_finals": 7,
+      "oldest_pending_age_s": 116.53519625,
+      "partial_staleness_s": 0.16550875000000076,
+      "inflight_age_s": null,
+      "calls_done": 261,
+      "coalesced": 9
+    },
+    {
+      "t_s": 128.686208332,
+      "rss_mb": 3299.84375,
+      "pending_finals": 7,
+      "oldest_pending_age_s": 117.53589583200001,
+      "partial_staleness_s": 0.20620833200001698,
+      "inflight_age_s": null,
+      "calls_done": 263,
+      "coalesced": 9
+    },
+    {
+      "t_s": 129.687304666,
+      "rss_mb": 3304.0625,
+      "pending_finals": 7,
+      "oldest_pending_age_s": 118.53699216599999,
+      "partial_staleness_s": 0.2473046659999909,
+      "inflight_age_s": null,
+      "calls_done": 265,
+      "coalesced": 9
+    },
+    {
+      "t_s": 130.706685082,
+      "rss_mb": 3309.46875,
+      "pending_finals": 7,
+      "oldest_pending_age_s": 119.55637258200001,
+      "partial_staleness_s": 0.30668508200000133,
+      "inflight_age_s": null,
+      "calls_done": 267,
+      "coalesced": 9
+    },
+    {
+      "t_s": 131.726760832,
+      "rss_mb": 3312.9375,
+      "pending_finals": 7,
+      "oldest_pending_age_s": 120.576448332,
+      "partial_staleness_s": 0.3667608319999829,
+      "inflight_age_s": null,
+      "calls_done": 269,
+      "coalesced": 9
+    },
+    {
+      "t_s": 132.746698,
+      "rss_mb": 3313.28125,
+      "pending_finals": 7,
+      "oldest_pending_age_s": 121.59638550000001,
+      "partial_staleness_s": 0.9066980000000058,
+      "inflight_age_s": null,
+      "calls_done": 271,
+      "coalesced": 9
+    },
+    {
+      "t_s": 133.746712,
+      "rss_mb": 3314.34375,
+      "pending_finals": 7,
+      "oldest_pending_age_s": 122.5963995,
+      "partial_staleness_s": 0.4667120000000011,
+      "inflight_age_s": null,
+      "calls_done": 273,
+      "coalesced": 9
+    },
+    {
+      "t_s": 134.766802166,
+      "rss_mb": 3319.875,
+      "pending_finals": 7,
+      "oldest_pending_age_s": 123.61648966599999,
+      "partial_staleness_s": 0.5268021659999818,
+      "inflight_age_s": 0.020016083000001572,
+      "calls_done": 275,
+      "coalesced": 9
+    },
+    {
+      "t_s": 135.7870575,
+      "rss_mb": 3321.0625,
+      "pending_finals": 7,
+      "oldest_pending_age_s": 124.636745,
+      "partial_staleness_s": 0.5870575000000144,
+      "inflight_age_s": 0.05007370799999933,
+      "calls_done": 277,
+      "coalesced": 9
+    },
+    {
+      "t_s": 136.806611916,
+      "rss_mb": 3321.640625,
+      "pending_finals": 7,
+      "oldest_pending_age_s": 125.65629941600001,
+      "partial_staleness_s": 0.6466119160000119,
+      "inflight_age_s": 0.07984745800000326,
+      "calls_done": 279,
+      "coalesced": 9
+    },
+    {
+      "t_s": 137.806625832,
+      "rss_mb": 3322.265625,
+      "pending_finals": 7,
+      "oldest_pending_age_s": 126.65631333200001,
+      "partial_staleness_s": 0.6866258320000043,
+      "inflight_age_s": 0.09988433299999144,
+      "calls_done": 281,
+      "coalesced": 9
+    },
+    {
+      "t_s": 138.806690166,
+      "rss_mb": 3322.921875,
+      "pending_finals": 7,
+      "oldest_pending_age_s": 127.65637766600001,
+      "partial_staleness_s": 0.7266901659999974,
+      "inflight_age_s": 0.11976687499999628,
+      "calls_done": 283,
+      "coalesced": 9
+    },
+    {
+      "t_s": 139.827271166,
+      "rss_mb": 3323.078125,
+      "pending_finals": 7,
+      "oldest_pending_age_s": 128.676958666,
+      "partial_staleness_s": null,
+      "inflight_age_s": null,
+      "calls_done": 286,
+      "coalesced": 9
+    },
+    {
+      "t_s": 140.846742166,
+      "rss_mb": 3323.078125,
+      "pending_finals": 8,
+      "oldest_pending_age_s": 129.696429666,
+      "partial_staleness_s": null,
+      "inflight_age_s": null,
+      "calls_done": 288,
+      "coalesced": 9
+    },
+    {
+      "t_s": 141.866717332,
+      "rss_mb": 3323.859375,
+      "pending_finals": 8,
+      "oldest_pending_age_s": 130.716404832,
+      "partial_staleness_s": null,
+      "inflight_age_s": null,
+      "calls_done": 290,
+      "coalesced": 9
+    },
+    {
+      "t_s": 142.869008082,
+      "rss_mb": 3332.765625,
+      "pending_finals": 8,
+      "oldest_pending_age_s": 131.71869558199998,
+      "partial_staleness_s": null,
+      "inflight_age_s": null,
+      "calls_done": 292,
+      "coalesced": 9
+    }
+  ],
+  "unmatched_events": 3,
+  "events": 245,
+  "errors": [],
+  "feed_lateness_s": {
+    "n": 7177,
+    "p50": 0.003332375,
+    "p95": 0.004366583,
+    "p99": 0.004948333,
+    "max": 0.478837375,
+    "mean": 0.004696278062700289
+  },
+  "compute_per_call_s": {
+    "n": 295,
+    "p50": 0.124199125,
+    "p95": 0.206011125,
+    "p99": 0.215280209,
+    "max": 2.348589583,
+    "mean": 0.13402139954576275
+  },
+  "per_call_rtf": {
+    "n": 295,
+    "p50": 0.009422256324404762,
+    "p95": 0.026088194270833334,
+    "p99": 0.03871328125,
+    "max": 4.892894964583333,
+    "mean": 0.029065219727657292
+  },
+  "busy_s": 39.53631286599998,
+  "calls": 295,
+  "coalesced": 9,
+  "first_partial_from_onset_s": {
+    "n": 10,
+    "p50": 0.723845831999995,
+    "p95": 1.8595986659999966,
+    "p99": 1.8595986659999966,
+    "max": 1.8595986659999966,
+    "mean": 0.8759512993999996
+  },
+  "final_from_speech_end_s": {
+    "n": 4,
+    "p50": 2.5338071660000026,
+    "p95": 4.694897499999996,
+    "p99": 4.694897499999996,
+    "max": 4.694897499999996,
+    "mean": 2.680967749499999
+  },
+  "partial_staleness_s": {
+    "n": 108,
+    "p50": 0.5063870000000001,
+    "p95": 0.8252568320000009,
+    "p99": 1.5074679160000102,
+    "max": 1.816425582,
+    "mean": 0.52771682037037
+  },
+  "streaming_rtf": 0.2754375983419255,
+  "speed": 2.0,
+  "false_segments": 2,
+  "false_segments_per_min": 0.8360039013515397,
+  "false_events": [
+    {
+      "t_s": 5.675437832,
+      "kind": "partial",
+      "text": "我",
+      "confidence": null
+    },
+    {
+      "t_s": 50.902475332,
+      "kind": "partial",
+      "text": "我",
+      "confidence": null
+    },
+    {
+      "t_s": 51.07617875,
+      "kind": "partial",
+      "text": "我",
+      "confidence": null
+    }
+  ],
+  "missed_utterances": 7,
+  "cer_micro": 0.7528830313014827,
+  "stream_cer": 0.128500823723229,
+  "exact_match_rate": 0.0
+}

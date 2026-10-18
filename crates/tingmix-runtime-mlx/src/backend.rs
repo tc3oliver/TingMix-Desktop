@@ -73,11 +73,18 @@ impl MlxLargeBackend {
         let logits = self.chunk_logits(wav)?;
         let v = self.vocab.len();
         let lp = log_softmax_rows(&logits, v);
-        let confidence = non_blank_confidence(&lp, v);
+        let text_conf = non_blank_confidence(&lp, v);
         let text = match &mut self.decode {
             Decode::Greedy => self.vocab.decode(&greedy_ids(&lp, v)),
             Decode::BeamLm(lm, cfg) => beam_decode(&lp, &self.vocab, lm, cfg).text,
         };
+        // The beam+LM path can write characters although every frame's best label is blank (its length bonus and the LM
+        // outvote the blank): that is the signature of a hallucination, so report zero confidence rather than none.
+        let confidence = text_conf.or(if text.trim().is_empty() {
+            None
+        } else {
+            Some(0.0)
+        });
         Ok((text, confidence))
     }
 }

@@ -89,7 +89,7 @@ impl<B: AsrBackend> Decoder<B> {
             match self
                 .suppression
                 .as_ref()
-                .is_some_and(|p| p.rejects(&text, conf))
+                .is_some_and(|p| p.rejects(&text, conf, job.kind == JobKind::Final))
             {
                 true => String::new(),
                 false => text,
@@ -170,11 +170,8 @@ impl<B: AsrBackend> Decoder<B> {
 
     fn final_(&mut self, job: &Job, text: String) -> Option<Event> {
         self.last = None;
-        // A suppressed (or empty) final of a segment that already showed text keeps what the user saw.
-        let text = match (text.is_empty(), self.transcript.current(job.segment_id)) {
-            (true, Some(p)) if self.suppression.is_some() => p.text.clone(),
-            _ => text,
-        };
+        // A suppressed final is an empty one: if the segment showed a partial it closes with empty text (the caption is
+        // retracted), otherwise nothing is emitted.
         if text.is_empty() && self.transcript.current(job.segment_id).is_none() {
             return None; // false trigger, nothing was ever shown
         }
