@@ -1,59 +1,46 @@
-# Contributing to TingMix Desktop
+# Contributing
 
-Thanks for helping. This project is a local-only speech recognition app; changes are judged on correctness, privacy and
-honest measurement. Please read this page and the [Code of Conduct](CODE_OF_CONDUCT.md) first.
+Thanks for taking a look. A few things matter more than usual in this project.
 
-## Ground rules
+**Privacy.** Audio and text stay on the user's machine. No telemetry, no cloud calls, and nothing that listens on a
+network port. The only network traffic is the model download and app updates, and both happen only when the user starts
+them.
 
-- **Privacy:** audio and transcripts never leave the machine. No cloud inference, no telemetry, no listening network
-  sockets. Network use is limited to user-authorised model downloads and application updates.
-- **No Python in the shipped app.** Python lives only under `experiments/` and `tools/`; each harness is its own
-  [`uv`](https://docs.astral.sh/uv/) project with pinned dependencies (`uv sync`).
-- **No model weights, converted models or large dumps in git** (see `.gitignore`). Small golden fixtures (under 1 MB each) may
-  live in `tests/fixtures/`.
-- **No secrets** in the repository, in command arguments, logs or fixtures. Signing keys are never committed.
-- **Do not copy third-party text** (system prompts, transcripts or subtitles of other people's media, model output you did not
-  generate) into the repository. Generate fixtures instead.
-- **Report results honestly.** Use the status words: `VERIFIED` (measured with the real TingMix model), `EXPERIMENTAL`
-  (implemented or officially supported, parity or speed unmeasured), `BLOCKED` (missing operator, artifact or permission).
-  Never claim a successful conversion, GPU or Neural Engine use, signing or accuracy without a measurement. Keep raw benchmark
-  output (JSON) next to the exact command, hardware and artifact SHA-256.
-- Changes to the training repositories (`tc3oliver/tingmix`, `tc3oliver/embed2asr`) are not made here; write a request in
-  `docs/research/requests-to-training.md` instead.
+**No Python in the app.** Python is fine under `experiments/` and `tools/`. Each folder there is its own
+[uv](https://docs.astral.sh/uv/) project, so run `uv sync` inside it.
 
-## Setup
+**Keep big files out of git.** That means model weights, converted models and large dumps. Test fixtures should stay under
+about 1 MB each.
 
-See the build section of the [README](README.md). Before sending a change, run what applies:
+**Measure before you claim.** If a change makes something faster or more accurate, include the numbers, the command and the
+hardware. Raw benchmark output goes under `benchmarks/` next to the command that produced it. Don't say something runs on
+the GPU or the Neural Engine unless you measured it.
 
-    pnpm typecheck && pnpm test
-    cargo fmt --all --check
-    cargo clippy --workspace --all-targets -- -D warnings
-    cargo test --workspace
-    cargo deny check                   # licences, advisories, sources (install cargo-deny)
-    python3 tools/licenses/inventory.py --check   # docs/release/dependency-licenses.md is current
+**Don't paste other people's content.** That includes transcripts or subtitles of someone else's media, and copied model
+output. Generate test data instead.
 
-Tests that need model files or large inputs skip themselves when their environment variables are unset; say in the pull
-request which of them you ran.
+## Before you open a pull request
 
-## Pull requests
+```sh
+pnpm typecheck && pnpm test
+cargo fmt --all --check
+cargo clippy --workspace --all-targets -- -D warnings
+cargo test --workspace
+cargo deny check
+```
 
-- One logical change per pull request, with tests for new logic and for every bug fixed (the failing case first).
-- Match the surrounding code: naming, comment density and idiom. Comments say why, not what.
-- Commit messages: imperative subject line, a body that says what changed and why it was wrong before. Do not add tool or
-  assistant attribution trailers.
-- Adding a dependency needs a reason in the pull request, its licence (it must pass `cargo deny`), and a regenerated
-  `docs/release/dependency-licenses.md`. Prefer the standard library and existing dependencies.
-- Changes to anything that downloads, verifies or activates a model, or that touches signing, need a security note in the
-  description (see [SECURITY.md](SECURITY.md)).
-- User-visible text goes through the translation files for both English and Traditional Chinese.
+If you add a dependency, say why, make sure `cargo deny` passes, and regenerate the licence list with
+`python3 tools/licenses/inventory.py`.
 
-## Reporting bugs and proposing features
+Keep each pull request to one change and add a test for anything new or fixed. Any UI text needs both the English and the
+Traditional Chinese strings (`src/i18n/`). If you touch model download, verification or signing, explain the security
+side in the description.
 
-Use the issue templates. For a recognition problem include the app version, platform, backend and model shown in the
-Diagnostics tab, and whether the audio can be shared (do not attach audio you do not have the right to share). Security
-problems go through [SECURITY.md](SECURITY.md), not public issues.
+Commit messages: a short imperative subject, then a body saying what changed and why.
 
-## License
+## Issues
 
-By contributing you agree that your contribution is licensed under the Apache License 2.0, the same as the project (section 5
-of the license).
+Use the issue templates. For recognition problems, include the app version, your OS, and the details from Settings ›
+About › Troubleshooting info. Only attach audio you're allowed to share.
+
+By contributing you agree that your work is licensed under Apache-2.0, like the rest of the project.

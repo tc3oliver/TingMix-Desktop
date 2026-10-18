@@ -1,13 +1,11 @@
 ---
 name: Feature request
-about: Suggest an improvement
+about: Suggest something
 labels: enhancement
 ---
 
-**What problem does this solve?**
+**What are you trying to do?**
 
-**What would you like to happen?**
+**What would help?**
 
-**Alternatives considered**
-
-**Privacy impact** (everything must stay on the user's machine; say if this needs network access)
+**Does it need the network?** Everything stays on the user's machine today, so say if this would change that.

@@ -1,22 +1,20 @@
 ---
 name: Bug report
-about: Something does not work as described
+about: Something doesn't work
 labels: bug
 ---
 
 **What happened, and what did you expect?**
 
-**Steps to reproduce**
+**How to reproduce it**
 
-**Environment** (Diagnostics tab shows most of this)
-- App version / commit:
+**Setup**
+- App version or commit:
 - OS and version:
-- Backend and model shown (for example `mlx`, `onnx-cpu`, demo mode):
-- Microphone or file input:
+- Microphone or file:
+- Troubleshooting info (Settings › About › Troubleshooting info › Copy):
 
-**Logs or screenshots** (remove anything private; do not attach audio you may not share)
+**Wrong transcription?** Paste what you said and what the app wrote, and say whether it's Mandarin, English or mixed. Only
+attach audio you're allowed to share.
 
-**Recognition problem?** Give the expected text, the actual text, the language (Mandarin, English, mixed), and whether the
-problem is reproducible with a file.
-
-Security problems: do not file them here, see SECURITY.md.
+For security problems, see SECURITY.md instead.

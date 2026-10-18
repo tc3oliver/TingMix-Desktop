@@ -1,104 +1,92 @@
 # TingMix Desktop
 
-Local speech recognition for the desktop: live captions from the microphone and transcription of audio files, with
-Partial / Revision / Final results and TXT / SRT export. All audio and text stay on your computer. The app is built with
-Tauri 2 (Rust back end, React + TypeScript front end) and runs the recognizer natively, without Python.
+Offline speech-to-text for macOS and Windows. It does live captions from the microphone and transcribes audio and video
+files, in Taiwanese Mandarin, English, and the two mixed together. Nothing you say or transcribe leaves your computer.
 
-It is the desktop front end for the [TingMix](https://github.com/tc3oliver/tingmix) models (Taiwanese Mandarin, English and
-Mandarin-English code-switching), built on [Embed2ASR](https://github.com/tc3oliver/embed2asr) and Google's
-[EmbeddingGemma 2](https://huggingface.co/google/embeddinggemma-2) audio encoder.
+它是一個離線的語音轉文字桌面程式，支援台灣華語、英文和中英夾雜，可以做即時字幕，也可以轉錄音訊或影片檔。聲音和文字都只留在你的電腦上。
 
-> **Status: experimental, pre-release.** There are no signed or notarized builds yet, no published installers, and the speech
-> models are not part of this repository. Until a model is installed the app runs in a clearly labelled **demo mode** that
-> emits placeholder words, never recognized speech. See [Status](#status) and [Limitations](#limitations).
-
-## Platforms
-
-| Platform | State |
-|---|---|
-| macOS 13+ on Apple silicon (arm64) | builds and runs; TingMix-Large through MLX (EXPERIMENTAL) |
-| Windows 11 x64 | builds, installs per user, starts; CPU inference through ONNX Runtime (EXPERIMENTAL, pipeline-tested with a placeholder network only) |
-| Intel Mac, Linux, Windows on ARM | not targeted |
-
-The user interface is available in English and Traditional Chinese and follows the operating-system language.
-
-## What is in the repository
-
-| Path | Contents |
-|---|---|
-| `src/`, `src-tauri/` | React UI and the Tauri host (capture, sessions, file jobs, settings, model manager, updater hook) |
-| `crates/` | Rust libraries: audio capture and decoding, streaming session and events, log-mel front end, CTC and language-model decoder, signed model registry, ONNX Runtime and MLX back ends, benchmark harness |
-| `tests/fixtures/` | small golden fixtures (synthetic speech, decoder and session cases) |
-| `docs/` | architecture, release notes, and the research record (audit, parity, benchmarks) |
-| `benchmarks/` | raw benchmark output with the commands that produced it |
-| `experiments/`, `tools/` | Python research harnesses and export tools (each its own `uv` project; never part of the app) |
-
-## Build from source
-
-Clone the repository (`git clone https://github.com/tc3oliver/TingMix-Desktop.git`). Requirements: Rust 1.85 or newer (`rustup` or your package manager), Node 24 with pnpm 10, and the platform toolchain for
-Tauri 2 ([prerequisites](https://v2.tauri.app/start/prerequisites/)): Xcode command-line tools on macOS; Visual Studio
-Build Tools (MSVC) and the WebView2 runtime on Windows. Python is only needed for the research tools.
-
-    pnpm install
-    pnpm tauri dev                    # run the app in development (demo mode until a model is installed)
-
-    pnpm typecheck && pnpm test       # front end
-    cargo fmt --all --check
-    cargo clippy --workspace --all-targets -- -D warnings
-    cargo test --workspace            # tests that need model files skip themselves when their inputs are absent
-
-Release-style bundles load a pinned, checksum-verified ONNX Runtime at run time:
-
-    tools/ort-fetch/fetch.sh macos-arm64      # or windows-x64
-    pnpm bundle:macos                         # .app and .dmg, unsigned
-    pnpm bundle:windows                       # NSIS installer, unsigned (run on Windows)
-
-Details, results and what was and was not checked: [docs/release/packaging.md](docs/release/packaging.md),
-[docs/release/onnxruntime.md](docs/release/onnxruntime.md), [docs/release/windows-validation.md](docs/release/windows-validation.md).
-The MLX back end needs an MLX build and extra bundling steps: [docs/architecture/app.md](docs/architecture/app.md).
-
-## Models
-
-No model weights are stored in this repository, and none are bundled in the installers. The app installs a model from a
-**signed package**: a manifest signed with an Ed25519 key whose public half is compiled into the app, listing every file with
-its size, SHA-256 and licence. Packages can be downloaded by the app or imported offline from a folder or zip. Before
-anything is installed the app shows each file's licence and asks you to accept it; unknown, incomplete or tampered files are
-rejected, and only data formats are accepted (no pickles, no scripts).
-
-- TingMix-Large needs Google's EmbeddingGemma 2 audio tower (Apache-2.0, downloaded from Google's Hugging Face repository at a
-  pinned revision) plus the TingMix reader, LoRA adapter and language model. Their data and licence notes are in
-  [docs/research/licensing-review.md](docs/research/licensing-review.md).
-- TingMix-Small (a streaming CPU model) has no released checkpoint yet.
-
-How trust, rollback and offline import work: [docs/architecture/model-management.md](docs/architecture/model-management.md).
+The recognizer is [TingMix-Large](https://huggingface.co/tc3oliver/TingMix-Large), which pairs the audio encoder from
+Google's [EmbeddingGemma 2](https://huggingface.co/google/embeddinggemma-2) with a small CTC reader and a character language
+model. The app is written in Rust and TypeScript on [Tauri 2](https://v2.tauri.app/) and runs the model natively: MLX on
+Apple silicon, ONNX Runtime on Windows. There is no Python in the app.
 
 ## Status
 
-Status words used throughout the repository: **VERIFIED** (measured with the real TingMix model), **EXPERIMENTAL**
-(implemented or officially supported, TingMix parity or speed not fully measured), **BLOCKED** (missing operator, artifact or
-permission).
+Early and unpolished. There are no prebuilt releases yet, so you have to build it yourself, and the builds are not code
+signed. It works on the two machines it was developed on (an M4 Max Mac and a Ryzen 7 / RTX 5070 Ti PC); I haven't tried it
+anywhere else.
 
-- TingMix-Large on Apple silicon through MLX reproduces the reference recognizer's text on 8 synthetic clips (EXPERIMENTAL).
-- The Rust CTC and language-model decoder and the Rust log-mel front end match the Python reference on the reference outputs.
-- The Small streaming pipeline (front end, ONNX graph, state carry, INT8 mechanics) works end to end with placeholder weights;
-  accuracy and acceptance targets cannot be measured without a trained checkpoint (BLOCKED).
-- The research record, with the measured numbers and their limits, is in [docs/research/](docs/research/).
+Accuracy is whatever TingMix-Large gives you. On clear speech it is good. On a casual YouTube product review with background
+music it got about 32% of characters wrong, and it tends to miss brand names and rare proper nouns.
 
-## Limitations
+## Platforms
 
-- No signed or notarized builds; macOS Gatekeeper and Windows SmartScreen will warn on development bundles.
-- No real-speech accuracy evaluation of the desktop back ends yet; parity tests use synthetic speech.
-- TingMix-Large re-decodes the open segment while streaming (the model is offline); latency is measured on one Mac and one
-  Windows PC only.
-- Models are not distributed from this repository; the training data of the published TingMix models carries its own licences.
-- Updates are disabled until an updater key is configured.
+- macOS 13 or later on Apple silicon
+- Windows 11, x64 (runs on the CPU; a GPU isn't needed)
 
-## Contributing, security, conduct
+## The model
 
-See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+The model isn't in this repository or in the installer. On first launch the app offers to download it (about 1.4 GB) from
+[tc3oliver/TingMix-Desktop](https://huggingface.co/tc3oliver/TingMix-Desktop) on Hugging Face. After that it works
+offline.
+
+Every package is described by a manifest that lists each file's size and SHA-256 and is signed with an Ed25519 key built
+into the app. Anything that doesn't match is refused, and a package can never be replaced by an older one. You can also
+install a package from a folder or a zip without a network connection. The details are in
+[docs/architecture/model-management.md](docs/architecture/model-management.md).
+
+The model weights are Apache-2.0, but some of the data TingMix-Large was trained on is non-commercial (CC BY-NC) or
+share-alike (CC BY-SA). The model card lists every source. Read it before using the model for anything commercial.
+
+## Building
+
+You need Rust 1.85 or newer, Node 24 with pnpm 10, and the
+[Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) for your platform (Xcode command line tools on macOS,
+Visual Studio Build Tools and WebView2 on Windows).
+
+```sh
+git clone https://github.com/tc3oliver/TingMix-Desktop.git
+cd TingMix-Desktop
+pnpm install
+tools/ort-fetch/fetch.sh macos-arm64     # or windows-x64: fetches the pinned ONNX Runtime
+pnpm tauri dev
+```
+
+To build an installer, run `pnpm bundle:windows` on Windows. The macOS app with the MLX engine is built by
+`tools/bundle-mlx.sh release`, which needs an MLX install; [docs/architecture/app.md](docs/architecture/app.md) explains
+how.
+
+Tests:
+
+```sh
+pnpm typecheck && pnpm test
+cargo fmt --all --check
+cargo clippy --workspace --all-targets -- -D warnings
+cargo test --workspace
+```
+
+Tests that need the real model skip themselves unless you point them at one.
+
+## Layout
+
+```
+src/            React UI
+src-tauri/      Tauri host: audio capture, sessions, file jobs, settings, model setup
+crates/         Rust libraries: audio, streaming and VAD, decoder, mel front end,
+                model registry, MLX and ONNX Runtime engines, benchmarks
+tests/fixtures/ small test inputs (synthetic speech, decoder cases)
+experiments/    Python scripts used to port and check the model (not shipped)
+tools/          export, packaging and fixture scripts
+benchmarks/     raw benchmark results, with the command that produced each one
+docs/           architecture notes, release notes and research write-ups
+```
+
+## Contributing
+
+Bug reports and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md). Report security problems privately, as
+described in [SECURITY.md](SECURITY.md).
 
 ## License
 
-Apache License 2.0, see [LICENSE](LICENSE) and [NOTICE](NOTICE). Third-party licences of Rust and npm dependencies and bundled
-binaries: [docs/release/dependency-licenses.md](docs/release/dependency-licenses.md). Model licences are separate and are
-shown by the app before installation.
+Apache-2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE). Dependency licences are listed in
+[docs/release/dependency-licenses.md](docs/release/dependency-licenses.md).

@@ -15,3 +15,6 @@ experiments/**/out/
 !tests/fixtures/**/*.npy
 tools/**/out/
 vendor/
+
+# local agent notes
+/CLAUDE.md

@@ -1,6 +1,6 @@
 # TingMix-Large on ONNX Runtime (Windows path)
 
-Status words follow `CLAUDE.md`. Owner decision 2026-10-18: Windows transcribes with Large. Everything here is **EXPERIMENTAL**:
+Status words follow CONTRIBUTING.md. Owner decision 2026-10-18: Windows transcribes with Large. Everything here is **EXPERIMENTAL**:
 parity and speed are measured with the real TingMix-Large weights, but only on 8 synthetic TTS clips (no real-speech accuracy
 set) and on one Windows PC. Weights: `google/embeddinggemma-2@914f7f8` audio tower plus `TingMix-Large@75071a1` (LoRA merged, fp32).
 

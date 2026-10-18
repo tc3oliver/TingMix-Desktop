@@ -1,4 +1,4 @@
-# TingMix Desktop: product UX brief (task #34)
+# Product UX brief
 
 For: implementers of `docs/design/ux-product.md`. It replaces the parts of `docs/design/ui-ux.md` that assume a technical user: the Models tab (`ui-ux.md:60-69`), the "{model} · Experimental" chip (`ui-ux.md:39-45`) and the "Speech engine" settings section (`ui-ux.md:93-94`). The rest of that brief still applies: contrast, caption scrolling, screen-reader behaviour, confirm before delete, and the copy rules at `ui-ux.md:116-122`.
 
@@ -18,7 +18,7 @@ Everything below comes from reading the code. I was not given any renders, so ev
    - This is the single most "experimental-feeling" thing in the app.
 2. **Windows users are told "this Mac".**
    - Strings: `en.ts:115,140,150,151,220-223` and the host fallbacks at `src-tauri/src/backends.rs:364,370,376,382`.
-   - These reach Windows because the ONNX path is being wired (task #33/#35).
+   - These reach Windows now that Windows has a working engine.
 3. **Every live History entry has the same English name,** "Live session" (`commands.rs:88`), and it is shown untranslated in zh-TW (`src/features/history/HistoryPanel.tsx:41`).
 4. **Screen-reader chatter during the download.** The stage text updates on every byte and sits in `role="status"` (`src/features/setup/SetupScreen.tsx:66-67`, text from `src/features/models/onboard.ts:24`).
 5. **Raw technical details are shown to users** through `{detail}`:
