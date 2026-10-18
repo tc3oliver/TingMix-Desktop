@@ -13,14 +13,21 @@ download-binaries = ["ort/download-binaries", "ort/tls-native"]
 # Release: no download at build time; the pinned, sha256-verified Microsoft build (tools/ort-fetch) is loaded
 # from an explicit path at run time. Build with `--no-default-features --features load-dynamic`.
 load-dynamic = ["ort/load-dynamic"]
+# Execution providers (need an ORT build that contains them: pyke download-binaries with these features, or the matching
+# Microsoft DirectML / CUDA package loaded with load-dynamic).
+directml = ["ort/directml"]
+cuda = ["ort/cuda"]
 
 [dependencies]
 tingmix-core = { path = "../tingmix-core" }
+tingmix-decoder = { path = "../tingmix-decoder" }
+tingmix-frontend-gemma = { path = "../tingmix-frontend-gemma" }
 ort = { version = "=2.0.0-rc.14", default-features = false, features = ["std", "ndarray"] }
 rustfft = "6.4.1"
 thiserror = "2.0.21"
 
 [dev-dependencies]
+serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 tingmix-streaming = { path = "../tingmix-streaming" }
 hound = "3.5.1"

@@ -8,9 +8,11 @@
 mod backend;
 mod ctc;
 mod frontend;
+mod large;
 mod model;
 
 pub use backend::{OnnxSmall, SmallStream, TokenDecoder};
 pub use ctc::Collapser;
 pub use frontend::{LogMel, MelStream, HOP, N_FFT, N_MELS, WIN};
+pub use large::{Decode, OnnxLarge, Provider};
 pub use model::{set_runtime_library, Error, SharedModel, StepModel, StepState, Streamer};

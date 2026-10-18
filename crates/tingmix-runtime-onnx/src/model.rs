@@ -16,7 +16,7 @@ pub enum Error {
     Contract(String),
 }
 
-fn ort_err(e: impl std::fmt::Display) -> Error {
+pub(crate) fn ort_err(e: impl std::fmt::Display) -> Error {
     Error::Ort(e.to_string())
 }
 
@@ -29,12 +29,27 @@ pub fn set_runtime_library(path: impl Into<PathBuf>) {
     let _ = LIBRARY.set(path.into());
 }
 
+static ENVIRONMENT: OnceLock<ort::environment::Environment> = OnceLock::new();
+
+/// The process-wide ORT environment (ORT allows exactly one; every session of every backend shares it).
+pub(crate) fn environment() -> Result<ort::environment::Environment, Error> {
+    if let Some(e) = ENVIRONMENT.get() {
+        return Ok(e.clone());
+    }
+    let env = build_environment()?;
+    Ok(ENVIRONMENT.get_or_init(|| env).clone())
+}
+
 #[cfg(feature = "load-dynamic")]
-fn environment() -> Result<ort::environment::Environment, Error> {
+fn build_environment() -> Result<ort::environment::Environment, Error> {
     let path = LIBRARY
         .get()
         .cloned()
-        .or_else(|| ["TINGMIX_ORT_DYLIB", "ORT_DYLIB_PATH"].iter().find_map(|k| std::env::var_os(k).filter(|v| !v.is_empty()).map(PathBuf::from)))
+        .or_else(|| {
+            ["TINGMIX_ORT_DYLIB", "ORT_DYLIB_PATH"]
+                .iter()
+                .find_map(|k| std::env::var_os(k).filter(|v| !v.is_empty()).map(PathBuf::from))
+        })
         .ok_or_else(|| Error::Ort("no ONNX Runtime library configured: call set_runtime_library or set TINGMIX_ORT_DYLIB".into()))?;
     if !path.is_absolute() {
         return Err(Error::Ort(format!(
@@ -49,7 +64,7 @@ fn environment() -> Result<ort::environment::Environment, Error> {
 }
 
 #[cfg(not(feature = "load-dynamic"))]
-fn environment() -> Result<ort::environment::Environment, Error> {
+fn build_environment() -> Result<ort::environment::Environment, Error> {
     ort::init().build().map_err(ort_err)
 }
 
