@@ -151,14 +151,19 @@ impl Registry {
         )
     }
 
+    /// Licences not yet accepted at their current URL: changed terms are asked again.
     pub fn missing_acceptances(&self, m: &Manifest) -> Vec<String> {
         m.licenses_requiring_acceptance()
             .filter(|l| {
-                !self
+                let path = self
                     .root
                     .join("acceptances")
-                    .join(format!("{}.json", safe_name(&l.id)))
-                    .is_file()
+                    .join(format!("{}.json", safe_name(&l.id)));
+                let accepted_url = fs::read_to_string(path)
+                    .ok()
+                    .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
+                    .and_then(|v| v.get("url").and_then(|u| u.as_str().map(str::to_owned)));
+                accepted_url.as_deref() != Some(l.url.as_str())
             })
             .map(|l| l.id.clone())
             .collect()

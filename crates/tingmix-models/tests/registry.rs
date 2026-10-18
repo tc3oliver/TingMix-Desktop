@@ -687,3 +687,17 @@ fn shipped_mlx_manifest_has_provenance_and_licence_acceptance() {
         .unwrap();
     assert!(g.acceptance_required && g.notes.contains("Prohibited Use Policy"));
 }
+
+#[test]
+fn changed_licence_url_is_asked_again() {
+    let dir = tempfile::tempdir().unwrap();
+    let reg = registry(dir.path());
+    let mut raw = manifest("v1", "http://127.0.0.1:1", 1);
+    let m = signed(&raw);
+    assert_eq!(reg.missing_acceptances(m.manifest()), ["model-terms"]);
+    accept(&reg, &m);
+    assert!(reg.missing_acceptances(m.manifest()).is_empty());
+    raw.licenses[0].url = "https://example.invalid/new-terms".into();
+    let changed = signed(&raw);
+    assert_eq!(reg.missing_acceptances(changed.manifest()), ["model-terms"]);
+}
