@@ -5,18 +5,19 @@ import { HistoryPanel } from "../features/history/HistoryPanel";
 import { LivePanel } from "../features/live/LivePanel";
 import { useLive } from "../features/live/useLive";
 import { ModelsPanel } from "../features/models/ModelsPanel";
+import { SetupScreen } from "../features/setup/SetupScreen";
 import { SettingsPanel } from "../features/settings/SettingsPanel";
 import { I18nProvider, resolveLocale, useT } from "../i18n";
 import { hostText } from "../i18n/host";
 import { api, errorText, onBackend, onDrag, onFilesDropped } from "../lib/api";
-import { demoBanner, engineChip } from "../lib/engine";
+import { demoBanner, engineChip, needsSetup } from "../lib/engine";
 import { isMac, label, shortcutFor } from "../lib/shortcuts";
 import type { BackendState, Settings } from "../types/protocol";
 
 const TABS = ["live", "files", "history", "models", "settings"] as const;
 type Tab = (typeof TABS)[number];
 
-const DEFAULTS: Settings = { device_id: null, theme: "system", caption_size: 28, save_history: true, experimental_backends: false, language: "auto" };
+const DEFAULTS: Settings = { device_id: null, theme: "system", caption_size: 28, save_history: true, language: "auto" };
 const MAC = isMac(navigator.platform);
 
 /** Owns the saved settings and the language; everything visible lives in `Main`, inside the translation context. */
@@ -115,6 +116,8 @@ function Main({ settings, update, error, setError }: MainProps) {
   const banner = demoBanner(bs, t);
   const openModels = () => setTab("models");
   const toggleKey = label(MAC, "Enter");
+  // release builds never run on the placeholder engine: until a model is usable the first-run screen replaces Live and Files
+  const setupNeeded = needsSetup(bs);
 
   return (
     <div className="app">
@@ -157,14 +160,14 @@ function Main({ settings, update, error, setError }: MainProps) {
       <main>
         {/* the live and file panels stay mounted so a recording and running jobs survive switching tabs */}
         <div role="tabpanel" id="panel-live" aria-labelledby="tab-live" hidden={tab !== "live"} className="panel live-panel">
-          <LivePanel live={live} settings={settings} onSettings={update} backend={bs} shortcut={toggleKey} onOpenModels={openModels} />
+          {setupNeeded ? <SetupScreen backend={bs} onOpenModels={openModels} /> : <LivePanel live={live} settings={settings} onSettings={update} backend={bs} shortcut={toggleKey} onOpenModels={openModels} />}
         </div>
         <div role="tabpanel" id="panel-files" aria-labelledby="tab-files" hidden={tab !== "files"} className="panel">
-          <FilesPanel files={files} settings={settings} backend={bs} onOpenModels={openModels} shortcut={label(MAC, "O")} />
+          {setupNeeded ? <SetupScreen backend={bs} onOpenModels={openModels} /> : <FilesPanel files={files} settings={settings} backend={bs} onOpenModels={openModels} shortcut={label(MAC, "O")} />}
         </div>
         {tab === "history" && <div role="tabpanel" id="panel-history" aria-labelledby="tab-history" className="panel"><HistoryPanel settings={settings} /></div>}
-        {tab === "models" && <div role="tabpanel" id="panel-models" aria-labelledby="tab-models" className="panel"><ModelsPanel backend={bs} settings={settings} onSettings={update} /></div>}
-        {tab === "settings" && <div role="tabpanel" id="panel-settings" aria-labelledby="tab-settings" className="panel"><SettingsPanel settings={settings} onSettings={update} onOpenModels={openModels} mac={MAC} /></div>}
+        {tab === "models" && <div role="tabpanel" id="panel-models" aria-labelledby="tab-models" className="panel"><ModelsPanel backend={bs} onOpenModels={openModels} /></div>}
+        {tab === "settings" && <div role="tabpanel" id="panel-settings" aria-labelledby="tab-settings" className="panel"><SettingsPanel settings={settings} onSettings={update} mac={MAC} /></div>}
       </main>
       {dragging && <div className="drop-overlay" aria-hidden="true"><p>{t("app.drop_overlay")}</p></div>}
     </div>

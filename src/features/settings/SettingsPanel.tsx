@@ -43,11 +43,10 @@ function Updates({ t }: { t: Translate }) {
 interface Props {
   settings: Settings;
   onSettings: (s: Settings) => void;
-  onOpenModels: () => void;
   mac: boolean;
 }
 
-export function SettingsPanel({ settings, onSettings, onOpenModels, mac }: Props) {
+export function SettingsPanel({ settings, onSettings, mac }: Props) {
   const t = useT();
   // the slider keeps its own value while dragging and saves once it settles, so replies from earlier saves cannot move it
   const [size, setSize] = useState(settings.caption_size);
@@ -106,21 +105,6 @@ export function SettingsPanel({ settings, onSettings, onOpenModels, mac }: Props
         <label>
           <input type="checkbox" checked={settings.save_history} onChange={(e) => onSettings({ ...settings, save_history: e.target.checked })} /> {t("settings.save_history")}
         </label>
-      </fieldset>
-
-      <fieldset>
-        <legend><h2>{t("settings.engine")}</h2></legend>
-        <label>
-          <input
-            type="checkbox"
-            aria-describedby="exp-hint"
-            checked={settings.experimental_backends}
-            onChange={(e) => onSettings({ ...settings, experimental_backends: e.target.checked })}
-          />{" "}
-          {t("settings.experimental")}
-        </label>
-        <p id="exp-hint" className="muted small">{t("settings.experimental_hint")}</p>
-        <button className="link" onClick={onOpenModels}>{t("settings.open_models")}</button>
       </fieldset>
 
       <Updates t={t} />

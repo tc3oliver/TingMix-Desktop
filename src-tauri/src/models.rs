@@ -89,8 +89,6 @@ pub struct PendingInstall {
     pub precision: String,
     pub download_bytes: u64,
     pub compat_status: String,
-    /// The engine is EXPERIMENTAL and experimental engines are still off: the confirm card asks whether to enable them.
-    pub experimental: bool,
     pub licenses: Vec<LicenseDto>,
 }
 
@@ -103,6 +101,8 @@ pub struct Models {
     registry: Result<Registry, String>,
     root: PathBuf,
     caps: Capabilities,
+    /// Tests only: manifests may name `http://127.0.0.1:<port>/` file URLs.
+    loopback_http: bool,
     pending: Mutex<HashMap<String, Pending>>,
     op: Mutex<Option<Op>>,
 }
@@ -118,13 +118,20 @@ impl Models {
     }
 
     pub fn open(root: PathBuf) -> Self {
+        Self::open_with(root, Verifier::embedded(), false)
+    }
+
+    /// `verifier` and `loopback_http` are for tests (a throwaway key and a local fixture server).
+    pub fn open_with(root: PathBuf, verifier: Verifier, loopback_http: bool) -> Self {
         let registry = std::fs::create_dir_all(&root)
             .map_err(|e| e.to_string())
-            .and_then(|()| Registry::open(&root, Verifier::embedded()).map_err(|e| e.to_string()));
+            .and_then(|()| Registry::open(&root, verifier).map_err(|e| e.to_string()))
+            .map(|r| r.allow_loopback_http(loopback_http));
         Self {
             registry,
             root,
             caps: Capabilities::detect(),
+            loopback_http,
             pending: Mutex::default(),
             op: Mutex::default(),
         }
@@ -254,6 +261,15 @@ impl Models {
         self.pending_for(m, token, Some((path, zip)))
     }
 
+    /// Licence step for a manifest that already passed signature verification (a catalog entry).
+    pub fn begin_verified(
+        &self,
+        m: VerifiedManifest,
+        token: String,
+    ) -> Result<PendingInstall, String> {
+        self.pending_for(m, token, None)
+    }
+
     fn pending_for(
         &self,
         m: VerifiedManifest,
@@ -262,7 +278,7 @@ impl Models {
     ) -> Result<PendingInstall, String> {
         let reg = self.reg()?;
         let mf = m.manifest();
-        mf.validate(false).map_err(|e| e.to_string())?;
+        mf.validate(self.loopback_http).map_err(|e| e.to_string())?;
         let missing = reg.missing_acceptances(mf);
         let out = PendingInstall {
             token: token.clone(),
@@ -272,7 +288,6 @@ impl Models {
             precision: mf.precision.clone(),
             download_bytes: mf.download_size(),
             compat_status: mf.compat.status.clone(),
-            experimental: false,
             licenses: mf
                 .licenses
                 .iter()

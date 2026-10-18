@@ -117,9 +117,6 @@ pub struct Settings {
     /// Caption font size in px.
     pub caption_size: u32,
     pub save_history: bool,
-    /// Allow EXPERIMENTAL inference backends (ONNX Small, MLX Large) to be selected. Off by default.
-    #[serde(default)]
-    pub experimental_backends: bool,
     /// `auto` (follow the OS), or a language id the UI offers: `en`, `zh-TW`.
     #[serde(default = "default_language")]
     pub language: String,
@@ -136,7 +133,6 @@ impl Default for Settings {
             theme: "system".into(),
             caption_size: 28,
             save_history: true,
-            experimental_backends: false,
             language: default_language(),
         }
     }

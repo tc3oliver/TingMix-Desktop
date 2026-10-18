@@ -1,5 +1,4 @@
 import { friendlyName } from "./format";
-import type { Key } from "../i18n/en";
 import type { Translate } from "../i18n";
 
 /** The host labels placeholder output "Mock — not ASR"; anything else names the model and its status. */
@@ -13,12 +12,9 @@ export function exportNote(label: string | null | undefined): string | undefined
   return isMock(label) ? MOCK_NOTE : undefined;
 }
 
-/** Display name of a backend label: "Demo mode", or "<Model name> · <status>" for "<id> (<engine>) — STATUS". */
+/** Display name of a backend label: "Demo mode", or the model name for "<id> (<engine>) — STATUS" (the status word is for Diagnostics). */
 export function labelText(label: string | null | undefined, t: Translate): string {
   if (isMock(label)) return t("engine.demo");
   const m = /^(.+?) \((.+?)\) — (\w+)$/.exec(label ?? "");
-  if (!m) return label ?? "";
-  const key = `status.${m[3]!.toLowerCase()}` as Key;
-  const status = t(key);
-  return `${friendlyName(m[1]!)} · ${status === key ? m[3] : status}`;
+  return m ? friendlyName(m[1]!) : (label ?? "");
 }

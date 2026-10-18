@@ -1,10 +1,10 @@
 //! Runtime selection for the host: which `AsrBackend` the next session uses.
 //!
-//! Policy: the mock backend ("Mock — not ASR") is the default. A real backend is used only when the user activated an
-//! installed model AND `tingmix-models` selection accepts it (backend registered, runtime present, requirements met, a
-//! fresh passing compatibility probe). Both real backends are EXPERIMENTAL and `select` refuses non-VALIDATED backends,
-//! so they are registered as eligible only while "experimental backends" is switched on in Settings. A real backend
-//! that fails to load is an error, never a silent switch to the mock.
+//! Policy: a real backend is used when an installed model is active AND `tingmix-models` selection accepts it (backend
+//! registered, runtime present, requirements met, a fresh passing compatibility probe); the best accepted engine wins
+//! automatically, there is no user-facing gate. The placeholder engine ("Mock — not ASR") exists in debug builds only: a
+//! release build with no usable model has nothing to run and the UI shows the setup (download) screen. A real backend that
+//! fails to load is an error, never a silent switch to the placeholder.
 
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -28,10 +28,6 @@ pub const MLX: &str = "mlx";
 pub const ORT_VERSION: &str = "1.31.0";
 
 /// What each real backend honestly is. Change to `VALIDATED` only when its parity and probe evidence says so.
-pub fn is_experimental(backend: &str) -> bool {
-    status_word(backend) == "EXPERIMENTAL"
-}
-
 fn status_word(backend: &str) -> &'static str {
     match backend {
         ONNX | MLX => "EXPERIMENTAL",
@@ -252,12 +248,10 @@ fn mlx_runtime() -> Option<(String, String)> {
     None
 }
 
-pub fn regs(experimental_ok: bool, rt: &Runtimes) -> Vec<BackendReg> {
-    let validation = if experimental_ok {
-        Validation::Validated
-    } else {
-        Validation::Experimental
-    };
+/// Every backend compiled into this build is eligible: the best one that passes its compatibility test is used
+/// automatically. The EXPERIMENTAL status word survives only as a label for Advanced and Diagnostics.
+pub fn regs(rt: &Runtimes) -> Vec<BackendReg> {
+    let validation = Validation::Validated;
     let mut v = vec![BackendReg {
         backend: ONNX.into(),
         validation,
@@ -275,6 +269,11 @@ pub fn regs(experimental_ok: bool, rt: &Runtimes) -> Vec<BackendReg> {
         });
     }
     v
+}
+
+/// Whether this build can run `backend` at all (compiled in, and its runtime library present).
+pub fn engine_available(backend: &str, rt: &Runtimes) -> bool {
+    version_of(backend, rt).is_some()
 }
 
 fn version_of(backend: &str, rt: &Runtimes) -> Option<String> {
@@ -302,7 +301,10 @@ pub struct BackendInfoDto {
     pub reason: String,
     pub rejected: Vec<(String, String)>,
     pub ort_library: Option<String>,
-    pub experimental_allowed: bool,
+    /// Debug builds may run on the placeholder engine; release builds never do.
+    pub demo_allowed: bool,
+    /// A session can start: a real engine is chosen, or the demo engine is allowed.
+    pub usable: bool,
 }
 
 pub struct Decision {
@@ -313,6 +315,11 @@ pub struct Decision {
 }
 
 /// Plain-language version of a `tingmix-models` rejection reason or a backend error.
+/// The placeholder engine exists for development only: release builds never run on it.
+pub fn demo_allowed() -> bool {
+    cfg!(debug_assertions)
+}
+
 pub fn plain(why: &str, backend: &str) -> String {
     let engine = match backend {
         MLX => "MLX",
@@ -339,12 +346,6 @@ pub fn plain(why: &str, backend: &str) -> String {
             format!(
                 "This build of TingMix doesn't include the {engine} engine this model needs.{hint}"
             ),
-        )
-    } else if why.contains("EXPERIMENTAL") {
-        coded(
-            "backend.experimental",
-            json!({}),
-            "This model uses an experimental engine. Turn on “Allow EXPERIMENTAL inference backends” in Settings, or tick the box when importing.",
         )
     } else if why.contains("no verified compatibility probe") {
         coded(
@@ -375,7 +376,7 @@ pub fn plain(why: &str, backend: &str) -> String {
     }
 }
 
-pub fn decide(models: &Models, experimental_ok: bool, rt: &Runtimes) -> Decision {
+pub fn decide(models: &Models, rt: &Runtimes) -> Decision {
     let none = |reason: String, rejected| Decision {
         chosen: None,
         reason,
@@ -410,7 +411,7 @@ pub fn decide(models: &Models, experimental_ok: bool, rt: &Runtimes) -> Decision
             )
         }
     };
-    let regs = regs(experimental_ok, rt);
+    let regs = regs(rt);
     let probe_of = |m: &Manifest| {
         let (v, d) = (version_of(&m.backend, rt), device_of(&m.backend));
         fresh(reg.root(), &m.backend, m, v.as_deref(), &d)
@@ -452,8 +453,8 @@ pub fn decide(models: &Models, experimental_ok: bool, rt: &Runtimes) -> Decision
     }
 }
 
-pub fn info(models: &Models, experimental_ok: bool, rt: &Runtimes) -> BackendInfoDto {
-    let d = decide(models, experimental_ok, rt);
+pub fn info(models: &Models, rt: &Runtimes) -> BackendInfoDto {
+    let d = decide(models, rt);
     let (label, mock, experimental) = match &d.chosen {
         None => (BACKEND_LABEL.to_string(), true, false),
         Some((id, backend)) => (
@@ -469,7 +470,8 @@ pub fn info(models: &Models, experimental_ok: bool, rt: &Runtimes) -> BackendInf
         reason: d.reason,
         rejected: d.rejected,
         ort_library: rt.ort_library.as_ref().map(|p| p.display().to_string()),
-        experimental_allowed: experimental_ok,
+        demo_allowed: demo_allowed(),
+        usable: !mock || demo_allowed(),
     }
 }
 
@@ -479,10 +481,17 @@ pub struct Resolved {
 }
 
 /// The backend for the next session, loaded. A failing real backend is an error.
-pub fn resolve(models: &Models, experimental_ok: bool, rt: &Runtimes) -> Result<Resolved, String> {
-    let i = info(models, experimental_ok, rt);
-    let d = decide(models, experimental_ok, rt);
+pub fn resolve(models: &Models, rt: &Runtimes) -> Result<Resolved, String> {
+    let i = info(models, rt);
+    let d = decide(models, rt);
     let Some((id, backend)) = d.chosen else {
+        if !demo_allowed() {
+            return Err(crate::coded::coded(
+                "setup.required",
+                serde_json::json!({}),
+                "TingMix needs its speech model before it can transcribe. Open the setup screen to download it.",
+            ));
+        }
         return Ok(Resolved {
             backend: Dyn::mock(),
             label: i.label,
@@ -599,11 +608,7 @@ pub struct BackendState {
 
 pub fn state_of(st: &crate::state::AppState) -> BackendState {
     BackendState {
-        info: info(
-            &st.models,
-            st.store.settings().experimental_backends,
-            &st.runtimes,
-        ),
+        info: info(&st.models, &st.runtimes),
         load: st.warm.view(),
     }
 }
@@ -648,8 +653,7 @@ impl Warm {
 pub fn preload(app: &tauri::AppHandle) {
     use tauri::Manager;
     let st = app.state::<crate::state::AppState>();
-    let exp = st.store.settings().experimental_backends;
-    let d = decide(&st.models, exp, &st.runtimes);
+    let d = decide(&st.models, &st.runtimes);
     let notify = publish;
     let Some(key) = key_of(&d) else {
         *st.warm.slot.lock().unwrap() = WarmState::Empty;
@@ -673,7 +677,7 @@ pub fn preload(app: &tauri::AppHandle) {
         .name("tingmix-preload".into())
         .spawn(move || {
             let st = app.state::<crate::state::AppState>();
-            let r = resolve(&st.models, exp, &st.runtimes);
+            let r = resolve(&st.models, &st.runtimes);
             {
                 let mut slot = st.warm.slot.lock().unwrap();
                 // the choice may have changed while loading; then this copy is simply dropped
@@ -722,8 +726,7 @@ pub fn onboard_core(
 pub fn take(app: &tauri::AppHandle) -> Result<Resolved, String> {
     use tauri::Manager;
     let st = app.state::<crate::state::AppState>();
-    let exp = st.store.settings().experimental_backends;
-    let key = key_of(&decide(&st.models, exp, &st.runtimes));
+    let key = key_of(&decide(&st.models, &st.runtimes));
     if let Some(key) = key {
         let mut slot = st.warm.slot.lock().unwrap();
         loop {
@@ -741,7 +744,7 @@ pub fn take(app: &tauri::AppHandle) -> Result<Resolved, String> {
             }
         }
     }
-    resolve(&st.models, exp, &st.runtimes)
+    resolve(&st.models, &st.runtimes)
 }
 
 // ---- compatibility probe ------------------------------------------------------------------------------------------
@@ -1027,11 +1030,6 @@ mod tests {
             "{onnx}"
         );
         assert!(plain(
-            "backend mlx is EXPERIMENTAL; only VALIDATED backends are selected",
-            MLX
-        )
-        .contains("Allow EXPERIMENTAL"));
-        assert!(plain(
             "no verified compatibility probe result for this backend",
             MLX
         )
@@ -1046,32 +1044,30 @@ mod tests {
             plain("needs 16 GiB RAM, machine has 8 GiB", MLX),
             "Needs 16 GiB RAM, machine has 8 GiB"
         );
-        assert!(is_experimental(MLX) && is_experimental(ONNX) && !is_experimental("other"));
     }
 
     #[test]
     fn mock_is_the_default_and_the_label_is_honest() {
         let (m, dir) = models("default");
-        let i = info(&m, false, &Runtimes::default());
+        let i = info(&m, &Runtimes::default());
         assert!(i.mock && !i.experimental);
         assert_eq!(i.label, BACKEND_LABEL);
         assert!(i.reason.contains("No model is active") && i.reason.contains("backend.no_model"));
         assert_eq!(
-            resolve(&m, true, &Runtimes::default()).unwrap().label,
+            resolve(&m, &Runtimes::default()).unwrap().label,
             BACKEND_LABEL
         );
         std::fs::remove_dir_all(dir).unwrap();
     }
 
     #[test]
-    fn real_backends_are_experimental_unless_the_user_opts_in_and_need_their_runtime() {
-        let off = regs(false, &Runtimes::default());
-        assert!(off.iter().all(|r| r.validation == Validation::Experimental));
-        let on = regs(true, &Runtimes::default());
-        assert!(on.iter().all(|r| r.validation == Validation::Validated));
+    fn every_compiled_backend_is_eligible_and_needs_its_runtime() {
+        let regs0 = regs(&Runtimes::default());
+        assert!(regs0.iter().all(|r| r.validation == Validation::Validated));
         // ONNX needs the library file to exist
         assert_eq!(
-            on.iter()
+            regs0
+                .iter()
                 .find(|r| r.backend == ONNX)
                 .unwrap()
                 .runtime_version,
@@ -1081,7 +1077,7 @@ mod tests {
             ort_library: Some(std::env::current_exe().unwrap()),
         };
         assert_eq!(
-            regs(true, &here)
+            regs(&here)
                 .iter()
                 .find(|r| r.backend == ONNX)
                 .unwrap()

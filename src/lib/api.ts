@@ -19,6 +19,7 @@ import type {
   ModelsOverview,
   PendingInstall,
   Settings,
+  SetupView,
   UpdateInfo,
 } from "../types/protocol";
 
@@ -43,13 +44,13 @@ export const api = {
   modelsOverview: () => invoke<ModelsOverview>("models_overview"),
   modelsBeginImport: (kind: "folder" | "zip") => invoke<PendingInstall | null>("models_import", { kind }),
   modelsBeginInstall: () => invoke<PendingInstall | null>("models_begin_install"),
-  modelsInstall: (token: string, accepted: string[], enableExperimental: boolean) =>
-    invoke<void>("models_install", { token, accepted, enableExperimental }),
+  modelsInstall: (token: string, accepted: string[]) => invoke<void>("models_install", { token, accepted }),
   modelsCancel: () => invoke<void>("models_cancel"),
   modelsActivate: (id: string) => invoke<void>("models_activate", { id }),
   modelsRollback: () => invoke<string>("models_rollback"),
   modelsRemove: (id: string) => invoke<void>("models_remove", { id }),
   modelsProbe: (id: string) => invoke<void>("models_probe", { id }),
+  setupCheck: () => invoke<SetupView>("setup_check"),
   backendState: () => invoke<BackendState>("backend_state"),
   updaterCheck: () => invoke<UpdateInfo>("updater_check"),
   micStatus: () => invoke<MicStatus>("mic_permission_status"),

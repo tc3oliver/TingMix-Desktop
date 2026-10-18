@@ -4,23 +4,22 @@ import { useI18n } from "../../i18n";
 import { hostCode, hostText, reasonText } from "../../i18n/host";
 import { api, errorText, onBackend, onModelOp } from "../../lib/api";
 import { friendlyName } from "../../lib/format";
-import type { BackendState, ModelOp, ModelsOverview, PendingInstall, Settings } from "../../types/protocol";
+import type { BackendState, ModelOp, ModelsOverview, PendingInstall } from "../../types/protocol";
+import { SetupScreen } from "../setup/SetupScreen";
 import { cardStatus, onboardStage } from "./onboard";
 
 interface Props {
   backend: BackendState | null;
-  settings: Settings;
-  onSettings: (s: Settings) => void;
+  onOpenModels: () => void;
 }
 
-export function ModelsPanel({ backend, settings, onSettings }: Props) {
+export function ModelsPanel({ backend, onOpenModels }: Props) {
   const { t, number } = useI18n();
   const mb = (n: number) => (n >= 1 << 30 ? `${number(n / (1 << 30), { maximumFractionDigits: 2 })} GiB` : `${number(n / (1 << 20), { maximumFractionDigits: 1 })} MiB`);
   const [o, setO] = useState<ModelsOverview | null>(null);
   const [op, setOp] = useState<ModelOp | null>(null);
   const [pending, setPending] = useState<PendingInstall | null>(null);
   const [accepted, setAccepted] = useState<string[]>([]);
-  const [enableExperimental, setEnableExperimental] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
@@ -70,12 +69,11 @@ export function ModelsPanel({ backend, settings, onSettings }: Props) {
       const p = await f();
       setPending(p);
       setAccepted([]);
-      setEnableExperimental(false);
     });
   };
   const confirmInstall = () => act(async () => {
     if (!pending) return;
-    await api.modelsInstall(pending.token, accepted, enableExperimental);
+    await api.modelsInstall(pending.token, accepted);
     closePending();
   });
 
@@ -102,12 +100,6 @@ export function ModelsPanel({ backend, settings, onSettings }: Props) {
         )}
       </article>
 
-      <div className="row toolbar">
-        <button className="primary" onClick={() => begin(() => api.modelsBeginImport("folder"))} disabled={running || !o?.registry_available}>{t("models.add_folder")}</button>
-        <button onClick={() => begin(() => api.modelsBeginImport("zip"))} disabled={running || !o?.registry_available}>{t("models.add_zip")}</button>
-        <button onClick={() => begin(api.modelsBeginInstall)} disabled={running || !o?.registry_available}>{t("models.install_manifest")}</button>
-      </div>
-
       {pending && (
         <article className="card" aria-labelledby="licence-title" onKeyDown={(e) => e.key === "Escape" && closePending()}>
           <h2 id="licence-title" ref={heading} tabIndex={-1}>{t("models.licence_title", { name: friendlyName(pending.id) })}</h2>
@@ -129,13 +121,6 @@ export function ModelsPanel({ backend, settings, onSettings }: Props) {
               <ul className="small">{pending.licenses.filter((l) => !l.acceptance_required).map((l) => <li key={l.id}>{l.name}{l.spdx ? ` (${l.spdx})` : ""} · {l.url}</li>)}</ul>
             </>
           )}
-          {pending.experimental && (
-            <label className="block">
-              <input type="checkbox" checked={enableExperimental} onChange={(e) => setEnableExperimental(e.target.checked)} /> {t("models.enable_exp")}
-              <div className="muted small">{t("models.enable_exp_hint")}</div>
-            </label>
-          )}
-          <p className="muted small">{t("models.after_add")}</p>
           <div className="row">
             <button className="primary" disabled={!canInstall || running} onClick={confirmInstall}>{required.length ? t("models.accept_add") : t("models.add_model")}</button>
             <button onClick={closePending}>{t("common.cancel")}</button>
@@ -143,7 +128,7 @@ export function ModelsPanel({ backend, settings, onSettings }: Props) {
         </article>
       )}
 
-      {op && (
+      {op && (o?.installed.length ?? 0) > 0 && (
         <article className={`card stage ${stage?.phase ?? ""}`} aria-live="polite">
           <div className="row">
             <strong className="ellipsis" title={op.name}>{friendlyName(op.name)}</strong>
@@ -154,20 +139,10 @@ export function ModelsPanel({ backend, settings, onSettings }: Props) {
         </article>
       )}
 
-      {o && o.installed.length === 0 && (
-        <article className="card">
-          <h2>{t("models.start_title")}</h2>
-          <ol>
-            <li>{t("models.start_1")}</li>
-            <li>{t("models.start_2")}</li>
-            <li>{t("models.start_3")}</li>
-          </ol>
-        </article>
-      )}
+      {o && o.installed.length === 0 && <SetupScreen backend={backend} onOpenModels={onOpenModels} />}
       {o?.installed.map((m) => {
         const inUseHere = !!backend && !backend.info.mock && backend.info.label.startsWith(m.id);
         const status = cardStatus(m, backend, op, t);
-        const experimental = hostCode(backend?.info.reason) === "backend.experimental" && m.active && !settings.experimental_backends;
         return (
           <article key={m.id} className="card model">
             <div className="row between">
@@ -182,7 +157,6 @@ export function ModelsPanel({ backend, settings, onSettings }: Props) {
               )}
             </div>
             <p className={hostCode(backend?.info.reason) === "backend.missing_engine" || /test_failed/.test(hostCode(backend?.info.reason) ?? "") ? (m.active ? "error small" : "muted small") : "muted small"}>{status}</p>
-            {experimental && <button onClick={() => onSettings({ ...settings, experimental_backends: true })}>{t("models.turn_on_exp")}</button>}
             <details>
               <summary>{t("models.details")}</summary>
               <dl className="kv small">
@@ -210,6 +184,14 @@ export function ModelsPanel({ backend, settings, onSettings }: Props) {
 
       <details className="card">
         <summary>{t("models.advanced")}</summary>
+        <h3>{t("models.add_title")}</h3>
+      <div className="row">
+        <button className="primary" onClick={() => begin(() => api.modelsBeginImport("folder"))} disabled={running || !o?.registry_available}>{t("models.add_folder")}</button>
+        <button onClick={() => begin(() => api.modelsBeginImport("zip"))} disabled={running || !o?.registry_available}>{t("models.add_zip")}</button>
+        <button onClick={() => begin(api.modelsBeginInstall)} disabled={running || !o?.registry_available}>{t("models.install_manifest")}</button>
+      </div>
+
+
         {o?.capabilities && (
           <p className="muted small">
             {o.capabilities.apple_chip

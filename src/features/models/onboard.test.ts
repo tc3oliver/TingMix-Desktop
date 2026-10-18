@@ -8,7 +8,7 @@ const tz = translator("zh-TW");
 const coded = (code: string, text: string, params: Record<string, unknown> = {}) => JSON.stringify({ code, params, text });
 const op = (p: Partial<ModelOp>): ModelOp => ({ kind: "import", name: "m1", state: "running", message: null, bytes_done: 0, bytes_total: 0, ...p });
 const backend = (p: { mock: boolean; label: string; reason?: string }): BackendState => ({
-  info: { label: p.label, mock: p.mock, experimental: !p.mock, reason: p.reason ?? "", rejected: [], ort_library: null, experimental_allowed: true },
+  info: { label: p.label, mock: p.mock, experimental: !p.mock, reason: p.reason ?? "", rejected: [], ort_library: null, demo_allowed: true, usable: true },
   load: { loading: false, label: null, error: null },
 });
 const real = backend({ mock: false, label: "m1 (mlx) — EXPERIMENTAL" });
@@ -50,7 +50,6 @@ describe("model card status line", () => {
   });
   it("shows a running test and maps the host's reason codes to short lines", () => {
     expect(cardStatus(m, mock, op({ kind: "probe" }), t)).toBe("Testing on this Mac…");
-    expect(cardStatus(m, withReason(coded("backend.experimental", "x")), null, t)).toContain("Experimental");
     expect(cardStatus(m, withReason(coded("backend.missing_engine", "x", { engine: "MLX", mlx: true })), null, t)).toBe("Not supported in this build.");
     expect(cardStatus(m, mock, null, t)).toBe("Not tested yet.");
     expect(cardStatus(m, withReason(coded("backend.test_failed", "x")), null, t)).toMatch(/^Test failed\. The test run/);

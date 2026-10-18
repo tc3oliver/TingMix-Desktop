@@ -413,11 +413,7 @@ pub async fn diagnostics(state: State<'_, AppState>) -> Result<Diagnostics, Stri
         .as_ref()
         .map(|s| s.status())
         .unwrap_or_default();
-    let bi = backends::info(
-        &state.models,
-        state.store.settings().experimental_backends,
-        &state.runtimes,
-    );
+    let bi = backends::info(&state.models, &state.runtimes);
     Ok(Diagnostics {
         app_version: env!("CARGO_PKG_VERSION").into(),
         os: std::env::consts::OS.into(),
@@ -444,12 +440,6 @@ pub async fn diagnostics(state: State<'_, AppState>) -> Result<Diagnostics, Stri
 
 pub const MODELS_EVENT: &str = "tingmix://models";
 
-fn mark_experimental(state: &AppState, mut p: PendingInstall) -> PendingInstall {
-    p.experimental =
-        backends::is_experimental(&p.backend) && !state.store.settings().experimental_backends;
-    p
-}
-
 fn models_notify(app: &AppHandle) -> crate::models::Notify {
     let app = app.clone();
     Arc::new(move |v| {
@@ -472,11 +462,7 @@ fn models_notify(app: &AppHandle) -> crate::models::Notify {
 pub async fn models_overview(state: State<'_, AppState>) -> Result<ModelsOverview, String> {
     let mut o = state.models.overview();
     if o.registry_available {
-        let d = backends::decide(
-            &state.models,
-            state.store.settings().experimental_backends,
-            &state.runtimes,
-        );
+        let d = backends::decide(&state.models, &state.runtimes);
         o.selection = Some(crate::models::SelectionDto {
             chosen: d.chosen.map(|c| c.0),
             reason: d.reason,
@@ -510,7 +496,7 @@ pub async fn models_import(
     state
         .models
         .begin_import(path, kind == "zip", state.next_id("install"))
-        .map(|p| Some(mark_experimental(&state, p)))
+        .map(Some)
         .inspect_err(|e| state.note_error(format!("model import: {e}")))
 }
 
@@ -531,7 +517,7 @@ pub async fn models_begin_install(
     state
         .models
         .begin_install(&bytes, state.next_id("install"))
-        .map(|p| Some(mark_experimental(&state, p)))
+        .map(Some)
 }
 
 #[tauri::command]
@@ -540,15 +526,7 @@ pub async fn models_install(
     state: State<'_, AppState>,
     token: String,
     accepted: Vec<String>,
-    enable_experimental: bool,
 ) -> Result<(), String> {
-    // consent given in the confirm card replaces a separate trip to Settings
-    if enable_experimental {
-        let mut s = state.store.settings();
-        s.experimental_backends = true;
-        state.store.save_settings(s)?;
-        backends::publish(&app);
-    }
     state.models.install(&token, &accepted, models_notify(&app))
 }
 
@@ -566,8 +544,7 @@ pub async fn models_activate(
 ) -> Result<(), String> {
     state.models.activate(&id)?;
     // "Use this model" is one step: test it right away when no fresh test result exists
-    let exp = state.store.settings().experimental_backends;
-    let d = backends::decide(&state.models, exp, &state.runtimes);
+    let d = backends::decide(&state.models, &state.runtimes);
     if d.chosen.is_none() && d.reason.contains("hasn't been tested") {
         if let Err(e) = backends::start_probe(
             &state.models,
@@ -716,4 +693,20 @@ pub async fn mic_permission_request() -> Result<crate::mic::MicStatus, String> {
 #[tauri::command]
 pub async fn mic_open_settings() -> Result<(), String> {
     crate::mic::open_settings()
+}
+
+/// What the first-run screen should show. Fetches the signed catalog only when no model is installed.
+#[tauri::command]
+pub async fn setup_check(state: State<'_, AppState>) -> Result<crate::setup::SetupView, String> {
+    let cfg = crate::setup::Catalog {
+        url: crate::setup::catalog_url(),
+        allow_loopback_http: false,
+    };
+    let token = state.next_id("install");
+    Ok(crate::setup::check(
+        &state.models,
+        &state.runtimes,
+        &cfg,
+        token,
+    ))
 }

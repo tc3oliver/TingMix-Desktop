@@ -44,7 +44,6 @@ export function cardStatus(m: { id: string; active: boolean }, backend: BackendS
   if (!info) return t("models.status.checking");
   if (!info.mock && info.label.startsWith(m.id)) return t("models.status.ready");
   switch (hostCode(info.reason)) {
-    case "backend.experimental": return t("models.status.experimental");
     case "backend.missing_engine": return t("models.status.unsupported");
     case "backend.untested": return t("models.status.untested");
     case "backend.test_failed":

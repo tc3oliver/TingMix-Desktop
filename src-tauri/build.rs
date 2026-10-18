@@ -26,6 +26,7 @@ const COMMANDS: &[&str] = &[
     "models_verify",
     "models_probe",
     "backend_state",
+    "setup_check",
     "updater_check",
     "updater_install",
     "mic_permission_status",

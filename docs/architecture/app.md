@@ -28,9 +28,9 @@ shown (Models tab, Diagnostics, banner):
    RAM/CPU/chip requirements met, and a **fresh passing compatibility probe** (Models tab -> "Run compatibility probe": load,
    decode the shipped `zh_02s` fixture, compare with the oracle text, record RTF; stale after a runtime, OS, device or
    model change);
-3. both real backends are EXPERIMENTAL and `select` only accepts VALIDATED ones, so they are registered as eligible only
-   while **Settings -> Allow EXPERIMENTAL inference backends** is on (default off). The banner then reads
-   `EXPERIMENTAL backend: <model> (<backend>) — EXPERIMENTAL`. Their true status is the `status_word` table in `backends.rs`.
+3. every backend compiled into the build is eligible; there is no user-facing switch. The best engine that passes its test
+   is used automatically. Their true status (EXPERIMENTAL for both today) is the `status_word` table in `backends.rs` and is
+   shown only in Models > Technical details and Diagnostics.
 
 A selected backend that fails to load makes Start / file import fail with the error; there is no silent fallback to the mock.
 
@@ -106,10 +106,26 @@ install is refused while a live session runs. An update replaces the app bundle 
 directory (`models/`), are verified by their own signed manifests, and an app update never installs, switches or
 re-activates one.
 
+## First run: download the speech model (task 27)
+
+A release build never runs on the placeholder engine (`backends::demo_allowed()` is `cfg!(debug_assertions)`). With no usable
+model, `BackendInfo.usable` is false, Live and Files are replaced by the setup screen (`features/setup/SetupScreen.tsx`, also
+shown inside Models when nothing is installed) and starting a session fails with `setup.required`. The host
+(`setup::check`, command `setup_check`) fetches the **signed catalog** (`tingmix_models::catalog`: one signed manifest or an
+array, each entry verified against the trusted keys; plain http refused except loopback in tests) from `setup::catalog_url()`,
+a build-time constant (`TINGMIX_CATALOG_URL` at compile time overrides the default). It keeps entries for this OS and CPU that
+are downloadable and whose engine this build contains, and answers one of: ready / download (licences to accept, size) /
+problem (a model is installed but unusable) / unavailable (`platform`: nothing for this computer yet, `build`: this build
+lacks the engine) / offline. The download is the existing `Models::install` (resumable ranges, cancel, hash check, signed
+manifest, atomic commit); when it finishes `onboard_core` activates the model and tests it, and the pushed backend event
+removes the screen. A cancelled or failed download keeps its bytes, and "Resume download" continues from them.
+**Not live yet**: the default catalog URL points at a file the owner has not published (task 29: release signing key and
+signed packages); until then a real release build shows "TingMix can't reach the model server". Tests use a loopback server
+and a throwaway key (`setup.rs` tests, `tingmix-models/tests/catalog.rs`) plus the MLX end-to-end test.
+
 ## Model onboarding and live state
 
-Importing or downloading a model is one flow: the confirm card lists the licences and, for an EXPERIMENTAL engine while
-experimental engines are off, asks right there whether to enable them (`models_install(..., enableExperimental)`). When the
+Importing or downloading a model is one flow: the confirm card lists the licences to accept. When the
 operation finishes the host (`backends::onboard_core`) activates the model if none is active and starts the compatibility test
 ("Verifying and copying files…" -> "Testing on this Mac…" -> "Ready: <model>" or a plain-language problem). "Use this model"
 activates and tests when there is no fresh test result. The UI never polls: every change (activate, test result, rollback,
@@ -124,7 +140,7 @@ suffix `(MOCK)`). Frontend logic with tests: `features/models/onboard.ts`, `lib/
 
 Five tabs (Live, Files, History, Models, Settings; Diagnostics is a collapsible section at the bottom of Settings and polls
 only while open) with the ARIA tabs pattern. The engine chip right of the tabs is the one place that states the engine
-(`lib/engine.ts`): Checking / Demo mode / Loading / failed / `<model> · Experimental` / `<model>`; it opens Models. The banner
+(`lib/engine.ts`): Checking / Demo mode (debug builds) / Setup needed (release, no model) / Loading / failed / `<model>`; it opens Models. The banner
 shows in demo mode only. The window is the layout (header fixed, the active panel scrolls inside), Live fills the height.
 Keyboard: Cmd/Ctrl+1..5 tabs, +Enter start/stop, +O choose file, +=/- caption size, Esc dismisses an error or closes the
 licence card (`lib/shortcuts.ts`, tested). Live warns when a recording delivers silence for 3 s or no samples for 2 s and offers

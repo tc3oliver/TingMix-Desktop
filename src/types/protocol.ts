@@ -89,7 +89,6 @@ export interface Settings {
   theme: "system" | "light" | "dark";
   caption_size: number;
   save_history: boolean;
-  experimental_backends: boolean;
   /** `auto` or a language id (`en`, `zh-TW`). */
   language: string;
 }
@@ -172,8 +171,6 @@ export interface LicenseInfo {
 
 export interface PendingInstall {
   token: string;
-  /** Experimental engine while experimental engines are off: the confirm card asks to enable them. */
-  experimental: boolean;
   id: string;
   family: string;
   backend: string;
@@ -190,7 +187,10 @@ export interface BackendInfo {
   reason: string;
   rejected: [string, string][];
   ort_library: string | null;
-  experimental_allowed: boolean;
+  /** Debug builds may run on the placeholder engine; release builds never do. */
+  demo_allowed: boolean;
+  /** A session can start: a real engine is chosen, or the placeholder is allowed. */
+  usable: boolean;
 }
 
 export interface UpdateInfo {
@@ -218,3 +218,10 @@ export interface BackendState {
   info: BackendInfo;
   load: LoadView;
 }
+
+export type SetupView =
+  | { state: "ready" }
+  | { state: "download"; pending: PendingInstall }
+  | { state: "problem"; reason: string }
+  | { state: "unavailable"; why: "platform" | "build"; reason: string }
+  | { state: "offline"; reason: string };

@@ -1,6 +1,6 @@
 //! Host-level end-to-end test of the MLX Large path, ignored unless `TINGMIX_E2E_MLX_PACKAGE` points at a package folder:
 //! signed manifest + the files it lists (see docs/architecture/app.md). Steps: offline import with licence acceptance ->
-//! automatic activate + probe after the import -> selection refuses while experimental backends are off -> picks `mlx`
+//! automatic activate + probe after the import -> selection picks `mlx` on its own
 //! -> file transcription equals the oracle text -> live session on replayed audio emits partial and final events.
 //!
 //! cargo test needs `--features mlx`, `MLX_PREFIX`, `TINGMIX_MLX_DEV_RPATH=1`, and `TINGMIX_MLX_WORKER=<tingmix-mlx-worker>`.
@@ -147,26 +147,16 @@ fn mlx_import_probe_select_transcribe_live() {
         "the first imported model becomes the active one"
     );
 
-    // 2. selection: refused while experimental backends are off, picks mlx once they are on
-    let off = backends::decide(&models, false, &rt);
-    assert!(
-        off.chosen.is_none() && off.reason.contains("experimental engine"),
-        "{}",
-        off.reason
-    );
-    let on = backends::decide(&models, true, &rt);
+    // 2. selection: the best probed engine is chosen on its own, no setting involved
+    let on = backends::decide(&models, &rt);
     assert_eq!(
         on.chosen.as_ref().map(|c| c.1.as_str()),
         Some("mlx"),
         "{}",
         on.reason
     );
-    let info = backends::info(&models, true, &rt);
-    assert!(
-        !info.mock && info.experimental && info.label.contains("EXPERIMENTAL"),
-        "{}",
-        info.label
-    );
+    let info = backends::info(&models, &rt);
+    assert!(!info.mock && info.usable, "{}", info.label);
     println!("selection: {}", on.reason);
 
     // 4. file transcription == oracle text
@@ -179,7 +169,7 @@ fn mlx_import_probe_select_transcribe_live() {
         .unwrap()
         .to_string();
     let wav = root().join("tests/fixtures/audio/mix_08s.wav");
-    let resolved = backends::resolve(&models, true, &rt).expect("load mlx backend");
+    let resolved = backends::resolve(&models, &rt).expect("load mlx backend");
     let mut reducer = Reducer::new();
     let (mut partials, mut finals_seen) = (0, 0);
     let out = crate::files::run(
@@ -202,7 +192,7 @@ fn mlx_import_probe_select_transcribe_live() {
     assert_eq!(got, want);
 
     // 5. live session on replayed audio
-    let resolved = backends::resolve(&models, true, &rt).expect("load mlx backend");
+    let resolved = backends::resolve(&models, &rt).expect("load mlx backend");
     let log: Arc<Mutex<Vec<LiveMsg>>> = Arc::default();
     let l = log.clone();
     let sink: Sink = Arc::new(move |m| l.lock().unwrap().push(m));
