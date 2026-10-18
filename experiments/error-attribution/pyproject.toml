@@ -1,0 +1,24 @@
+[project]
+name = "tingmix-error-attribution"
+version = "0.0.0"
+description = "Error attribution of TingMix-Large on real zh-TW recordings (research only, never shipped)"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "numpy==2.5.4",
+    "torch==2.9.1",
+    "torchaudio==2.9.1",
+    "transformers==5.19.0",
+    "huggingface_hub==2.2.0",
+    "safetensors==0.8.0",
+    "sentencepiece==0.2.2",
+    "soundfile==0.14.0",
+    "scipy==1.18.1",
+    "mlx-whisper==0.4.3",
+    "opencc-python-reimplemented==0.1.7",
+    "demucs==4.0.1",
+    "embed2asr @ git+https://github.com/tc3oliver/embed2asr.git@8c6463b150392ecc0a8b121bba4ab71ed137eb75",
+    "tingmix @ git+https://github.com/tc3oliver/tingmix.git@34458e04cc2788ad25e86331535b48a45aed812c",
+]
+
+[tool.uv]
+package = false
