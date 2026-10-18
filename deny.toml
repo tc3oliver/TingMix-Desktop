@@ -27,7 +27,11 @@ allow = [
 [advisories]
 version = 2
 yanked = "deny"
-ignore = []
+ignore = [
+    { id = "RUSTSEC-2026-0367", reason = "zip 4.6.1 is pulled in by tauri-plugin-updater 2.14.0 for Windows only and is used to unpack an update archive after the updater has verified its minisign signature against the key in tauri.conf.json; TingMix publishes the NSIS installer (.exe), not a zip, so the extraction path does not run. The fix needs tauri-plugin-updater 3.x (alpha at the time of writing): revisit when it is stable." },
+    { id = "RUSTSEC-2026-0368", reason = "zip 4.6.1 is pulled in by tauri-plugin-updater 2.14.0 for Windows only and is used to unpack an update archive after the updater has verified its minisign signature against the key in tauri.conf.json; TingMix publishes the NSIS installer (.exe), not a zip, so the extraction path does not run. The fix needs tauri-plugin-updater 3.x (alpha at the time of writing): revisit when it is stable." },
+    { id = "RUSTSEC-2026-0369", reason = "zip 4.6.1 is pulled in by tauri-plugin-updater 2.14.0 for Windows only and is used to unpack an update archive after the updater has verified its minisign signature against the key in tauri.conf.json; TingMix publishes the NSIS installer (.exe), not a zip, so the extraction path does not run. The fix needs tauri-plugin-updater 3.x (alpha at the time of writing): revisit when it is stable." },
+]
 
 [bans]
 multiple-versions = "warn"

@@ -1,5 +1,6 @@
 [package]
 name = "tingmix-runtime-mlx"
+publish = false
 description = "EXPERIMENTAL: TingMix-Large audio tower + reader on MLX C++ behind a narrow C ABI (Apple silicon only)"
 edition.workspace = true
 license.workspace = true
@@ -26,7 +27,7 @@ tingmix-streaming = { path = "../tingmix-streaming" }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 tempfile = "3.27.0"
-zip = { version = "7.3.0", default-features = false, features = ["deflate"] }
+zip = { version = "9.0.5", default-features = false, features = ["deflate"] }
 libc = "0.2.178"
 
 [build-dependencies]

@@ -1,5 +1,6 @@
 [package]
 name = "tingmix-runtime-onnx"
+publish = false
 description = "TingMix-Small on ONNX Runtime (CPU): Rust log-mel frontend and native streaming backend"
 edition.workspace = true
 license.workspace = true

@@ -90,7 +90,7 @@ fn mel_matches_reference_dumps() {
 fn zip_names(dir: &Path, id: &str) -> Vec<String> {
     let z =
         zip::ZipArchive::new(std::fs::File::open(dir.join(format!("{id}.npz"))).unwrap()).unwrap();
-    z.file_names().map(String::from).collect()
+    z.file_names().map(|n| n.unwrap().into_owned()).collect()
 }
 
 fn get_has(names: &mut [String], k: usize) -> bool {

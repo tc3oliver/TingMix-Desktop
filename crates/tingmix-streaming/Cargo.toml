@@ -1,5 +1,6 @@
 [package]
 name = "tingmix-streaming"
+publish = false
 description = "VAD, endpointing, scheduling and the streaming session (buffered re-decode and native streams)"
 edition.workspace = true
 license.workspace = true

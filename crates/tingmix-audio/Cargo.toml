@@ -1,5 +1,6 @@
 [package]
 name = "tingmix-audio"
+publish = false
 description = "Microphone capture into a lock-free ring, 16 kHz mono resampling, and file decoding"
 edition.workspace = true
 license.workspace = true

@@ -1,5 +1,6 @@
 [package]
 name = "tingmix-decoder"
+publish = false
 description = "CTC greedy and LM prefix beam decoding, bit-compatible with the embed2asr reference"
 version.workspace = true
 edition.workspace = true
@@ -15,4 +16,4 @@ serde_json = { version = "=1.0.154", features = ["float_roundtrip"] }
 
 [dev-dependencies]
 # reads the stored (uncompressed) .npz oracle dumps; same spec as tingmix-models
-zip = { version = "7.3.0", default-features = false, features = ["deflate"] }
+zip = { version = "9.0.5", default-features = false, features = ["deflate"] }

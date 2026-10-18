@@ -114,7 +114,11 @@ pub fn import_zip(reg: &Registry, zip_path: &Path) -> Result<InstalledModel> {
     // Entries are looked up by manifest path, never extracted under their own names (no zip-slip); extras are rejected.
     for i in 0..z.len() {
         let e = z.by_index(i).map_err(|e| Error::Archive(e.to_string()))?;
-        let name = e.name().to_string();
+        // a name zip cannot decode (invalid UTF-8 under zip 9) is never a listed file
+        let name = e
+            .name()
+            .map_err(|e| Error::Archive(e.to_string()))?
+            .to_string();
         if !e.is_dir()
             && name != MANIFEST_FILE
             && !m.manifest().files.iter().any(|f| f.path == name)

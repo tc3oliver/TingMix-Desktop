@@ -1,5 +1,6 @@
 [package]
 name = "tingmix-core"
+publish = false
 description = "Transcript events, revision manager, event reducer and ASR backend traits"
 edition.workspace = true
 license.workspace = true

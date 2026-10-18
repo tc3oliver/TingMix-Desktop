@@ -1,5 +1,6 @@
 [package]
 name = "tingmix-bench"
+publish = false
 description = "Real-time streaming latency, backlog and RSS benchmark / soak harness for AsrBackends"
 edition.workspace = true
 license.workspace = true
