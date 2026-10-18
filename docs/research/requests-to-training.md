@@ -39,3 +39,4 @@ Other tasks append their own requests below the table in a new section; keep IDs
 | 2026-10-18 | R5 | Withdrawn: owner decision that TingMix-Large commercial use is out of scope. |
 | 2026-10-18 | R13 | Added after reading `session.py:88-99`. |
 | 2026-10-18 | R14 | Added after a measurement on one real zh-TW video. |
+| 2026-10-18 | R14 | Hub revision `aae0ca2` (v3, attention rescoring of the 8-best; encoder, Reader and LM unchanged) measured with the trainer's own package (`tingmix@34458e0`, fixed 25 s windows, MPS): the same 527 s video gives CER 0.352 with rescoring and 0.350 without, and on 300 s of a zh-TW finance talk show 9 of 12 windows change by a few characters. No gain in this domain, so Desktop stays on `75071a1` and does not port the attention decoder for now. |
