@@ -298,3 +298,65 @@ fn tail_partial_saves_the_final_decode_and_keeps_the_event_contract() {
         tail.0
     );
 }
+
+fn fixture_wav(name: &str) -> Vec<f32> {
+    let p = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../tests/fixtures/audio")
+        .join(name);
+    let mut r = hound::WavReader::open(p).unwrap();
+    r.samples::<i16>()
+        .map(|s| f32::from(s.unwrap()) / 32768.0)
+        .collect()
+}
+
+/// Final segments `(start, end)` of a replay of `wav` (plus 1.5 s of silence) through the mock backend.
+fn replay_segments(wav: &[f32], cfg: &SessionConfig) -> Vec<(f64, f64)> {
+    let mut wav = wav.to_vec();
+    wav.extend(std::iter::repeat_n(0.0, 24_000));
+    let mut s = StreamingSession::new(MockBackend::new(false), cfg);
+    let mut msgs: Vec<_> = wav.chunks(320).flat_map(|c| s.feed(c)).collect();
+    msgs.extend(s.flush());
+    events(msgs)
+        .into_iter()
+        .filter_map(|e| match e {
+            Event::Final(f) => Some((f.start, f.end)),
+            _ => None,
+        })
+        .collect()
+}
+
+/// mix_08s.wav starts with speech at sample 0. The adaptive VAD used to learn that speech as its noise floor and lose the
+/// first ~3 s; the live preset must keep the utterance from the first sample: every clearly loud 20 ms frame (above -40 dBFS)
+/// has to lie inside a final segment (pauses may be cut out, speech may not).
+#[test]
+fn live_preset_keeps_speech_that_starts_at_sample_zero() {
+    let wav = fixture_wav("mix_08s.wav");
+    let live = replay_segments(&wav, &SessionConfig::live_recommended());
+    assert!(!live.is_empty(), "no final at all");
+    assert_eq!(
+        live[0].0, 0.0,
+        "the first segment must start with the audio: {live:?}"
+    );
+    let loud: Vec<f64> = wav
+        .chunks_exact(320)
+        .enumerate()
+        .filter(|(_, f)| {
+            10.0 * (f.iter().map(|x| f64::from(*x) * f64::from(*x)).sum::<f64>() / 320.0 + 1e-20)
+                .log10()
+                > -40.0
+        })
+        .map(|(i, _)| i as f64 * 0.02 + 0.01)
+        .collect();
+    assert!(loud.len() > 200, "the fixture should be mostly speech");
+    let lost: Vec<f64> = loud
+        .iter()
+        .copied()
+        .filter(|t| !live.iter().any(|(a, b)| a <= t && t <= b))
+        .collect();
+    assert!(
+        lost.is_empty(),
+        "{} loud frames outside the segments {live:?}, e.g. at {:?} s",
+        lost.len(),
+        &lost[..lost.len().min(5)]
+    );
+}
