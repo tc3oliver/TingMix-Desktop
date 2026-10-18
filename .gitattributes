@@ -1,0 +1,4 @@
+# scripts and the data files they read must keep LF on Windows checkouts
+*.sh text eol=lf
+*.tsv text eol=lf
+*.sha256 text eol=lf

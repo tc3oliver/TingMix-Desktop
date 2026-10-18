@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "docs/release/dependency-licenses.md"
 TARGETS = ["aarch64-apple-darwin", "x86_64-pc-windows-msvc"]
 PLATFORM_PKG = re.compile(r"-(darwin|linux|win32|freebsd|android|openharmony)-")  # optional per-OS binaries: same licence as their parent
+OS_ONLY = {"fsevents"}  # optional packages installed on one OS only
 COPYLEFT = re.compile(r"\b(MPL|LGPL|GPL|AGPL|EPL|CDDL|CPL|OSL|SSPL)", re.I)
 
 
@@ -44,7 +45,7 @@ def npm():
             out = subprocess.check_output(["pnpm", "licenses", "list", "--json", *a], cwd=ROOT, stderr=subprocess.DEVNULL)
         except (OSError, subprocess.CalledProcessError):
             sys.exit("pnpm licenses list failed: install pnpm and run `pnpm install --frozen-lockfile` first")
-        return {lic: sorted({p["name"] + " " + v for p in pk for v in p["versions"] if not PLATFORM_PKG.search(p["name"])}) for lic, pk in json.loads(out).items()}
+        return {lic: sorted({p["name"] + " " + v for p in pk for v in p["versions"] if not PLATFORM_PKG.search(p["name"]) and p["name"] not in OS_ONLY}) for lic, pk in json.loads(out).items()}
 
     prod, allp = get("--prod"), get()
     prod_names = {n for v in prod.values() for n in v}

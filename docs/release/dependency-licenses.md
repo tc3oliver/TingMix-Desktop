@@ -136,7 +136,7 @@ Runtime (bundled into the front end):
 
 Build-time only (not shipped in the app), by licence:
 
-- MIT (33): @jridgewell/resolve-uri 3.1.2, @jridgewell/sourcemap-codec 1.6.0, @jridgewell/trace-mapping 0.3.31, @oxc-project/types 0.154.0, @rolldown/pluginutils 1.0.1, @types/chai 5.2.3, @types/deep-eql 4.0.2, @types/estree 1.0.9, @types/react 19.3.0, @types/react-dom 19.3.0, @vitejs/plugin-react 6.1.2, @vitest/mocker 5.0.5, @vitest/spy 5.0.5, assertion-error 2.0.1, chai 6.3.0, csstype 3.2.3, es-module-lexer 2.3.2, estree-walker 3.0.3, fdir 6.5.0, fsevents 2.3.3, magic-string 1.4.3, nanoid 3.3.20, obug 3.0.0, picomatch 4.0.7, postcss 8.5.30, rolldown 1.2.14, std-env 4.3.0, tinybench 6.2.2, tinyexec 1.3.1, tinyglobby 0.2.17, vite 8.3.4, vitest 5.0.5, why-is-node-running 3.2.1
+- MIT (32): @jridgewell/resolve-uri 3.1.2, @jridgewell/sourcemap-codec 1.6.0, @jridgewell/trace-mapping 0.3.31, @oxc-project/types 0.154.0, @rolldown/pluginutils 1.0.1, @types/chai 5.2.3, @types/deep-eql 4.0.2, @types/estree 1.0.9, @types/react 19.3.0, @types/react-dom 19.3.0, @vitejs/plugin-react 6.1.2, @vitest/mocker 5.0.5, @vitest/spy 5.0.5, assertion-error 2.0.1, chai 6.3.0, csstype 3.2.3, es-module-lexer 2.3.2, estree-walker 3.0.3, fdir 6.5.0, magic-string 1.4.3, nanoid 3.3.20, obug 3.0.0, picomatch 4.0.7, postcss 8.5.30, rolldown 1.2.14, std-env 4.3.0, tinybench 6.2.2, tinyexec 1.3.1, tinyglobby 0.2.17, vite 8.3.4, vitest 5.0.5, why-is-node-running 3.2.1
 - Apache-2.0 (5): detect-libc 2.1.2, expect-type 1.4.0, playwright 1.64.1, playwright-core 1.64.1, typescript 6.0.3
 - Apache-2.0 OR MIT (1): @tauri-apps/cli 2.12.3
 - BSD-3-Clause (1): source-map-js 1.2.2
