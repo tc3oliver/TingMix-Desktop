@@ -67,16 +67,18 @@ class DynAttn(nn.Module):
         q = torch.cat([q, q.new_zeros(1, nb * C - T, H, D)], dim=1).reshape(1, nb, C, H, D)
         k, v = self._ctx(k, nb, T), self._ctx(v, nb, T)
         rel = a.relative_k_proj(position_embeddings).view(-1, H, D)  # [P,H,D], P = context//2 + 1
+        # matmuls are kept 4-D (heads and blocks merged into one batch axis): DirectML rejects the 5-D batched MatMul
         qs = q.permute(0, 3, 1, 2, 4)  # [1,H,nb,C,D]
-        ac = qs @ k.permute(0, 3, 1, 4, 2)  # [1,H,nb,C,2C]
-        bd = (qs.reshape(1, H, nb * C, D) @ rel.permute(1, 2, 0)).reshape(1, H, nb, C, -1)
+        ac = (qs.reshape(1, H * nb, C, D) @ k.permute(0, 3, 1, 4, 2).reshape(1, H * nb, D, 2 * C)).reshape(1, H, nb, C, 2 * C)
+        bd = (qs.reshape(1, H, nb * C, D) @ rel.permute(1, 2, 0)[None]).reshape(1, H, nb, C, -1)
         ctx = a.context_size
         P = ctx // 2 + 1
         bd = F.pad(bd, (0, ctx + 1 - P)).reshape(1, H, nb, C * (ctx + 1))[..., : C * ctx].reshape(1, H, nb, C, ctx)
         w = torch.tanh((ac + bd) / a.softcap) * a.softcap
         w = w.masked_fill(attention_mask.logical_not(), MASK_VALUE)
         w = F.softmax(w, dim=-1)
-        o = (w @ v.permute(0, 3, 1, 2, 4)).permute(0, 2, 3, 1, 4).reshape(1, nb * C, -1)[:, :T]
+        o = (w.reshape(1, H * nb, C, 2 * C) @ v.permute(0, 3, 1, 2, 4).reshape(1, H * nb, 2 * C, D)).reshape(1, H, nb, C, D)
+        o = o.permute(0, 2, 3, 1, 4).reshape(1, nb * C, -1)[:, :T]
         return a.post(o), None
 
 
