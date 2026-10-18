@@ -134,7 +134,7 @@
    }
   ],
   "converter": "experiments/macos/mlx/convert.py",
-  "converter_commit": "7574a398a9cacce7bd84e33281685b3e04ac049e",
+  "converter_commit": "0b32104e54dfed0ba6ce4a6f70bf0fa8d78b87c5",
   "notes": "audio_tower of the Google base (text/vision towers dropped) with the 96 LoRA pairs (r16, alpha32) merged in fp32 as W + 2.0*B@A, conv weights transposed to MLX layouts (OIHW->OHWI, depthwise CK->KC), Reader GRU repacked to MLX gate layout, all fp32 in one safetensors file (tensor metadata format tingmix-large-mlx). Environment: mlx 0.32.4, mlx-vlm 0.7.8, transformers 5.19.0 (experiments/macos/mlx/uv.lock)."
  },
  "created": "2026-10-17",

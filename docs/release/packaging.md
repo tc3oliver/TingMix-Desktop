@@ -1,6 +1,6 @@
 # Packaging results and procedure
 
-Measured 2026-10-18 on the Mac Studio (Apple M4 Max, macOS 27.0), from a clean `git worktree` of commit `4f708c1` (tree without the
+Measured 2026-10-18 on the Mac Studio (Apple M4 Max, macOS 27.0), from a clean `git worktree` of commit `33e56e7` (tree without the
 uncommitted work of other tasks), Homebrew Rust 1.99.0, pnpm 10.34.7. **The bundle is unsigned and not notarized.** No Windows build was made here.
 
 ## Procedure (macOS arm64)
@@ -12,7 +12,7 @@ uncommitted work of other tasks), Homebrew Rust 1.99.0, pnpm 10.34.7. **The bund
 Outputs: `target/release/bundle/macos/TingMix.app`, `target/release/bundle/dmg/TingMix_0.1.0_aarch64.dmg`. Cold build including all crates: 7 min 08 s
 (`pnpm bundle:macos`, 285 s user CPU). The CI `package` job (tags and manual runs only) does the same on `macos-latest` and `windows-latest`.
 
-## Results (commit 4f708c1)
+## Results (commit 33e56e7)
 
 | Item | Result |
 |---|---|

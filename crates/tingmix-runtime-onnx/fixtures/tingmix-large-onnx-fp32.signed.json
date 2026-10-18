@@ -135,12 +135,12 @@
         }
       ],
       "converter": "experiments/windows/large-onnx/export.py",
-      "converter_commit": "f4df3c809fb0ac511893be86ebc0f29929a1fea1",
+      "converter_commit": "e322b4c9b7f8293beab1cee7ab85c9a3f781cda2",
       "notes": "Audio tower of google/embeddinggemma-2 (text and vision towers dropped) with the 96 LoRA pairs of TingMix-Large merged in fp32 (W + 2.0*B@A), followed by the GRU-CTC reader, exported to ONNX (opset 17) with a dynamic frame axis. Numerically equivalent rewrites: local attention without unfold, in-graph attention mask, RMSNorm prescale, clamp in place of ReLU."
     },
     "created": "2026-10-17",
     "min_app_version": "0.1.0"
   },
   "key_id": "tingmix-dev-1",
-  "signature": "bda3b7097bf69902c7ed92145e44451a0911fa60dfc4a1dfa2798e239f59c660bb4a036e7c7786dd2e89dc8163089f1570625a447acf0c5c498f4f537905c90c"
+  "signature": "e40042ecddf07b450abdd6e2ae95335c19c1232aab07f8a6b05edc36dbee516d6b3ea2eb84d94b75c6b8d9dc318b0870e52855ec61d5b7aa09e3aa8e2f331209"
 }

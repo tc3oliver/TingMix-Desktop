@@ -7,9 +7,9 @@ machine during all runs.
 
 | File | What | Notes |
 |---|---|---|
-| `mock-60min-soak.json` | 60 min, mock backend with simulated cost (40 ms + 0.06 x audio per call), seed 7, scheduler before a831f25 | 9/9 assertions pass: max 1 pending final, final latency early 1.395 s vs late 1.367 s, staleness 0.848 vs 0.824 s, RSS 27 to 34 MB (4.9 MB/h slope), longest call 1.57 s |
-| `mock-2min.json` | 2 min, same simulated cost, scheduler before a831f25 | final from speech end P50/P95 1.41/3.23 s |
-| `mock-2min-tail-off.json` | same command after a831f25 with `--tail-partial off` | P50/P95 1.38/2.85 s |
+| `mock-60min-soak.json` | 60 min, mock backend with simulated cost (40 ms + 0.06 x audio per call), seed 7, scheduler before 0a68bc0 | 9/9 assertions pass: max 1 pending final, final latency early 1.395 s vs late 1.367 s, staleness 0.848 vs 0.824 s, RSS 27 to 34 MB (4.9 MB/h slope), longest call 1.57 s |
+| `mock-2min.json` | 2 min, same simulated cost, scheduler before 0a68bc0 | final from speech end P50/P95 1.41/3.23 s |
+| `mock-2min-tail-off.json` | same command after 0a68bc0 with `--tail-partial off` | P50/P95 1.38/2.85 s |
 | `mock-2min-live.json` | same, live policy (`SessionWorker::spawn`, tail partial on) | P50/P95 0.81/2.29 s |
 | `mlx-f32-150s-tail-off.json`, `mlx-f32-150s-tail-live.json` | real `MlxLargeBackend`, fp32 artifact, beam+LM, 150 s, 20 ms chunks | see below |
 | `onnx-small-60s.json` | TingMix-Small step graph `tools/small-export/out/prod.onnx`, 60 s, native streaming | PIPELINE ONLY: seeded random weights (no Small checkpoint exists), so text is meaningless; compute RTF 0.043, final from speech end P50 0.79 s |

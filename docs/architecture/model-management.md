@@ -58,7 +58,7 @@ sha256 `9737153e...fc7ec`, verified against the file on disk). Backend `mlx`, ru
 until native end-to-end parity passes, no RTF recorded. The model file has no URL (not published anywhere; the
 licence review says derived artifacts stay unpublished until E1-E5 are decided), so it installs by offline import. Tokenizer,
 LM and config files point at the pinned TingMix-Large revision. `provenance` records the converter path and commit
-(`7574a39`), the two source revisions and the merge (`W + 2.0*B@A` in fp32, layout transposes). Both fixtures are signed
+(`0b32104`), the two source revisions and the merge (`W + 2.0*B@A` in fp32, layout transposes). Both fixtures are signed
 with the dev key.
 
 Licences in the manifests (from `docs/research/licensing-review.md`, 2026-10-17): `tingmix-large-model` carries the
