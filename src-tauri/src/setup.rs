@@ -65,10 +65,18 @@ pub fn check(
     if !info.mock {
         return SetupView::Ready;
     }
-    let installed = models
+    // an install this build cannot open (for example signed by a key it no longer trusts) does not count: the catalog
+    // offers a verified replacement for it, and the screen would otherwise sit in Problem for good
+    let installed: Vec<String> = models
         .reg()
         .ok()
-        .and_then(|r| r.list().ok())
+        .and_then(|r| {
+            r.list().ok().map(|ids| {
+                ids.into_iter()
+                    .filter(|id| r.open_model(id).is_ok())
+                    .collect()
+            })
+        })
         .unwrap_or_default();
     if !installed.is_empty() {
         return SetupView::Problem {
@@ -95,12 +103,15 @@ pub fn check(
     };
     let caps = models.caps();
     let for_here = cat.for_platform(&caps.os, &caps.arch);
-    let high_water = |m: &tingmix_models::Manifest| {
+    // the same rule as Registry::prepare, so an offered entry is never refused as a replay after the download
+    let replayed = |m: &tingmix_models::Manifest| {
         models
             .reg()
             .ok()
             .and_then(|r| r.high_water(&m.lineage()).ok())
-            .map_or(0, |h| h.0)
+            .is_some_and(|(serial, id)| {
+                m.serial < serial || (m.serial == serial && id.is_some_and(|id| id != m.id))
+            })
     };
     let downloadable: Vec<_> = for_here
         .into_iter()
@@ -108,7 +119,7 @@ pub fn check(
             let mf = m.manifest();
             mf.files.iter().all(|f| !f.url.is_empty())
                 && select::requirements_met(mf, caps, env!("CARGO_PKG_VERSION")).is_ok()
-                && mf.serial >= high_water(mf)
+                && !replayed(mf)
         })
         .collect();
     if downloadable.is_empty() {
@@ -302,6 +313,8 @@ mod tests {
     fn onnx_runtime() -> Runtimes {
         Runtimes {
             ort_library: Some(std::env::current_exe().unwrap()),
+            // the engine counts as available only with its probe worker; any existing file stands in
+            onnx_worker: Some(std::env::current_exe().unwrap()),
         }
     }
 
@@ -309,8 +322,6 @@ mod tests {
     fn first_run_offers_the_download_then_installs_activates_and_tests_it() {
         let (models, dir) = models("flow");
         let (listener, base) = bind();
-        // the engine counts as available only with its probe worker next to the app; any existing file stands in
-        std::env::set_var("TINGMIX_ONNX_WORKER", std::env::current_exe().unwrap());
         let (m, mut docs) = manifest("model-a", &base, std::env::consts::OS, "onnx-cpu");
         docs.insert("/catalog.json".into(), catalog_doc(&[&m]));
         serve_on(listener, docs);
@@ -382,6 +393,37 @@ mod tests {
             check(&models, &rt, &cfg, "t2".into()),
             SetupView::Problem { .. }
         ));
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn an_install_signed_by_an_untrusted_key_gets_the_replacement_offered() {
+        let (models, dir) = models("untrusted");
+        let (listener, base) = bind();
+        // installed earlier from a manifest signed with a key this build does not trust, serial 1
+        let (old, mut docs) = manifest("model-a", &base, std::env::consts::OS, "onnx-cpu");
+        let vdir = dir.join("models/versions/model-a");
+        std::fs::create_dir_all(&vdir).unwrap();
+        std::fs::write(
+            vdir.join("manifest.signed.json"),
+            serde_json::to_vec(&sign(&old, "dev", &key(9))).unwrap(),
+        )
+        .unwrap();
+        // the same id re-signed with the trusted key at a higher serial
+        let mut newer = old.clone();
+        newer.serial = 6;
+        docs.insert("/catalog.json".into(), catalog_doc(&[&newer]));
+        serve_on(listener, docs);
+        let url = format!("{base}/catalog.json");
+        let cfg = Catalog {
+            url: &url,
+            allow_loopback_http: true,
+        };
+        let SetupView::Download { pending } = check(&models, &onnx_runtime(), &cfg, "u".into())
+        else {
+            panic!("expected the replacement to be offered")
+        };
+        assert_eq!(pending.id, "model-a");
         let _ = std::fs::remove_dir_all(dir);
     }
 
