@@ -156,16 +156,14 @@ fn check_lm(lm_path: &Path, expected: &str) {
     );
 }
 
+/// Informational only (printed, never asserted): `ps` does not exist on Windows, where this reports 0.
 fn rss_mb() -> u64 {
-    let out = std::process::Command::new("ps")
+    std::process::Command::new("ps")
         .args(["-o", "rss=", "-p", &std::process::id().to_string()])
         .output()
-        .unwrap();
-    String::from_utf8_lossy(&out.stdout)
-        .trim()
-        .parse::<u64>()
-        .unwrap_or(0)
-        / 1024
+        .ok()
+        .and_then(|o| String::from_utf8_lossy(&o.stdout).trim().parse::<u64>().ok())
+        .map_or(0, |kb| kb / 1024)
 }
 
 #[test]
