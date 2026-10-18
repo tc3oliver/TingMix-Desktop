@@ -12,8 +12,8 @@ before the corresponding distribution step; the Desktop must not ship or downloa
 | E1 | May TingMix-Large weights and the LM be used in a **commercial** or redistributed product? | The Hub card says Apache-2.0, but the maintainer's own review says the Parliament data is CC BY-NC 4.0 and that weights and LM are "likely non-commercial", and that the review is "to complete before any weight release". The weights were released on the Hub anyway. No completed review exists in the repositories. | Owner decision (2026-10-18): commercial-use aspect not pursued; facts kept |
 | E2 | NTUML2021 training split: licence? | Not stated by the source. Two repo documents disagree on whether it was used for training (model card: "evaluation-only"; benchmark/licensing/Hub card: train split used). The released weights and LM include it. | Owner decision (2026-10-18): not pursued; facts kept |
 | E3 | ASCEND (CC BY-SA 4.0) ShareAlike effect on weights/LM labelled Apache-2.0 | Maintainer's "conservative reading" is that ShareAlike may apply to derived weights/LM. Unresolved. | Owner decision (2026-10-18): not pursued; facts kept |
-| E4 | Does the Gemma Prohibited Use Policy bind Desktop users? | Base model is Apache-2.0 and ungated on the Hub, but its README says "Deployments must adhere to the Gemma Prohibited Use Policy". Whether that is a licence condition is unclear. | **ESCALATE** (low cost: show the policy and require acknowledgement) |
-| E5 | May we re-host or re-pack Google weights (tower-only file) or ship an offline bundle? | Apache-2.0 allows redistribution with notices (section 4 of the licence), subject to E4. No `LICENSE`/`NOTICE` file exists in the Hub repo, so the attribution text must come from the card. Not needed if the Desktop downloads from Google's repo directly. | Open, avoidable |
+| E4 | Does the Gemma Prohibited Use Policy bind Desktop users? | Base model is Apache-2.0 and ungated on the Hub, but its README says "Deployments must adhere to the Gemma Prohibited Use Policy". Whether that is a licence condition is unclear. | Closed (2026-10-18): every package manifest lists the policy as a licence entry with acceptance required, so the app shows it and records acceptance before install |
+| E5 | May we re-host or re-pack Google weights (tower-only file) or ship an offline bundle? | Apache-2.0 allows redistribution with notices (section 4 of the licence), subject to E4. No `LICENSE`/`NOTICE` file exists in the Hub repo, so the attribution text must come from the card. Not needed if the Desktop downloads from Google's repo directly. | Closed (2026-10-18): owner decision to re-host the converted packages on `tc3oliver/TingMix-Desktop` with LICENSE, NOTICE and a "modified" statement (section 1, owner decisions) |
 | E6 | People's Speech licence class of the subset used | TingMix lists "People's Speech clean (CC BY)", but the dataset card lists CC-BY and CC-BY-SA variants. Which configuration was used is not documented. | Open (low) |
 | E7 | TingMix-Small | No checkpoint, no card, no licence (Hub API 401). | **BLOCKED** |
 
@@ -117,6 +117,4 @@ E1-E3 (commercial-use aspects) are closed by the owner decision above and are no
 
 | ID | Decision needed | Blocks |
 |---|---|---|
-| E4 | Is the Gemma Prohibited Use Policy a binding condition? | Wording of the licence screen |
-| E5 | Re-hosting / re-packing Google weights | Offline bundles, tower-only artifact |
 | E6 | People's Speech subset | Attribution text |
