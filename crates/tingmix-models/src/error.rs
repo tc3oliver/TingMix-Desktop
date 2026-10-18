@@ -62,3 +62,17 @@ pub(crate) fn io(path: impl Into<PathBuf>) -> impl FnOnce(std::io::Error) -> Err
     let path = path.into();
     move |source| Error::Io { path, source }
 }
+
+impl Error {
+    /// The stored manifest of an installed model is untrusted, unparsable or the wrong size: only these justify replacing
+    /// an install with a verified download. Anything else (an I/O error, say) may be transient and must keep the install.
+    pub fn replaceable(&self) -> bool {
+        matches!(
+            self,
+            Error::UnknownKey(_)
+                | Error::BadSignature(_)
+                | Error::Malformed(_)
+                | Error::SizeMismatch { .. }
+        )
+    }
+}

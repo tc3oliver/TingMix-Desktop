@@ -65,7 +65,7 @@ pub fn check(
     if !info.mock {
         return SetupView::Ready;
     }
-    // an install this build cannot open (for example signed by a key it no longer trusts) does not count: the catalog
+    // an install whose manifest this build cannot trust or parse (for example signed by a key it no longer trusts) does not count: the catalog
     // offers a verified replacement for it, and the screen would otherwise sit in Problem for good
     let installed: Vec<String> = models
         .reg()
@@ -73,7 +73,7 @@ pub fn check(
         .and_then(|r| {
             r.list().ok().map(|ids| {
                 ids.into_iter()
-                    .filter(|id| r.open_model(id).is_ok())
+                    .filter(|id| r.open_model(id).err().is_none_or(|e| !e.replaceable()))
                     .collect()
             })
         })

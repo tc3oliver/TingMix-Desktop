@@ -746,3 +746,93 @@ fn an_install_signed_by_a_no_longer_trusted_key_is_replaced_by_a_verified_one() 
     assert_eq!(reg.open_model("v1").unwrap().manifest.serial, 2);
     assert_eq!(reg.active().unwrap().as_deref(), Some("v1"));
 }
+
+/// Installs `v1` under key 1, then reopens the registry under a verifier that only trusts key 2.
+fn untrusted_install(srv: &Server, dir: &std::path::Path) -> (Registry, VerifiedManifest) {
+    let reg = registry(dir);
+    let old = signed(&manifest("v1", &srv.url, 1));
+    accept(&reg, &old);
+    Downloader::new(true)
+        .install(&reg, &old, &no_cancel(), |_| {})
+        .unwrap();
+    reg.activate("v1").unwrap();
+    let release = Verifier::new(&[("release", key(2).verifying_key().to_bytes())]).unwrap();
+    let reg = Registry::open(dir, release)
+        .unwrap()
+        .allow_loopback_http(true);
+    let mut raw = manifest("v1", &srv.url, 1);
+    raw.serial = 2;
+    let new = reg
+        .verifier()
+        .verify(sign(&raw, "release", &key(2)))
+        .unwrap();
+    accept(&reg, &new);
+    (reg, new)
+}
+
+#[test]
+fn a_cancelled_replacement_restores_the_old_install() {
+    let srv = serve(&[("v1", 1)]);
+    let dir = tempfile::tempdir().unwrap();
+    let (reg, new) = untrusted_install(&srv, dir.path());
+    let cancel = AtomicBool::new(true);
+    let e = Downloader::new(true)
+        .install(&reg, &new, &cancel, |_| {})
+        .unwrap_err();
+    assert!(matches!(e, Error::Cancelled), "{e}");
+    assert!(dir
+        .path()
+        .join("versions/v1/manifest.signed.json")
+        .is_file());
+    assert!(dir.path().join("versions/v1/model.safetensors").is_file());
+    // and a later, uncancelled attempt still replaces it
+    Downloader::new(true)
+        .install(&reg, &new, &no_cancel(), |_| {})
+        .unwrap();
+    assert_eq!(reg.open_model("v1").unwrap().manifest.serial, 2);
+    assert_eq!(
+        std::fs::read_dir(dir.path().join("trash")).unwrap().count(),
+        0
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn an_unreadable_manifest_is_not_replaced() {
+    use std::os::unix::fs::PermissionsExt;
+    let srv = serve(&[("v1", 1)]);
+    let dir = tempfile::tempdir().unwrap();
+    let reg = registry(dir.path());
+    let m = signed(&manifest("v1", &srv.url, 1));
+    accept(&reg, &m);
+    Downloader::new(true)
+        .install(&reg, &m, &no_cancel(), |_| {})
+        .unwrap();
+    let mf = dir.path().join("versions/v1/manifest.signed.json");
+    std::fs::set_permissions(&mf, std::fs::Permissions::from_mode(0o000)).unwrap();
+    let mut raw = manifest("v1", &srv.url, 1);
+    raw.serial = 2;
+    let newer = signed(&raw);
+    let r = Downloader::new(true).install(&reg, &newer, &no_cancel(), |_| {});
+    std::fs::set_permissions(&mf, std::fs::Permissions::from_mode(0o644)).unwrap();
+    // a read error may be transient: the install stays where it is
+    assert!(!matches!(r, Ok(_)));
+    assert!(dir.path().join("versions/v1/model.safetensors").is_file());
+    assert!(reg.open_model("v1").is_ok());
+}
+
+#[test]
+fn leftovers_of_another_file_set_in_staging_are_cleared() {
+    let srv = serve(&[("v1", 1)]);
+    let dir = tempfile::tempdir().unwrap();
+    let reg = registry(dir.path());
+    let m = signed(&manifest("v1", &srv.url, 1));
+    accept(&reg, &m);
+    let stray = dir.path().join("tmp/v1/old-layout.bin");
+    std::fs::create_dir_all(stray.parent().unwrap()).unwrap();
+    std::fs::write(&stray, b"x").unwrap();
+    Downloader::new(true)
+        .install(&reg, &m, &no_cancel(), |_| {})
+        .unwrap();
+    assert!(reg.open_model("v1").is_ok());
+}

@@ -97,6 +97,16 @@ fn files_under(dir: &Path, base: &Path, out: &mut Vec<String>) -> Result<()> {
     Ok(())
 }
 
+/// Whether everything staged in `dir` is a file (or a `.part` of a file) the manifest lists.
+fn staged_files_belong_to(dir: &Path, m: &Manifest) -> bool {
+    let mut found = Vec::new();
+    files_under(dir, dir, &mut found).is_ok()
+        && found.iter().all(|rel| {
+            let rel = rel.strip_suffix(".part").unwrap_or(rel);
+            rel == MANIFEST_FILE || m.files.iter().any(|f| f.path == rel)
+        })
+}
+
 impl Registry {
     pub fn open(root: impl Into<PathBuf>, verifier: Verifier) -> Result<Self> {
         let root = root.into();
@@ -187,9 +197,15 @@ impl Registry {
         if let Some(l) = self.missing_acceptances(m.manifest()).into_iter().next() {
             return Err(Error::LicenseNotAccepted(l));
         }
-        let existing = self.version_dir(&m.manifest().id);
-        if existing.exists() && self.open_model(&m.manifest().id).is_ok() {
-            return Err(Error::AlreadyInstalled(m.manifest().id.clone()));
+        let id = &m.manifest().id;
+        self.restore_trash(id)?; // a crash between the move and the commit must not strand the old install
+        let existing = self.version_dir(id);
+        if existing.exists() {
+            match self.open_model(id) {
+                Ok(_) => return Err(Error::AlreadyInstalled(id.clone())),
+                Err(e) if e.replaceable() => {}
+                Err(e) => return Err(e),
+            }
         }
         let man = m.manifest();
         let high_water = self.high_water(&man.lineage())?;
@@ -206,12 +222,73 @@ impl Registry {
         }
         if existing.exists() {
             // an install this build cannot open (signed by a key it no longer trusts, or damaged) is replaced by this
-            // verified one; the pointers keep naming the id, so it becomes usable again once the download commits
-            fs::remove_dir_all(&existing).map_err(io(&existing))?;
+            // verified one; the old folder waits in trash until the new one commits
+            let trash = self.root.join("trash");
+            fs::create_dir_all(&trash).map_err(io(&trash))?;
+            let ts = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_nanos())
+                .unwrap_or(0);
+            let to = trash.join(format!("{id}-{ts}"));
+            fs::rename(&existing, &to).map_err(io(&existing))?;
         }
-        let d = self.root.join("tmp").join(&m.manifest().id);
+        let d = self.root.join("tmp").join(id);
+        if d.exists() && !staged_files_belong_to(&d, m.manifest()) {
+            fs::remove_dir_all(&d).map_err(io(&d))?; // leftovers of another file set would fail verify_tree on every retry
+        }
         fs::create_dir_all(&d).map_err(io(&d))?;
         Ok(d)
+    }
+
+    /// `prepare`, `fill` the staging directory, `commit`. An install moved aside by `prepare` is restored when anything
+    /// fails (including a cancelled download) and deleted once the new version is committed.
+    pub fn install_with(
+        &self,
+        m: &VerifiedManifest,
+        fill: impl FnOnce(&Path) -> Result<()>,
+    ) -> Result<InstalledModel> {
+        let stage = self.prepare(m)?;
+        let r = fill(&stage).and_then(|()| self.commit(m));
+        match &r {
+            Ok(_) => self.purge_trash(&m.manifest().id),
+            Err(_) => {
+                let _ = self.restore_trash(&m.manifest().id);
+            }
+        }
+        r
+    }
+
+    fn trashed(&self, id: &str) -> Vec<PathBuf> {
+        let prefix = format!("{id}-");
+        fs::read_dir(self.root.join("trash"))
+            .into_iter()
+            .flatten()
+            .filter_map(|e| e.ok())
+            .filter(|e| {
+                e.file_name()
+                    .to_string_lossy()
+                    .strip_prefix(&prefix)
+                    .is_some_and(|t| !t.is_empty() && t.bytes().all(|b| b.is_ascii_digit()))
+            })
+            .map(|e| e.path())
+            .collect()
+    }
+
+    fn restore_trash(&self, id: &str) -> Result<()> {
+        let dest = self.version_dir(id);
+        if dest.exists() {
+            return Ok(());
+        }
+        if let Some(t) = self.trashed(id).into_iter().max() {
+            fs::rename(&t, &dest).map_err(io(&dest))?;
+        }
+        Ok(())
+    }
+
+    fn purge_trash(&self, id: &str) {
+        for t in self.trashed(id) {
+            let _ = fs::remove_dir_all(t);
+        }
     }
 
     /// Verify the staged tree against the manifest (exact file set, sizes, sha256) and rename it into `versions/`.

@@ -62,20 +62,21 @@ pub fn import_dir(reg: &Registry, dir: &Path) -> Result<InstalledModel> {
     let m = reg
         .verifier()
         .parse(&fs::read(dir.join(MANIFEST_FILE)).map_err(io(dir.join(MANIFEST_FILE)))?)?;
-    let stage = reg.prepare(&m)?;
-    reset_stage(&stage)?;
-    check_listed_dir(dir, dir, &m)?;
-    for f in &m.manifest().files {
-        let p = dir.join(&f.path);
-        if !fs::symlink_metadata(&p)
-            .map(|md| md.is_file())
-            .unwrap_or(false)
-        {
-            return Err(Error::Missing(f.path.clone()));
+    reg.install_with(&m, |stage| {
+        reset_stage(stage)?;
+        check_listed_dir(dir, dir, &m)?;
+        for f in &m.manifest().files {
+            let p = dir.join(&f.path);
+            if !fs::symlink_metadata(&p)
+                .map(|md| md.is_file())
+                .unwrap_or(false)
+            {
+                return Err(Error::Missing(f.path.clone()));
+            }
+            copy_checked(File::open(&p).map_err(io(&p))?, &stage.join(&f.path), f)?;
         }
-        copy_checked(File::open(&p).map_err(io(&p))?, &stage.join(&f.path), f)?;
-    }
-    reg.commit(&m)
+        Ok(())
+    })
 }
 
 fn check_listed_dir(root: &Path, dir: &Path, m: &VerifiedManifest) -> Result<()> {
@@ -109,28 +110,29 @@ pub fn import_zip(reg: &Registry, zip_path: &Path) -> Result<InstalledModel> {
         .read_to_end(&mut mbytes)
         .map_err(io(zip_path))?;
     let m = reg.verifier().parse(&mbytes)?;
-    let stage = reg.prepare(&m)?;
-    reset_stage(&stage)?;
-    // Entries are looked up by manifest path, never extracted under their own names (no zip-slip); extras are rejected.
-    for i in 0..z.len() {
-        let e = z.by_index(i).map_err(|e| Error::Archive(e.to_string()))?;
-        // a name zip cannot decode (invalid UTF-8 under zip 9) is never a listed file
-        let name = e
-            .name()
-            .map_err(|e| Error::Archive(e.to_string()))?
-            .to_string();
-        if !e.is_dir()
-            && name != MANIFEST_FILE
-            && !m.manifest().files.iter().any(|f| f.path == name)
-        {
-            return Err(Error::Unlisted(name));
+    reg.install_with(&m, |stage| {
+        reset_stage(stage)?;
+        // Entries are looked up by manifest path, never extracted under their own names (no zip-slip); extras are rejected.
+        for i in 0..z.len() {
+            let e = z.by_index(i).map_err(|e| Error::Archive(e.to_string()))?;
+            // a name zip cannot decode (invalid UTF-8 under zip 9) is never a listed file
+            let name = e
+                .name()
+                .map_err(|e| Error::Archive(e.to_string()))?
+                .to_string();
+            if !e.is_dir()
+                && name != MANIFEST_FILE
+                && !m.manifest().files.iter().any(|f| f.path == name)
+            {
+                return Err(Error::Unlisted(name));
+            }
         }
-    }
-    for f in &m.manifest().files {
-        let e = z
-            .by_name(&f.path)
-            .map_err(|_| Error::Missing(f.path.clone()))?;
-        copy_checked(e, &stage.join(&f.path), f)?;
-    }
-    reg.commit(&m)
+        for f in &m.manifest().files {
+            let e = z
+                .by_name(&f.path)
+                .map_err(|_| Error::Missing(f.path.clone()))?;
+            copy_checked(e, &stage.join(&f.path), f)?;
+        }
+        Ok(())
+    })
 }

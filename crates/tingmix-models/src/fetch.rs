@@ -88,38 +88,39 @@ impl Downloader {
         if let Some(f) = m.manifest().files.iter().find(|f| f.url.is_empty()) {
             return Err(Error::ImportOnly(f.path.clone()));
         }
-        let stage = reg.prepare(m)?;
-        let total = m.manifest().download_size();
-        let mut done = 0u64;
-        for f in &m.manifest().files {
-            let dest = stage.join(&f.path);
-            if dest.is_file() && verify_file(&dest, f).is_ok() {
+        reg.install_with(m, |stage| {
+            let total = m.manifest().download_size();
+            let mut done = 0u64;
+            for f in &m.manifest().files {
+                let dest = stage.join(&f.path);
+                if dest.is_file() && verify_file(&dest, f).is_ok() {
+                    done += f.size;
+                    continue;
+                }
+                let _ = fs::remove_file(&dest); // present but wrong: refetch
+                if let Some(p) = dest.parent() {
+                    fs::create_dir_all(p).map_err(io(p))?;
+                }
+                let part = dest.with_file_name(format!(
+                    "{}.part",
+                    dest.file_name().unwrap().to_string_lossy()
+                ));
+                self.fetch_one(&f.url, &part, f.size, cancel, |n| {
+                    progress(Progress {
+                        file: &f.path,
+                        bytes_done: done + n,
+                        bytes_total: total,
+                    })
+                })?;
+                if let Err(e) = verify_file(&part, f) {
+                    let _ = fs::remove_file(&part); // never resume from corrupt bytes
+                    return Err(e);
+                }
+                fs::rename(&part, &dest).map_err(io(&dest))?;
                 done += f.size;
-                continue;
             }
-            let _ = fs::remove_file(&dest); // present but wrong: refetch
-            if let Some(p) = dest.parent() {
-                fs::create_dir_all(p).map_err(io(p))?;
-            }
-            let part = dest.with_file_name(format!(
-                "{}.part",
-                dest.file_name().unwrap().to_string_lossy()
-            ));
-            self.fetch_one(&f.url, &part, f.size, cancel, |n| {
-                progress(Progress {
-                    file: &f.path,
-                    bytes_done: done + n,
-                    bytes_total: total,
-                })
-            })?;
-            if let Err(e) = verify_file(&part, f) {
-                let _ = fs::remove_file(&part); // never resume from corrupt bytes
-                return Err(e);
-            }
-            fs::rename(&part, &dest).map_err(io(&dest))?;
-            done += f.size;
-        }
-        reg.commit(m)
+            Ok(())
+        })
     }
 
     fn fetch_one(
