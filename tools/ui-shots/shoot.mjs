@@ -8,7 +8,7 @@ import { chromium } from "playwright";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const PORT = 1431;
-const STATES = ["setup-offer", "setup-downloading", "setup-failed", "setup-offline", "setup-unavailable", "ready-empty", "live-captions", "live-retracted", "live-mic-denied", "live-no-signal", "files-idle", "files-running", "files-done", "history-empty", "history-items", "settings"];
+const STATES = ["setup-checking", "setup-offer", "setup-downloading", "setup-paused", "setup-failed", "setup-finishing", "setup-offline", "setup-unavailable", "setup-unavailable-windows", "ready-empty", "live-captions", "live-retracted", "live-mic-denied", "live-mic-denied-windows", "live-no-signal", "live-disconnected", "files-idle", "files-running", "files-done", "history-empty", "history-items", "settings", "settings-model-advanced-open", "settings-troubleshooting-open"];
 const SIZES = [[1100, 720], [720, 560]];
 const only = process.argv[2];
 

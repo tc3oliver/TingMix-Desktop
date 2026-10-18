@@ -1,3 +1,4 @@
+import "./platform";
 import { emit } from "@tauri-apps/api/event";
 import { mockIPC } from "@tauri-apps/api/mocks";
 import { createRoot } from "react-dom/client";
@@ -8,11 +9,13 @@ import type { BackendState, Diagnostics, HistorySummary, JobView, LiveStatus, Mi
 
 const q = new URLSearchParams(location.search);
 const stateName = q.get("state") ?? "ready-empty";
+const base = stateName.replace(/-windows$/, "");
 const lang = q.get("lang") ?? "en";
 const theme = q.get("theme") ?? "light";
 
+const MODEL_ID = "tingmix-small-onnx-fp16-r1a2b3c4";
 const info = (over: Partial<BackendState["info"]> = {}): BackendState["info"] => ({
-  label: "TingMix-Small (ONNX Runtime, CoreML)", mock: false, experimental: false, reason: "", rejected: [], ort_library: null,
+  label: `${MODEL_ID} (onnx) — EXPERIMENTAL`, mock: false, experimental: false, reason: "", rejected: [], ort_library: null,
   demo_allowed: false, usable: true, ...over,
 });
 const READY: BackendState = { info: info(), load: { loading: false, label: null, error: null } };
@@ -24,7 +27,7 @@ const download: SetupView = {
 };
 const op = (state: ModelOp["state"], done: number, message: string | null = null): ModelOp => ({ kind: "download", name: "tingmix-small-onnx-fp16-r1a2b3c4", state, message, bytes_done: done, bytes_total: 1_320_000_000 });
 
-const idle: LiveStatus = { state: "idle", session_id: null, elapsed_s: 0, samples_in: 0, overflow_samples: 0, level_db: -120, device: "", backend: "TingMix-Small (ONNX Runtime, CoreML)", coalesced_partials: 0, message: null };
+const idle: LiveStatus = { state: "idle", session_id: null, elapsed_s: 0, samples_in: 0, overflow_samples: 0, level_db: -120, device: "", backend: `${MODEL_ID} (onnx) — EXPERIMENTAL`, coalesced_partials: 0, message: null };
 const rec = (over: Partial<LiveStatus> = {}): LiveStatus => ({ ...idle, state: "recording", session_id: "s1", elapsed_s: 42, samples_in: 672_000, level_db: -32, device: "MacBook Pro Microphone", ...over });
 const seg = (id: number, text: string, start: number, end: number) => ({ segment_id: id, revision: 3, text, start, end });
 const part = (id: number, text: string, start: number, end: number) => ({ ...seg(id, text, start, end), stable_prefix_len: Math.floor(text.length / 2) });
@@ -36,7 +39,7 @@ const OPEN = lang === "en" ? "The first one is that long files" : "第一個問�
 
 interface State {
   backend?: BackendState;
-  setup?: SetupView;
+  setup?: SetupView | "never";
   modelOp?: ModelOp | null;
   live?: { status: LiveStatus; finals?: ReturnType<typeof seg>[]; open?: ReturnType<typeof part>[] };
   mic?: MicStatus;
@@ -48,13 +51,21 @@ interface State {
   liveEvents?: boolean;
 }
 
+/** Opens a disclosure and scrolls it into view (the screenshot is the window, and the panel scrolls inside it). */
+const open = async (selector: string) => {
+  const summary = document.querySelector<HTMLElement>(selector);
+  summary?.click();
+  await new Promise((r) => setTimeout(r, 300));
+  summary?.scrollIntoView({ block: "start" });
+};
+
 const finals = CAPTIONS.map((c, i) => seg(i, c, i * 6, i * 6 + 5));
 const job = (state: JobView["state"], name: string, audio_s: number, n: number): JobView => ({
-  job_id: `j-${name}`, name, backend: "TingMix-Small (ONNX Runtime, CoreML)", state, audio_s, message: null,
+  job_id: `j-${name}`, name, backend: `${MODEL_ID} (onnx) — EXPERIMENTAL`, state, audio_s, message: null,
   snapshot: { finals: finals.slice(0, n), open: [] },
 });
 const hist = (i: number, source: "live" | "file", name: string, ago: number, dur: number): HistorySummary => ({
-  id: `h${i}`, source, name, started_at: Math.floor(Date.now() / 1000) - ago, duration_s: dur, backend: "TingMix-Small (ONNX Runtime, CoreML)", segments: 3 + i * 4,
+  id: `h${i}`, source, name, started_at: Math.floor(Date.now() / 1000) - ago, duration_s: dur, backend: `${MODEL_ID} (onnx) — EXPERIMENTAL`, segments: 3 + i * 4,
 });
 
 const STATES: Record<string, State> = {
@@ -62,6 +73,10 @@ const STATES: Record<string, State> = {
   "setup-downloading": { backend: NOT_READY, setup: download, modelOp: op("running", 488_400_000) },
   "setup-failed": { backend: NOT_READY, setup: download, modelOp: op("failed", 488_400_000, "The connection was interrupted.") },
   "setup-offline": { backend: NOT_READY, setup: { state: "offline", reason: "No internet connection." }, modelOp: null },
+  "setup-checking": { backend: NOT_READY, setup: "never", modelOp: null },
+  "setup-paused": { backend: NOT_READY, setup: download, modelOp: op("cancelled", 488_400_000) },
+  "setup-finishing": { backend: NOT_READY, setup: download, modelOp: { ...op("running", 1_320_000_000), kind: "probe" } },
+  "setup-unavailable-windows": { backend: NOT_READY, setup: { state: "unavailable", why: "platform", reason: JSON.stringify({ code: "setup.no_platform", text: "x" }) }, modelOp: null },
   "setup-unavailable": { backend: NOT_READY, setup: { state: "unavailable", why: "platform", reason: "TingMix is not available for this computer yet." }, modelOp: null },
   "ready-empty": { live: { status: idle } },
   "live-captions": { live: { status: rec(), finals: finals.slice(0, 2), open: [part(2, OPEN, 12, 15)] } },
@@ -72,6 +87,8 @@ const STATES: Record<string, State> = {
     },
   },
   "live-mic-denied": { live: { status: idle }, mic: "denied" },
+  "live-mic-denied-windows": { live: { status: idle }, mic: "denied" },
+  "live-disconnected": { live: { status: { ...rec(), state: "error", message: JSON.stringify({ code: "live.disconnected", text: "The microphone was disconnected: device lost (0x8889000a)" }) }, finals: finals.slice(0, 2) } },
   "live-no-signal": { live: { status: rec({ level_db: -120, elapsed_s: 8 }) } },
   "files-idle": { tab: "files", jobs: [] },
   "files-running": { tab: "files", jobs: [job("running", "weekly-sync.m4a", 95, 2)] },
@@ -79,16 +96,18 @@ const STATES: Record<string, State> = {
   "history-empty": { tab: "history", history: [] },
   "history-items": { tab: "history", history: [hist(1, "live", "live-transcript", 3600, 754), hist(2, "file", "interview-final.mp3", 90000, 2710), hist(3, "file", "lecture-03.m4a", 400000, 5400)] },
   settings: { tab: "settings" },
+  "settings-model-advanced-open": { tab: "settings", after: async () => open("details.advanced > summary") },
+  "settings-troubleshooting-open": { tab: "settings", after: async () => open("fieldset:last-of-type details > summary") },
 };
-const S = { ...STATES[stateName] };
 if (!STATES[stateName]) throw new Error(`unknown state ${stateName}`);
+const S = { ...STATES[stateName] };
 
 const settings: Settings = { device_id: null, theme: theme as Settings["theme"], caption_size: 28, save_history: true, language: lang };
-const overview: ModelsOverview = {
+const overview = (): ModelsOverview => ({
   registry_available: true, note: "", root: "~/Library/Application Support/TingMix/models",
   capabilities: { os: "macos", arch: "aarch64", ram_bytes: 36 << 30, apple_chip: "Apple M4 Max" },
-  installed: [], unreadable: [], selection: null, op: S.modelOp ?? null,
-};
+  installed: S.setup ? [] : [{ id: MODEL_ID, family: "tingmix-small", revision: "1a2b3c4", backend: "onnx", precision: "fp16", size_bytes: 1_320_000_000, serial: 3, compat_status: "EXPERIMENTAL", compat_notes: "", licenses: ["apache-2.0"], active: true, previous: false }], unreadable: [], selection: null, op: S.modelOp ?? null,
+});
 const diag: Diagnostics = {
   app_version: "0.1.0", os: "macos", arch: "aarch64", backend: "TingMix-Small", backend_reason: "", ort_library: null, updater_enabled: false,
   input_devices: [], device_error: null, live: idle, running_jobs: 0, config_dir: "~/Library/Application Support/TingMix", data_dir: "~/Library/Application Support/TingMix", recent_errors: [],
@@ -99,8 +118,8 @@ mockIPC((cmd, args) => {
     case "settings_get": return settings;
     case "settings_set": return (args as { settings: Settings }).settings;
     case "backend_state": return S.backend ?? READY;
-    case "setup_check": return S.setup ?? { state: "ready" };
-    case "models_overview": return overview;
+    case "setup_check": return S.setup === "never" ? new Promise(() => undefined) : (S.setup ?? { state: "ready" });
+    case "models_overview": return overview();
     case "list_input_devices": return [{ id: "mic1", name: "MacBook Pro Microphone", is_default: true, sample_rate: 48000, channels: 1 }, { id: "mic2", name: "USB Headset", is_default: false, sample_rate: 48000, channels: 1 }];
     case "live_snapshot": return { status: S.live?.status ?? idle, snapshot: { finals: S.live?.finals ?? [], open: S.live?.open ?? [] } };
     case "mic_permission_status": return S.mic ?? "authorized";
@@ -120,6 +139,7 @@ import "../../src/app/styles.css";
 // after mount: switch tab, run scripted events, then tell the screenshot script the page is settled
 setTimeout(async () => {
   if (S.tab) document.getElementById(`tab-${S.tab}`)?.click();
+  await new Promise((r) => setTimeout(r, 300));
   await S.after?.();
   setTimeout(() => ((document.body.dataset.ready = "1")), 300);
 }, 400);
