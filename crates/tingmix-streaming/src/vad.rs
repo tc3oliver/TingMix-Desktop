@@ -179,6 +179,10 @@ impl AdaptiveVad {
     }
 
     fn track_floor(&mut self, db: f32) {
+        // digital silence says nothing about the room; letting it in drags the floor to -200 dB and the next noise reads as speech
+        if db < self.p.abs_min_db - 30.0 {
+            return;
+        }
         self.window.push_back(db);
         if self.window.len() > self.p.window_frames {
             self.window.pop_front();
@@ -245,6 +249,9 @@ impl Vad for AdaptiveVad {
             .map(|&x| f64::from(x) * f64::from(x))
             .sum::<f64>()
             / frame.len().max(1) as f64;
+        if !ms.is_finite() {
+            return self.speech; // NaN or infinite samples: no update
+        }
         self.power.push_back(ms);
         if self.power.len() > self.p.smooth_frames.max(1) {
             self.power.pop_front();
@@ -340,6 +347,26 @@ mod tests {
             assert!(!feed(&mut a, -20.0, 4)); // 80 ms bursts (smoothing stretches them to 6 frames)
             feed(&mut a, -60.0, 10);
         }
+    }
+
+    #[test]
+    fn digital_silence_does_not_drag_the_floor_so_later_noise_stays_closed() {
+        let mut a = AdaptiveVad::new();
+        feed(&mut a, -200.0, 50); // 1 s of zeros
+        let open = (0..400).filter(|_| a.update(&level(-50.0))).count();
+        assert!(open < 30, "noise held the gate open for {open} frames");
+        assert!(a.floor_db() > -60.0, "{}", a.floor_db());
+    }
+
+    #[test]
+    fn non_finite_samples_are_ignored() {
+        let mut a = AdaptiveVad::new();
+        feed(&mut a, -40.0, 400);
+        let floor = a.floor_db();
+        assert!(!a.update(&[f32::NAN; 320]));
+        assert!(!a.update(&[f32::INFINITY; 320]));
+        assert!(!feed(&mut a, -40.0, 50));
+        assert_eq!(a.floor_db(), floor);
     }
 
     /// Syllable-like modulation: 8 frames at `hi` dB, 4 at `lo` dB, repeated.
