@@ -234,6 +234,8 @@ impl AsrBackend for Dyn {
 #[derive(Clone, Default)]
 pub struct Runtimes {
     pub ort_library: Option<PathBuf>,
+    /// Probe worker for the ONNX engine; `None` means `TINGMIX_ONNX_WORKER`, then the sibling of the executable.
+    pub onnx_worker: Option<PathBuf>,
 }
 
 impl Runtimes {
@@ -302,13 +304,15 @@ pub fn engine_available(backend: &str, rt: &Runtimes) -> bool {
 /// `engine_available` and the probe worker it is checked by exists: a build without the sidecar can install a model but
 /// never activate it.
 pub fn engine_ready(backend: &str, rt: &Runtimes) -> bool {
-    engine_available(backend, rt) && worker_exe(backend).is_some_and(|p| p.is_file())
+    engine_available(backend, rt) && worker_exe(backend, rt).is_some_and(|p| p.is_file())
 }
 
-fn worker_exe(backend: &str) -> Option<std::path::PathBuf> {
+fn worker_exe(backend: &str, rt: &Runtimes) -> Option<std::path::PathBuf> {
     match backend {
-        ONNX => std::env::var_os("TINGMIX_ONNX_WORKER")
-            .map(Into::into)
+        ONNX => rt
+            .onnx_worker
+            .clone()
+            .or_else(|| std::env::var_os("TINGMIX_ONNX_WORKER").map(Into::into))
             .or_else(|| tingmix_runtime_onnx::probe::OnnxProbeTarget::sibling_worker().ok()),
         #[cfg(all(feature = "mlx", target_os = "macos", target_arch = "aarch64"))]
         MLX => std::env::var_os("TINGMIX_MLX_WORKER")
@@ -1021,8 +1025,11 @@ fn probe_onnx_large(
         return None;
     }
     // TINGMIX_ONNX_WORKER overrides the sibling lookup (tests, development)
-    let worker = std::env::var_os("TINGMIX_ONNX_WORKER")
-        .map(|p| Ok(p.into()))
+    let worker = rt
+        .onnx_worker
+        .clone()
+        .or_else(|| std::env::var_os("TINGMIX_ONNX_WORKER").map(Into::into))
+        .map(Ok)
         .unwrap_or_else(OnnxProbeTarget::sibling_worker);
     Some(match worker {
         Ok(exe) => run_probe(
@@ -1218,6 +1225,7 @@ mod tests {
             .contains("ONNX Runtime"));
         let here = Runtimes {
             ort_library: Some(std::env::current_exe().unwrap()),
+            ..Default::default()
         };
         assert!(probe_precheck(ONNX, &here).is_ok());
     }
@@ -1320,6 +1328,7 @@ mod tests {
         );
         let here = Runtimes {
             ort_library: Some(std::env::current_exe().unwrap()),
+            ..Default::default()
         };
         assert_eq!(
             regs(&here)

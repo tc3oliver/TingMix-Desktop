@@ -273,7 +273,10 @@ fn real_first_run_download_probe_transcribe() {
     if let Some(p) = &ort {
         tingmix_runtime_onnx::set_runtime_library(p.clone());
     }
-    let rt = Runtimes { ort_library: ort };
+    let rt = Runtimes {
+        ort_library: ort,
+        ..Default::default()
+    };
     let t0 = Instant::now();
     let stamp = |what: &str| println!("[{:7.1}s] {what}", t0.elapsed().as_secs_f64());
 

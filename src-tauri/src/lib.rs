@@ -91,7 +91,10 @@ pub fn run() {
             app.manage(AppState::new(
                 store,
                 models,
-                backends::Runtimes { ort_library },
+                backends::Runtimes {
+                    ort_library,
+                    ..Default::default()
+                },
                 updater,
             ));
             backends::preload(app.handle());
