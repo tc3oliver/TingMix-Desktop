@@ -142,3 +142,21 @@ starts that segment's final. The 0.05 percentile was rejected for fan noise alon
 Tests: `non_stop_compressed_speech_stays_open` (fails on the old defaults); the settle negative control pins the old 0.2
 percentile it was written for. Not checked: real rooms with fans or air conditioning, and how often the brief "m" partial
 appears there. A neural VAD remains the real fix for speech that energy cannot separate from its background.
+
+## Bridging short gaps between segments (2026-10-18)
+
+Over the whole 1988 s of the same video the live preset left 8 gaps of 1.1-2.7 s between segments (1958 s covered). Each gap,
+decoded on its own, held speech: quieter stretches (median -24 to -29 dBFS against -22 overall) that stay below the start
+threshold, so the VAD does not reopen until the speech gets louder, and the 800 ms preroll does not reach back far enough.
+Lowering the start margin or lengthening the hang closes the gaps but raises false segments on fan noise alone from 24 to 36-132
+per 30 min (`hang_frames` 15/20, `start_margin_db` 8), so the VAD stays as it is.
+
+Change: `SessionConfig::bridge_s` (live preset 4 s, default 0 = Python-identical). A segment that opens within 4 s of the previous
+one's end starts at that end, so the audio between them is decoded with the next segment. The model window budget uses the larger
+of preroll and bridge. Model-free coverage of the whole video: 1958 -> 1987 s. Real model, whole video: no gap above 1 s, no final
+suppressed, 29385 -> 29743 characters; the gap speech now appears in the text. One segment (around 1155 s, which starts with a
+2.3 s bridged stretch) came out shorter than before (22 vs 74 characters) while its neighbour gained text, so bridging can also
+make an individual decode worse. Fixture replays with the bridge (`mlx-bridge/`, suppression on, adaptive): clean CER 0.031
+(0.025 without the bridge in `mlx-floor-p10/`, 0.035 in the original table; a difference of a few characters), fan + speech
+0.030, babble + speech 0.035, fan alone 0.56 false segments per minute with every final suppressed, music bed alone 0.
+Test: `a_short_gap_between_segments_is_bridged`.

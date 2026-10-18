@@ -24,7 +24,7 @@ use probe::{Rec, Sim};
 use run::{RunCfg, RunOut};
 
 const USAGE: &str = "usage: tingmix-bench [--backend mock|onnx|mlx] [--duration-s 120] [--chunk-ms 20] [--seed 1] [--gap-min 1.0] [--gap-max 4.0]
-  [--noise-dbfs -70] [--clips id,id] [--tail-s 4] [--mock-native] [--tail-partial on|off|live]\n  [--noise none|white|pink|fan|babble] [--snr-db N | --noise-dbfs N] [--no-speech] [--vad energy|adaptive] [--suppress on|off]\n  [--sup-min C] [--sup-partial-min C] [--sup-short-chars N] [--sup-short-min C] [--speed X] [--fixtures DIR (manifest.jsonl + wavs)] [--vad-only] [--wav FILE (segment a recording, no model)] [--cut-search S] [--oracle FILE|prompt] [--avad key=value,...] [--oracle FILE] [--discard-first N] [--mock-delay-ms 0] [--sim-base-ms 0] [--sim-rtf 0]
+  [--noise-dbfs -70] [--clips id,id] [--tail-s 4] [--mock-native] [--tail-partial on|off|live]\n  [--noise none|white|pink|fan|babble] [--snr-db N | --noise-dbfs N] [--no-speech] [--vad energy|adaptive] [--suppress on|off]\n  [--sup-min C] [--sup-partial-min C] [--sup-short-chars N] [--sup-short-min C] [--speed X] [--fixtures DIR (manifest.jsonl + wavs)] [--vad-only] [--wav FILE (segment a recording, no model)] [--cut-search S] [--bridge-s S] [--oracle FILE|prompt] [--avad key=value,...] [--oracle FILE] [--discard-first N] [--mock-delay-ms 0] [--sim-base-ms 0] [--sim-rtf 0]
   [--artifact PATH] [--model onnx] [--units units.json --dtype f16 --lm charlm.json.gz] [--scenario NAME] [--soak] --out FILE.json";
 
 struct Args(std::collections::HashMap<String, String>);
@@ -176,6 +176,7 @@ fn real_main() -> Result<(), String> {
         },
         adaptive_vad: avad_params(a.s("avad"))?,
         max_cut_search_s: a.f("cut-search", 0.0)?,
+        bridge_s: a.f("bridge-s", 0.0)?,
         ..SessionConfig::default()
     };
     if let Some(path) = a.s("wav") {
@@ -196,7 +197,7 @@ fn real_main() -> Result<(), String> {
                 .map_err(|e| e.to_string())?,
         };
         let out = vadeval::evaluate_wav(&wav, &session);
-        std::fs::write(&out_path, serde_json::to_vec_pretty(&serde_json::json!({ "command": std::env::args().collect::<Vec<_>>().join(" "), "vad": a.s("vad").unwrap_or("energy"), "cut_search_s": a.f("cut-search", 0.0)?, "result": out })).unwrap()).map_err(|e| e.to_string())?;
+        std::fs::write(&out_path, serde_json::to_vec_pretty(&serde_json::json!({ "command": std::env::args().collect::<Vec<_>>().join(" "), "vad": a.s("vad").unwrap_or("energy"), "cut_search_s": a.f("cut-search", 0.0)?, "bridge_s": a.f("bridge-s", 0.0)?, "result": out })).unwrap()).map_err(|e| e.to_string())?;
         let o = &out;
         eprintln!(
             "{} s: {} segments, {} ended at the cap, median {:.1} s, longest {:.1} s",
@@ -207,7 +208,7 @@ fn real_main() -> Result<(), String> {
     if a.0.contains_key("vad-only") {
         let out = vadeval::evaluate(src, &session, chunk_ms as usize);
         let body = serde_json::json!({ "command": std::env::args().collect::<Vec<_>>().join(" "), "env": report::env(),
-            "config": { "noise": noise_desc, "vad": a.s("vad").unwrap_or("energy"), "avad": a.s("avad"), "cut_search_s": a.f("cut-search", 0.0)?, "oracle": a.s("oracle"), "seed": a.f("seed", 1.0)?, "duration_s": duration_s, "gap_s": [a.f("gap-min", 1.0)?, a.f("gap-max", 4.0)?], "no_speech": a.0.contains_key("no-speech") },
+            "config": { "noise": noise_desc, "vad": a.s("vad").unwrap_or("energy"), "avad": a.s("avad"), "cut_search_s": a.f("cut-search", 0.0)?, "bridge_s": a.f("bridge-s", 0.0)?, "oracle": a.s("oracle"), "seed": a.f("seed", 1.0)?, "duration_s": duration_s, "gap_s": [a.f("gap-min", 1.0)?, a.f("gap-max", 4.0)?], "no_speech": a.0.contains_key("no-speech") },
             "result": out });
         std::fs::write(&out_path, serde_json::to_vec_pretty(&body).unwrap())
             .map_err(|e| format!("{}: {e}", out_path.display()))?;

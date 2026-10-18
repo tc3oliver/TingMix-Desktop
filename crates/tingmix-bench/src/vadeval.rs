@@ -130,7 +130,9 @@ pub fn evaluate_wav(wav: &[f32], cfg: &SessionConfig) -> WavOut {
         take(p.feed(c));
     }
     take(p.flush());
-    let cap = cfg.max_segment_s.min(29.5 - cfg.preroll_ms / 1000.0 - 0.1);
+    let cap = cfg
+        .max_segment_s
+        .min(29.5 - (cfg.preroll_ms / 1000.0).max(cfg.bridge_s) - 0.1);
     let mut sorted = lens.clone();
     sorted.sort_by(f64::total_cmp);
     WavOut {

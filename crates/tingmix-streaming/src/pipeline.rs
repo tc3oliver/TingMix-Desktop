@@ -31,6 +31,9 @@ pub struct SessionConfig {
     /// When a segment hits `max_segment_s`, cut at the quietest point of its last this-many seconds instead of at the cap,
     /// and carry the rest into the next segment (0 = hard cut, Python-identical). Buffered models only.
     pub max_cut_search_s: f64,
+    /// A segment that opens within this many seconds of the previous one's end starts at that end instead of `preroll_ms`
+    /// earlier, so speech too quiet to open the VAD between two segments is still decoded (0 = off, Python-identical).
+    pub bridge_s: f64,
 }
 
 impl Default for SessionConfig {
@@ -49,6 +52,7 @@ impl Default for SessionConfig {
             suppression: None,
             tail_partial: false,
             max_cut_search_s: 0.0,
+            bridge_s: 0.0,
         }
     }
 }
@@ -61,6 +65,7 @@ impl SessionConfig {
             vad: VadKind::Adaptive,
             suppression: Some(Suppression::RECOMMENDED),
             max_cut_search_s: 3.0,
+            bridge_s: 4.0,
             ..Self::default()
         }
     }
@@ -99,6 +104,7 @@ pub struct Pipeline {
     native: bool,
     vad: Box<dyn Vad>,
     preroll: usize,
+    bridge: usize,
     tail_pad: usize,
     endpointer: Endpointer,
     scheduler: Scheduler,
@@ -129,10 +135,9 @@ impl Pipeline {
     pub fn with_vad(info: &BackendInfo, cfg: &SessionConfig, vad: Box<dyn Vad>) -> Self {
         let sr = info.sample_rate as usize;
         let ms = |m: f64| (m * sr as f64 / 1000.0) as usize;
-        // the open segment (plus preroll) must fit the model window
-        let max_seg = cfg
-            .max_segment_s
-            .min(info.max_window_s - cfg.preroll_ms / 1000.0 - 0.1);
+        // the open segment (plus preroll or bridge) must fit the model window
+        let lead_s = (cfg.preroll_ms / 1000.0).max(cfg.bridge_s);
+        let max_seg = cfg.max_segment_s.min(info.max_window_s - lead_s - 0.1);
         let frame_ms = f64::from(vad.frame_ms());
         let frame = ms(frame_ms);
         let ring = ((info.max_window_s.min(cfg.max_segment_s) + 30.0) * sr as f64) as usize;
@@ -141,6 +146,7 @@ impl Pipeline {
             native: info.streaming_native,
             vad,
             preroll: ms(cfg.preroll_ms),
+            bridge: ms(cfg.bridge_s * 1000.0),
             tail_pad: ms(cfg.tail_pad_ms),
             endpointer: Endpointer::new(cfg.silence_ms, max_seg),
             scheduler: Scheduler::new(info.sample_rate, cfg.hop_ms, cfg.max_load),
@@ -237,10 +243,13 @@ impl Pipeline {
     }
 
     fn open(&mut self, frame_start: usize) {
-        self.seg_start = frame_start
-            .saturating_sub(self.preroll)
-            .max(self.prev_end)
-            .max(self.buf.start());
+        let bridged = self.next_id > 0 && frame_start <= self.prev_end + self.bridge;
+        let lead = if bridged {
+            self.prev_end
+        } else {
+            frame_start.saturating_sub(self.preroll)
+        };
+        self.seg_start = lead.max(self.prev_end).max(self.buf.start());
         self.fed = self.seg_start;
         self.first_job = true;
         self.tail_end = None;
@@ -341,6 +350,50 @@ mod tests {
         (0..(secs * 16_000.0) as usize)
             .map(|i| amp * (i as f32 * 0.3).sin())
             .collect()
+    }
+
+    #[test]
+    fn a_short_gap_between_segments_is_bridged() {
+        let info = BackendInfo {
+            name: "t".into(),
+            sample_rate: 16_000,
+            max_window_s: 29.5,
+            streaming_native: false,
+        };
+        let run = |bridge_s: f64, gap_s: f64| {
+            let cfg = SessionConfig {
+                bridge_s,
+                ..SessionConfig::default()
+            };
+            let mut p = Pipeline::new(&info, &cfg);
+            // speech, a pause long enough to end the segment, speech again
+            let mut pcm = tone(3.0, 0.2);
+            pcm.extend(tone(gap_s, 0.0));
+            pcm.extend(tone(3.0, 0.2));
+            let mut jobs = Vec::new();
+            for c in pcm.chunks(320) {
+                jobs.extend(p.feed(c));
+            }
+            jobs.extend(p.flush());
+            let f: Vec<_> = jobs
+                .into_iter()
+                .filter(|j| j.kind == JobKind::Final)
+                .collect();
+            assert_eq!(f.len(), 2);
+            (f[0].end, f[1].start)
+        };
+        let (end, start) = run(0.0, 3.0);
+        assert!(
+            start > end + 16_000,
+            "without a bridge the pause is skipped"
+        );
+        let (end, start) = run(4.0, 3.0);
+        assert_eq!(
+            start, end,
+            "the second segment starts where the first ended"
+        );
+        let (end, start) = run(4.0, 6.0);
+        assert!(start > end + 16_000, "a long pause is not bridged");
     }
 
     #[test]
