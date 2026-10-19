@@ -199,6 +199,8 @@ const ALLOWED_EXT: &[&str] = &[
     "mlmodel",
     "bin",
     "npy",
+    // ONNX external weights: raw tensor bytes that a graph references by offset, read by ONNX Runtime as data only
+    "data",
 ];
 
 impl Manifest {
