@@ -1,10 +1,10 @@
 {
  "label": "VERIFIED-PARITY + EXPERIMENTAL accuracy: SenseVoice-Small (sherpa-onnx int8 export) through tingmix-runtime-onnx on 55 real zh-TW clips (two third-party videos, 647 s), scored like docs/research/error-attribution.md section 2. References are Whisper large-v3 drafts (provisional); the product video is also scored against its uploader subtitles (independent). No transcripts are kept here.",
  "commands": [
-  "cargo run --release -p tingmix-runtime-onnx --no-default-features --features load-dynamic --example sensevoice_dir -- <export dir> experiments/error-attribution/out/{product,finance}/clips experiments/sensevoice/out/ea_{product,finance}.json 4   (TINGMIX_ORT_DYLIB=vendor/onnxruntime/macos-arm64/lib/libonnxruntime.1.31.0.dylib)",
+  "cargo run --release -p tingmix-runtime-onnx --no-default-features --features load-dynamic --example decode_dir -- sensevoice <export dir> experiments/error-attribution/out/{product,finance}/clips experiments/sensevoice/out/ea_{product,finance}.json 4   (TINGMIX_ORT_DYLIB=vendor/onnxruntime/macos-arm64/lib/libonnxruntime.1.31.0.dylib)",
   "cd experiments/error-attribution && uv run python -m ea.other sensevoice-small product=../sensevoice/out/ea_product.json finance=../sensevoice/out/ea_finance.json",
   "cd experiments/error-attribution && EA_REF=subtitles uv run python -m ea.other sensevoice-small product=../sensevoice/out/ea_product.json",
-  "/usr/bin/time -l target/release/examples/sensevoice_dir <export dir> experiments/error-attribution/out/finance/clips <out.json> 4",
+  "/usr/bin/time -l target/release/examples/decode_dir sensevoice <export dir> experiments/error-attribution/out/finance/clips <out.json> 4",
   "cd experiments/error-attribution/app-live && cargo build --release; for n in product finance: TINGMIX_ORT_DYLIB=<vendored 1.31.0> [EA_MAX_SEG_S=6] target/release/ea-app-live <export dir> ../../sensevoice/out/live[_cap6]_$n.json ../out/$n/regions/r*.wav",
   "cd experiments/error-attribution && [EA_REF=subtitles] uv run python -m ea.other --live sensevoice-live app_live[_cap6] product=../sensevoice/out/live[_cap6]_product.json finance=../sensevoice/out/live[_cap6]_finance.json"
  ],

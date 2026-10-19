@@ -4,7 +4,7 @@ docs/research/error-attribution.md), next to TingMix-Large's app decoder on the 
     uv run python -m ea.other LABEL NAME=hyps.json [NAME=hyps.json ...]
     uv run python -m ea.other --live LABEL BASELINE NAME=live.json [...]   # BASELINE: app_live or app_live_cap6 ...
 
-Each hyps.json maps clip id -> text, either at the top level or under "texts" (the `sensevoice_dir` example writes that).
+Each hyps.json maps clip id -> text, either at the top level or under "texts" (the `decode_dir` example writes that).
 --live takes `app-live` output (region id -> [[start, end, text], ...]) and scores whole regions against the joined clip
 references, next to TingMix-Large's out/NAME/BASELINE.json (section 3).
 The engine's output goes through the same OpenCC s2t step as the references, so Simplified output is not penalised."""

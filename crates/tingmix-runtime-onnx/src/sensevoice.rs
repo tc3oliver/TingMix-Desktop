@@ -156,7 +156,8 @@ fn lfr_cmvn(fb: &[f32], m: usize, shift: usize, neg_mean: &[f32], inv_std: &[f32
     out
 }
 
-type TextMap = Box<dyn Fn(&str) -> String + Send>;
+/// A rewrite applied to every final text (shared with `qwen3`).
+pub(crate) type TextMap = Box<dyn Fn(&str) -> String + Send>;
 
 pub struct OnnxSenseVoice {
     info: BackendInfo,

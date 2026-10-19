@@ -1,30 +1,41 @@
-//! Decode every 16 kHz mono wav in a directory with SenseVoice-Small and write `{stem: text}` JSON plus timing, for scoring by
-//! another harness (`experiments/error-attribution`, `ea.other`). Texts are the backend's own output (Simplified characters;
-//! the app converts them to Traditional afterwards).
+//! Decode every 16 kHz mono wav in a directory with SenseVoice-Small or Qwen3-ASR and write `{stem: text}` JSON plus timing,
+//! for scoring by another harness (`experiments/error-attribution`, `ea.other`). Texts are the backend's own output (the app
+//! converts Simplified characters to Traditional afterwards).
 //!
-//!   cargo run --release -p tingmix-runtime-onnx --example sensevoice_dir -- <export dir> <wav dir> <out.json> [threads]
+//!   cargo run --release -p tingmix-runtime-onnx --example decode_dir -- <sensevoice|qwen3> <export dir> <wav dir> <out.json> [threads]
 //! With `--no-default-features --features load-dynamic` set TINGMIX_ORT_DYLIB to the onnxruntime library.
 use std::path::Path;
 use std::time::Instant;
 
 use tingmix_core::AsrBackend;
-use tingmix_runtime_onnx::{runtime_version, OnnxSenseVoice};
+use tingmix_runtime_onnx::{runtime_version, OnnxQwen3Asr, OnnxSenseVoice};
 
 fn main() {
     let a: Vec<String> = std::env::args().collect();
     assert!(
-        a.len() >= 4,
-        "usage: sensevoice_dir <export dir> <wav dir> <out.json> [threads]"
+        a.len() >= 5,
+        "usage: decode_dir <sensevoice|qwen3> <export dir> <wav dir> <out.json> [threads]"
     );
-    let (export, dir, out) = (Path::new(&a[1]), Path::new(&a[2]), Path::new(&a[3]));
-    let threads: usize = a.get(4).map_or(4, |t| t.parse().unwrap());
+    let (engine, export, dir, out) = (
+        a[1].as_str(),
+        Path::new(&a[2]),
+        Path::new(&a[3]),
+        Path::new(&a[4]),
+    );
+    let threads: usize = a.get(5).map_or(4, |t| t.parse().unwrap());
     let t0 = Instant::now();
-    let mut b = OnnxSenseVoice::load(
-        &export.join("model.int8.onnx"),
-        &export.join("tokens.txt"),
-        threads,
-    )
-    .unwrap();
+    let mut b: Box<dyn AsrBackend> = match engine {
+        "sensevoice" => Box::new(
+            OnnxSenseVoice::load(
+                &export.join("model.int8.onnx"),
+                &export.join("tokens.txt"),
+                threads,
+            )
+            .unwrap(),
+        ),
+        "qwen3" => Box::new(OnnxQwen3Asr::load(export, threads).unwrap()),
+        e => panic!("unknown engine {e}"),
+    };
     let load_s = t0.elapsed().as_secs_f64();
     let mut files: Vec<_> = std::fs::read_dir(dir)
         .unwrap()
@@ -56,7 +67,7 @@ fn main() {
         texts.insert(p.file_stem().unwrap().to_string_lossy().into(), text.into());
     }
     let doc = serde_json::json!({
-        "backend": "sensevoice-small-onnx int8",
+        "backend": b.info().name,
         "onnxruntime": runtime_version(),
         "threads": threads,
         "load_s": load_s,

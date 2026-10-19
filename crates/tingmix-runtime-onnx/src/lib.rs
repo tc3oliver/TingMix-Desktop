@@ -12,6 +12,7 @@ mod large;
 mod model;
 #[cfg(feature = "probe")]
 pub mod probe;
+mod qwen3;
 mod sensevoice;
 
 pub use backend::{OnnxSmall, SmallStream, TokenDecoder};
@@ -21,4 +22,5 @@ pub use large::{Decode, OnnxLarge, Provider};
 pub use model::{
     runtime_version, set_runtime_library, Error, SharedModel, StepModel, StepState, Streamer,
 };
+pub use qwen3::{audio_tokens, OnnxQwen3Asr, WhisperMel};
 pub use sensevoice::{Fbank, OnnxSenseVoice};

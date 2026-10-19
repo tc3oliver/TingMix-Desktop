@@ -30,6 +30,7 @@ tingmix-frontend-gemma = { path = "../tingmix-frontend-gemma" }
 ort = { version = "=2.0.0-rc.14", default-features = false, features = ["std", "ndarray"] }
 rustfft = "6.4.1"
 thiserror = "2.0.21"
+serde_json = "1.0.154"
 
 [dev-dependencies]
 serde = { version = "1.0.229", features = ["derive"] }

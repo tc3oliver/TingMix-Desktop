@@ -6,6 +6,11 @@ requires-python = ">=3.11,<3.13"
 dependencies = [
     "mlx-qwen3-asr==0.4.4",
     "soundfile",
+    # oracle for the Rust ONNX backend: the export repository's own src/ (cloned into out/export-src at a pinned commit)
+    "onnxruntime==1.23.2",
+    "torch==2.9.1",
+    "librosa==0.11.0",
+    "numpy",
 ]
 
 [tool.uv]
