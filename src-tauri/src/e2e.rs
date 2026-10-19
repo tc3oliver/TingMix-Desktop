@@ -254,32 +254,27 @@ fn live_session(models: &Models, rt: &Runtimes, wav: &Path) -> Vec<String> {
     finals
 }
 
-/// SenseVoice-Small on ONNX Runtime through the host, ignored unless TINGMIX_E2E_SENSEVOICE_DIR points at the sherpa-onnx export
-/// (model.int8.onnx, tokens.txt) and TINGMIX_ORT_DYLIB at the pinned ONNX Runtime library. The catalog manifest
-/// (`crates/tingmix-runtime-onnx/fixtures/sensevoice-small-onnx-int8.manifest.json`) is signed with a throwaway key; then: offline
-/// import -> activate + probe -> selection picks it -> file transcription in Traditional characters -> live session.
-#[test]
-#[ignore = "needs the SenseVoice export and the ONNX Runtime library (see the doc comment)"]
-fn sensevoice_import_probe_select_transcribe_live() {
-    let src = PathBuf::from(
-        std::env::var("TINGMIX_E2E_SENSEVOICE_DIR").expect("TINGMIX_E2E_SENSEVOICE_DIR"),
-    );
+/// An ONNX family through the host, from the export directory `src` and the catalog manifest in
+/// `crates/tingmix-runtime-onnx/fixtures/<manifest>` signed with a throwaway key: offline import -> activate + probe -> selection
+/// picks it -> file transcription of mix_08s (must contain `want`, in Traditional characters) -> live session.
+fn onnx_family_e2e(manifest: &str, src: &Path, want: &str) {
     let ort = PathBuf::from(std::env::var("TINGMIX_ORT_DYLIB").expect("TINGMIX_ORT_DYLIB"));
     tingmix_runtime_onnx::set_runtime_library(ort.clone());
     let (dir, keep) = scratch_dir();
     let key = ed25519_dalek::SigningKey::from_bytes(&[7; 32]);
-    let manifest: tingmix_models::Manifest =
-        serde_json::from_slice(
-            &std::fs::read(root().join(
-                "crates/tingmix-runtime-onnx/fixtures/sensevoice-small-onnx-int8.manifest.json",
-            ))
-            .unwrap(),
+    let manifest: tingmix_models::Manifest = serde_json::from_slice(
+        &std::fs::read(
+            root()
+                .join("crates/tingmix-runtime-onnx/fixtures")
+                .join(manifest),
         )
-        .unwrap();
+        .unwrap(),
+    )
+    .unwrap();
     let pkg = dir.join("package");
     std::fs::create_dir_all(&pkg).unwrap();
     for f in &manifest.files {
-        // same volume: a hard link, so the 240 MB model is not copied twice
+        // same volume: a hard link, so the model is not copied twice
         std::fs::hard_link(src.join(&f.path), pkg.join(&f.path))
             .or_else(|_| std::fs::copy(src.join(&f.path), pkg.join(&f.path)).map(drop))
             .unwrap();
@@ -325,7 +320,7 @@ fn sensevoice_import_probe_select_transcribe_live() {
     );
 
     let wav = root().join("tests/fixtures/audio/mix_08s.wav");
-    let resolved = backends::resolve(&models, &rt).expect("load sensevoice");
+    let resolved = backends::resolve(&models, &rt).expect("load backend");
     let mut reducer = Reducer::new();
     let t = Instant::now();
     let out = crate::files::run(
@@ -338,14 +333,39 @@ fn sensevoice_import_probe_select_transcribe_live() {
     assert_eq!(out.state, JobState::Done, "{:?}", out.message);
     let got = join(reducer.finals().map(|f| f.text.clone()).collect());
     println!("file ({:.2}s): {got}", t.elapsed().as_secs_f64());
-    // the oracle writes 我觉得这个deadline有点太赶了; the app converts it to Traditional characters
-    assert!(got.contains("我覺得這個deadline有點太趕了"), "{got}");
+    assert!(got.contains(want), "{got}");
 
     let finals = live_session(&models, &rt, &wav);
     assert!(finals.iter().all(|f| !f.contains('这')), "{finals:?}");
     if keep.is_none() {
         let _ = std::fs::remove_dir_all(dir);
     }
+}
+
+/// SenseVoice-Small. Env: TINGMIX_E2E_SENSEVOICE_DIR (the sherpa-onnx export: model.int8.onnx, tokens.txt), TINGMIX_ORT_DYLIB.
+#[test]
+#[ignore = "needs the SenseVoice export and the ONNX Runtime library (see the doc comment)"]
+fn sensevoice_import_probe_select_transcribe_live() {
+    let src = std::env::var("TINGMIX_E2E_SENSEVOICE_DIR").expect("TINGMIX_E2E_SENSEVOICE_DIR");
+    // the oracle writes 我觉得这个deadline有点太赶了; the app converts it to Traditional characters
+    onnx_family_e2e(
+        "sensevoice-small-onnx-int8.manifest.json",
+        Path::new(&src),
+        "我覺得這個deadline有點太趕了",
+    );
+}
+
+/// Qwen3-ASR-0.6B int4. Env: TINGMIX_E2E_QWEN3_DIR (the andrewleech/qwen3-asr-0.6b-onnx files the manifest lists),
+/// TINGMIX_ORT_DYLIB.
+#[test]
+#[ignore = "needs the Qwen3-ASR export and the ONNX Runtime library (see the doc comment)"]
+fn qwen3_import_probe_select_transcribe_live() {
+    let src = std::env::var("TINGMIX_E2E_QWEN3_DIR").expect("TINGMIX_E2E_QWEN3_DIR");
+    onnx_family_e2e(
+        "qwen3-asr-0.6b-onnx-int4.manifest.json",
+        Path::new(&src),
+        "我覺得這個 deadline 有點太趕了",
+    );
 }
 
 /// The real first-run flow against the published catalog: fetch, accept the licences (what the user's tick does), download

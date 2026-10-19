@@ -635,11 +635,16 @@ pub const LARGE: &str = "tingmix-large";
 pub const SMALL: &str = "tingmix-small";
 /// SenseVoice-Small, the sherpa-onnx export (`model.int8.onnx` as component `model`, `tokens.txt` as `tokenizer`).
 pub const SENSEVOICE: &str = "sensevoice-small";
+/// Qwen3-ASR, the ONNX export of andrewleech/qwen3-asr-onnx: every file of the int4 variant in the version directory, under
+/// the export's own names (the decoder graphs find `decoder_weights.int4.data` next to themselves).
+pub const QWEN3: &str = "qwen3-asr";
 
 /// Whether `build` has an arm for this family on this backend (the engine itself may still be missing; see `engine_ready`).
 pub fn runs(family: &str, backend: &str) -> bool {
-    matches!((family, backend), (LARGE | SMALL | SENSEVOICE, ONNX))
-        || (family == LARGE && backend == MLX && mlx_compiled())
+    matches!(
+        (family, backend),
+        (LARGE | SMALL | SENSEVOICE | QWEN3, ONNX)
+    ) || (family == LARGE && backend == MLX && mlx_compiled())
 }
 
 /// Construct the backend for an installed version. The ONNX Runtime library must already be set (`start-up`).
@@ -668,11 +673,14 @@ pub fn build(model: &InstalledModel, backend: &str) -> Result<Box<dyn AsrBackend
                 onnx_threads(),
             )
             .map_err(|e| e.to_string())?;
-            // SenseVoice writes Simplified characters; TingMix writes Traditional (Taiwan) ones
-            let s2tw =
-                ferrous_opencc::OpenCC::from_config(ferrous_opencc::config::BuiltinConfig::S2tw)
-                    .map_err(|e| e.to_string())?;
-            Ok(Box::new(b.with_output(move |t| s2tw.convert(t))))
+            Ok(Box::new(b.with_output(s2tw()?)))
+        }
+        (QWEN3, ONNX) => {
+            let encoder = component(model, "model", Some("encoder.int4.onnx"))?;
+            let dir = encoder.parent().ok_or("encoder has no directory")?;
+            let b = tingmix_runtime_onnx::OnnxQwen3Asr::load(dir, onnx_threads())
+                .map_err(|e| e.to_string())?;
+            Ok(Box::new(b.with_output(s2tw()?)))
         }
         #[cfg(all(feature = "mlx", target_os = "macos", target_arch = "aarch64"))]
         (LARGE, MLX) => {
@@ -693,6 +701,13 @@ pub fn build(model: &InstalledModel, backend: &str) -> Result<Box<dyn AsrBackend
             "model family {family} on backend {other} is not available in this build"
         )),
     }
+}
+
+/// SenseVoice and Qwen3-ASR write Simplified characters for Mandarin; TingMix writes Traditional (Taiwan) ones.
+fn s2tw() -> Result<impl Fn(&str) -> String + Send + 'static, String> {
+    let cc = ferrous_opencc::OpenCC::from_config(ferrous_opencc::config::BuiltinConfig::S2tw)
+        .map_err(|e| e.to_string())?;
+    Ok(move |t: &str| cc.convert(t))
 }
 
 /// Large on ONNX Runtime, CPU provider, with the character LM (beam search). One copy only: it holds about 2 to 2.5 GB.
@@ -991,8 +1006,8 @@ fn wav_samples(b: &[u8]) -> Result<Vec<f32>, String> {
 pub fn probe_fixture(family: &str) -> Option<(&'static str, Vec<f32>, &'static str)> {
     match family {
         // text from tests/fixtures/large/expected_texts.json (CPU fp32 oracle), also what the MLX port reproduces; SenseVoice
-        // (after s2tw) writes the same words plus a full stop, which the probe ignores (experiments/sensevoice)
-        LARGE | SENSEVOICE => wav_samples(ZH_02S)
+        // and Qwen3-ASR (after s2tw) write the same words plus a full stop, which the probe ignores
+        LARGE | SENSEVOICE | QWEN3 => wav_samples(ZH_02S)
             .ok()
             .map(|w| ("zh_02s", w, "今天天氣很好")),
         _ => None,
