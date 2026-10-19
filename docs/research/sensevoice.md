@@ -39,6 +39,8 @@ clips plus the 8 synthetic fixtures. The LFR features are compared with kaldi-na
   sherpa's own ONNX Runtime (1.28.2) gives the same result, so the cause is feature noise at the 1e-4 level, not the runtime.
   The test ignores punctuation and allows at most one such clip.
 - Same result with the pyke ONNX Runtime build (dev) and the vendored 1.31.0 (release).
+- Same result on native Windows 11 (AMD Ryzen 7 9700X, vendored ONNX Runtime 1.31.0): features within 7.7e-4, the same one
+  comma on zh_16s.
 
 ## Accuracy on real zh-TW speech (`benchmarks/sensevoice/real-zh-tw-55clips.json`)
 
@@ -92,8 +94,8 @@ download straight from the sherpa-onnx repository at the pinned revision, so not
 2. `cargo run -p tingmix-models --bin manifest-sign -- sign <release key> tingmix-release-1 <manifest> <signed>`
 3. Append the signed entry to `catalog.json` in the model repository.
 
-The entry is `os: any`, `arch: any`, so it also covers Windows x86_64, where the catalog has no TingMix package yet. It was
-tested only on macOS.
+The entry is `os: any`, `arch: any`, so it also covers Windows x86_64, where the catalog has no TingMix package yet. Parity
+was checked on Windows; the app's install, probe and live path were run on macOS only.
 
 ## Open questions
 

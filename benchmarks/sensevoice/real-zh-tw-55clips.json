@@ -57,7 +57,17 @@
   "lfr_max_abs_diff": 0.000235,
   "text_exact": 9,
   "text_punctuation_only_diff": 1,
-  "note": "zh_16s: one enumeration comma whose logit leads by 0.109 differs; same result with sherpa's own ONNX Runtime 1.28.2, so it is float noise in the features (<= 2.4e-4), not the runtime"
+  "note": "zh_16s: one enumeration comma whose logit leads by 0.109 differs; same result with sherpa's own ONNX Runtime 1.28.2, so it is float noise in the features (<= 2.4e-4), not the runtime",
+  "windows": {
+   "hardware": "AMD Ryzen 7 9700X, Windows 11 Pro build 26200",
+   "onnxruntime": "1.31.0 (vendored, load-dynamic)",
+   "commit": "072d306",
+   "command": "cargo test -p tingmix-runtime-onnx --no-default-features --features load-dynamic --test sensevoice (TINGMIX_ORT_DYLIB=vendor\\onnxruntime\\windows-x64\\lib\\onnxruntime.dll, TINGMIX_SENSEVOICE_DIR=<export dir>)",
+   "lfr_max_abs_diff": 0.00077,
+   "text_exact": 9,
+   "text_punctuation_only_diff": 1,
+   "result": "pass"
+  }
  },
  "scores_vs_whisper_draft": [
   {
