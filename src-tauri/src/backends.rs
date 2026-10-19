@@ -629,10 +629,16 @@ fn component(
         })
 }
 
+/// Model families this build can run. A new engine is one arm in `build` and, for its compatibility test, one in
+/// `probe_fixture`; nothing else in the app knows which family it is talking to.
+pub const LARGE: &str = "tingmix-large";
+pub const SMALL: &str = "tingmix-small";
+
 /// Construct the backend for an installed version. The ONNX Runtime library must already be set (`start-up`).
 pub fn build(model: &InstalledModel, backend: &str) -> Result<Box<dyn AsrBackend>, String> {
-    match backend {
-        ONNX => {
+    let family = model.manifest.family.as_str();
+    match (family, backend) {
+        (LARGE | SMALL, ONNX) => {
             let graph = model
                 .manifest
                 .files
@@ -641,14 +647,14 @@ pub fn build(model: &InstalledModel, backend: &str) -> Result<Box<dyn AsrBackend
                 .map(|f| model.dir.join(&f.path))
                 .ok_or("manifest lists no .onnx file")?;
             let units = component(model, "tokenizer", Some("units.json"))?;
-            if is_large(model) {
+            if family == LARGE {
                 onnx_large_backend(&graph, &units, &component(model, "lm", None)?)
             } else {
                 onnx_backend(&graph, &units)
             }
         }
         #[cfg(all(feature = "mlx", target_os = "macos", target_arch = "aarch64"))]
-        MLX => {
+        (LARGE, MLX) => {
             use tingmix_runtime_mlx::{Decode, Dtype, MlxLargeBackend};
             let lm = tingmix_decoder::CharLm::load(&component(model, "lm", None)?)
                 .map_err(|e| e.to_string())?;
@@ -662,13 +668,10 @@ pub fn build(model: &InstalledModel, backend: &str) -> Result<Box<dyn AsrBackend
             .map_err(|e| e.to_string())?;
             Ok(Box::new(b))
         }
-        other => Err(format!("backend {other} is not available in this build")),
+        (_, other) => Err(format!(
+            "model family {family} on backend {other} is not available in this build"
+        )),
     }
-}
-
-/// TingMix-Large ships as an ONNX graph under the same backend id as Small; the family tells them apart.
-fn is_large(model: &InstalledModel) -> bool {
-    model.manifest.family == "tingmix-large"
 }
 
 /// Large on ONNX Runtime, CPU provider, with the character LM (beam search). One copy only: it holds about 2 to 2.5 GB.
@@ -967,7 +970,7 @@ fn wav_samples(b: &[u8]) -> Result<Vec<f32>, String> {
 pub fn probe_fixture(family: &str) -> Option<(&'static str, Vec<f32>, &'static str)> {
     match family {
         // text from tests/fixtures/large/expected_texts.json (CPU fp32 oracle), also what the MLX port reproduces
-        "tingmix-large" => wav_samples(ZH_02S)
+        LARGE => wav_samples(ZH_02S)
             .ok()
             .map(|w| ("zh_02s", w, "今天天氣很好")),
         _ => None,
@@ -1021,7 +1024,7 @@ fn probe_onnx_large(
     fx: &ProbeFixture,
 ) -> Option<Result<tingmix_models::probe::ProbeRecord, String>> {
     use tingmix_runtime_onnx::{probe::OnnxProbeTarget, Provider};
-    if !is_large(model) {
+    if model.manifest.family != LARGE {
         return None;
     }
     // TINGMIX_ONNX_WORKER overrides the sibling lookup (tests, development)
