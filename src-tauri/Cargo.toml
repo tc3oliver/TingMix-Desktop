@@ -35,6 +35,7 @@ tingmix-runtime-mlx = { path = "../crates/tingmix-runtime-mlx", optional = true 
 tauri-plugin-updater = "=2.14.0"
 sys-locale = "=0.3.2"
 zip = { version = "9.0.5", default-features = false, features = ["deflate"] }
+ferrous-opencc = { version = "0.4.0", default-features = false, features = ["s2t-conversion"] }
 
 [dev-dependencies]
 hound = "3.5.1"

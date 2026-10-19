@@ -93,7 +93,10 @@ pub fn check(
     // MLX is the faster engine on Apple Silicon; do not let catalog order decide
     let Some(m) = downloadable
         .into_iter()
-        .filter(|m| backends::engine_ready(&m.manifest().backend, rt))
+        .filter(|m| {
+            let mf = m.manifest();
+            backends::runs(&mf.family, &mf.backend) && backends::engine_ready(&mf.backend, rt)
+        })
         .min_by_key(|m| m.manifest().backend != backends::MLX)
     else {
         return SetupView::Unavailable {
@@ -160,7 +163,7 @@ pub struct Offer {
     pub download_bytes: u64,
     pub compat_status: String,
     pub installed: bool,
-    /// This build has the engine (and its test helper) the model needs.
+    /// This build can run the model's family on its engine, and has that engine (and its test helper).
     pub engine_ready: bool,
 }
 
@@ -180,10 +183,11 @@ pub fn list(
                 family: mf.family.clone(),
                 backend: mf.backend.clone(),
                 precision: mf.precision.clone(),
-                download_bytes: mf.files.iter().map(|f| f.size).sum(),
+                download_bytes: mf.download_size(),
                 compat_status: mf.compat.status.clone(),
                 installed: installed.contains(&mf.id),
-                engine_ready: backends::engine_ready(&mf.backend, rt),
+                engine_ready: backends::runs(&mf.family, &mf.backend)
+                    && backends::engine_ready(&mf.backend, rt),
             }
         })
         .collect())
@@ -475,6 +479,14 @@ mod tests {
         assert!(ids.contains(&"model-a") && ids.contains(&"model-b"));
         let a = offers.iter().find(|o| o.id == "model-a").unwrap();
         assert!(a.engine_ready && !a.installed && a.download_bytes > 200_000);
+        // a family this build has no engine for is listed but cannot be downloaded
+        assert!(
+            !offers
+                .iter()
+                .find(|o| o.id == "model-b")
+                .unwrap()
+                .engine_ready
+        );
         assert_eq!(
             begin(&models, &cfg, "model-b", "p".into()).unwrap().id,
             "model-b"

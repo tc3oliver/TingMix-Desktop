@@ -633,6 +633,14 @@ fn component(
 /// `probe_fixture`; nothing else in the app knows which family it is talking to.
 pub const LARGE: &str = "tingmix-large";
 pub const SMALL: &str = "tingmix-small";
+/// SenseVoice-Small, the sherpa-onnx export (`model.int8.onnx` as component `model`, `tokens.txt` as `tokenizer`).
+pub const SENSEVOICE: &str = "sensevoice-small";
+
+/// Whether `build` has an arm for this family on this backend (the engine itself may still be missing; see `engine_ready`).
+pub fn runs(family: &str, backend: &str) -> bool {
+    matches!((family, backend), (LARGE | SMALL | SENSEVOICE, ONNX))
+        || (family == LARGE && backend == MLX && mlx_compiled())
+}
 
 /// Construct the backend for an installed version. The ONNX Runtime library must already be set (`start-up`).
 pub fn build(model: &InstalledModel, backend: &str) -> Result<Box<dyn AsrBackend>, String> {
@@ -652,6 +660,19 @@ pub fn build(model: &InstalledModel, backend: &str) -> Result<Box<dyn AsrBackend
             } else {
                 onnx_backend(&graph, &units)
             }
+        }
+        (SENSEVOICE, ONNX) => {
+            let b = tingmix_runtime_onnx::OnnxSenseVoice::load(
+                &component(model, "model", None)?,
+                &component(model, "tokenizer", Some("tokens.txt"))?,
+                onnx_threads(),
+            )
+            .map_err(|e| e.to_string())?;
+            // SenseVoice writes Simplified characters; TingMix writes Traditional (Taiwan) ones
+            let s2tw =
+                ferrous_opencc::OpenCC::from_config(ferrous_opencc::config::BuiltinConfig::S2tw)
+                    .map_err(|e| e.to_string())?;
+            Ok(Box::new(b.with_output(move |t| s2tw.convert(t))))
         }
         #[cfg(all(feature = "mlx", target_os = "macos", target_arch = "aarch64"))]
         (LARGE, MLX) => {
@@ -969,8 +990,9 @@ fn wav_samples(b: &[u8]) -> Result<Vec<f32>, String> {
 
 pub fn probe_fixture(family: &str) -> Option<(&'static str, Vec<f32>, &'static str)> {
     match family {
-        // text from tests/fixtures/large/expected_texts.json (CPU fp32 oracle), also what the MLX port reproduces
-        LARGE => wav_samples(ZH_02S)
+        // text from tests/fixtures/large/expected_texts.json (CPU fp32 oracle), also what the MLX port reproduces; SenseVoice
+        // (after s2tw) writes the same words plus a full stop, which the probe ignores (experiments/sensevoice)
+        LARGE | SENSEVOICE => wav_samples(ZH_02S)
             .ok()
             .map(|w| ("zh_02s", w, "今天天氣很好")),
         _ => None,

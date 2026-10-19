@@ -128,7 +128,10 @@ tests it) and every catalog entry for this computer that is not installed (`setu
 whose engine this build lacks is shown disabled). Downloading one goes through `models_begin_download(id)`: the host fetches
 and verifies the catalog again and looks the id up, so the webview never supplies a manifest or URL; the licence card and
 `models_install` are the same as for any other install. Which engine runs a model is decided by `(manifest.family,
-manifest.backend)` in `backends::build`; a new model family is one arm there plus one in `backends::probe_fixture`.
+manifest.backend)` in `backends::build`; a new model family is one arm there, one in `backends::runs` (what the picker and
+first run may offer) and one in `backends::probe_fixture`. Families today: `tingmix-large` (ONNX, MLX), `tingmix-small` (ONNX)
+and `sensevoice-small` (ONNX, output converted to Traditional characters; docs/research/sensevoice.md). The probe compares
+letters and digits only, so engines that write punctuation pass on the same words.
 
 Live sessions use `SessionConfig::live_recommended()` (adaptive VAD, confidence suppression); file jobs keep `default()`. A
 suppressed segment ends with an **empty final**: the UI treats it as "remove this caption" (the reducer keeps the segment

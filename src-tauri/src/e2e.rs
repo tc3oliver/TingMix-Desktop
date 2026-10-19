@@ -198,12 +198,20 @@ fn mlx_import_probe_select_transcribe_live() {
     assert_eq!(got, want);
 
     // 5. live session on replayed audio
-    let resolved = backends::resolve(&models, &rt).expect("load mlx backend");
+    live_session(&models, &rt, &wav);
+    if keep.is_none() {
+        let _ = std::fs::remove_dir_all(dir);
+    }
+}
+
+/// A live session on `wav` replayed at about 4x real time must emit partials and at least one non-empty final.
+fn live_session(models: &Models, rt: &Runtimes, wav: &Path) -> Vec<String> {
+    let resolved = backends::resolve(models, rt).expect("load backend");
     let log: Arc<Mutex<Vec<LiveMsg>>> = Arc::default();
     let l = log.clone();
     let sink: Sink = Arc::new(move |m| l.lock().unwrap().push(m));
     let persist: Persist = Arc::new(|_, _| {});
-    let data = tingmix_audio::decode_file(&wav).unwrap();
+    let data = tingmix_audio::decode_file(wav).unwrap();
     let mut live = Live::start(
         "live-e2e".into(),
         resolved.label,
@@ -219,36 +227,122 @@ fn mlx_import_probe_select_transcribe_live() {
     }
     live.stop();
     let msgs = log.lock().unwrap();
-    let events: Vec<&Event> = msgs
+    let n_partial = msgs
         .iter()
-        .filter_map(|m| {
-            if let LiveMsg::Event { event, .. } = m {
-                Some(event)
-            } else {
-                None
-            }
+        .filter(|m| {
+            matches!(
+                m,
+                LiveMsg::Event {
+                    event: Event::Partial(_),
+                    ..
+                }
+            )
         })
-        .collect();
-    let n_partial = events
-        .iter()
-        .filter(|e| matches!(e, Event::Partial(_)))
         .count();
     let snap = live.shared.snapshot();
-    println!(
-        "live: {n_partial} partials, {} finals: {:?}",
-        snap.finals.len(),
-        snap.finals
-            .iter()
-            .map(|f| f.text.as_str())
-            .collect::<Vec<_>>()
-    );
+    let finals: Vec<String> = snap.finals.iter().map(|f| f.text.clone()).collect();
     let st = live.shared.status();
     println!(
-        "live status: {:?} message {:?} samples {}",
-        st.state, st.message, st.samples_in
+        "live: {n_partial} partials, {} finals: {finals:?}; status {:?} message {:?} samples {}",
+        finals.len(),
+        st.state,
+        st.message,
+        st.samples_in
     );
-    assert!(n_partial > 0 && !snap.finals.is_empty());
-    assert!(snap.finals.iter().any(|f| !f.text.is_empty()));
+    assert!(n_partial > 0 && !finals.is_empty());
+    assert!(finals.iter().any(|f| !f.is_empty()));
+    finals
+}
+
+/// SenseVoice-Small on ONNX Runtime through the host, ignored unless TINGMIX_E2E_SENSEVOICE_DIR points at the sherpa-onnx export
+/// (model.int8.onnx, tokens.txt) and TINGMIX_ORT_DYLIB at the pinned ONNX Runtime library. The catalog manifest
+/// (`crates/tingmix-runtime-onnx/fixtures/sensevoice-small-onnx-int8.manifest.json`) is signed with a throwaway key; then: offline
+/// import -> activate + probe -> selection picks it -> file transcription in Traditional characters -> live session.
+#[test]
+#[ignore = "needs the SenseVoice export and the ONNX Runtime library (see the doc comment)"]
+fn sensevoice_import_probe_select_transcribe_live() {
+    let src = PathBuf::from(
+        std::env::var("TINGMIX_E2E_SENSEVOICE_DIR").expect("TINGMIX_E2E_SENSEVOICE_DIR"),
+    );
+    let ort = PathBuf::from(std::env::var("TINGMIX_ORT_DYLIB").expect("TINGMIX_ORT_DYLIB"));
+    tingmix_runtime_onnx::set_runtime_library(ort.clone());
+    let (dir, keep) = scratch_dir();
+    let key = ed25519_dalek::SigningKey::from_bytes(&[7; 32]);
+    let manifest: tingmix_models::Manifest =
+        serde_json::from_slice(
+            &std::fs::read(root().join(
+                "crates/tingmix-runtime-onnx/fixtures/sensevoice-small-onnx-int8.manifest.json",
+            ))
+            .unwrap(),
+        )
+        .unwrap();
+    let pkg = dir.join("package");
+    std::fs::create_dir_all(&pkg).unwrap();
+    for f in &manifest.files {
+        // same volume: a hard link, so the 240 MB model is not copied twice
+        std::fs::hard_link(src.join(&f.path), pkg.join(&f.path))
+            .or_else(|_| std::fs::copy(src.join(&f.path), pkg.join(&f.path)).map(drop))
+            .unwrap();
+    }
+    std::fs::write(
+        pkg.join(tingmix_models::store::MANIFEST_FILE),
+        serde_json::to_vec(&tingmix_models::manifest::sign(&manifest, "e2e", &key)).unwrap(),
+    )
+    .unwrap();
+    let verifier =
+        tingmix_models::Verifier::new(&[("e2e", key.verifying_key().to_bytes())]).unwrap();
+    let models = Arc::new(Models::open_with(dir.join("models"), verifier, false));
+    let rt = Runtimes {
+        ort_library: Some(ort),
+        onnx_worker: None,
+    };
+
+    let pending = models
+        .begin_import(pkg, false, "e2e".into())
+        .expect("verify manifest");
+    let required: Vec<String> = pending
+        .licenses
+        .iter()
+        .filter(|l| l.acceptance_required)
+        .map(|l| l.id.clone())
+        .collect();
+    let (m2, rt2) = (models.clone(), rt.clone());
+    let on_op: Notify = Arc::new(move |v| {
+        if v.state == "done" && v.kind == "import" {
+            backends::onboard_core(&m2, &rt2, &v.name, Arc::new(|_| {})).expect("onboard");
+        }
+    });
+    models
+        .install("e2e", &required, on_op)
+        .expect("start import");
+    wait_op(&models, "probe", "automatic probe");
+    let on = backends::decide(&models, &rt);
+    assert_eq!(
+        on.chosen.as_ref().map(|c| c.0.as_str()),
+        Some(manifest.id.as_str()),
+        "{}",
+        on.reason
+    );
+
+    let wav = root().join("tests/fixtures/audio/mix_08s.wav");
+    let resolved = backends::resolve(&models, &rt).expect("load sensevoice");
+    let mut reducer = Reducer::new();
+    let t = Instant::now();
+    let out = crate::files::run(
+        &wav,
+        resolved.backend,
+        &AtomicBool::new(false),
+        &mut reducer,
+        &mut |_| {},
+    );
+    assert_eq!(out.state, JobState::Done, "{:?}", out.message);
+    let got = join(reducer.finals().map(|f| f.text.clone()).collect());
+    println!("file ({:.2}s): {got}", t.elapsed().as_secs_f64());
+    // the oracle writes 我觉得这个deadline有点太赶了; the app converts it to Traditional characters
+    assert!(got.contains("我覺得這個deadline有點太趕了"), "{got}");
+
+    let finals = live_session(&models, &rt, &wav);
+    assert!(finals.iter().all(|f| !f.contains('这')), "{finals:?}");
     if keep.is_none() {
         let _ = std::fs::remove_dir_all(dir);
     }
