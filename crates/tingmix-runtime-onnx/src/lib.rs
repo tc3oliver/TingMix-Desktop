@@ -12,6 +12,7 @@ mod large;
 mod model;
 #[cfg(feature = "probe")]
 pub mod probe;
+mod sensevoice;
 
 pub use backend::{OnnxSmall, SmallStream, TokenDecoder};
 pub use ctc::Collapser;
@@ -20,3 +21,4 @@ pub use large::{Decode, OnnxLarge, Provider};
 pub use model::{
     runtime_version, set_runtime_library, Error, SharedModel, StepModel, StepState, Streamer,
 };
+pub use sensevoice::{Fbank, OnnxSenseVoice};

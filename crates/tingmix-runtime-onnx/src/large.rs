@@ -141,7 +141,7 @@ impl OnnxLarge {
 }
 
 /// Mean max-posterior over frames whose argmax is not the blank (id 0); `None` when every frame is blank.
-fn non_blank_confidence(log_probs: &[f32], vocab: usize) -> Option<f32> {
+pub(crate) fn non_blank_confidence(log_probs: &[f32], vocab: usize) -> Option<f32> {
     let (mut sum, mut n) = (0.0f64, 0usize);
     for row in log_probs.chunks_exact(vocab) {
         let (arg, best) =

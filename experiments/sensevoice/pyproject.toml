@@ -1,0 +1,16 @@
+[project]
+name = "tingmix-sensevoice-reference"
+version = "0.0.0"
+description = "sherpa-onnx oracle for the SenseVoice-Small ONNX backend (research only, never shipped)"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "sherpa-onnx==1.13.8",
+    "sherpa-onnx-core==1.13.8",
+    "kaldi-native-fbank==1.22.3",
+    "numpy",
+    "soundfile",
+    "onnx",
+]
+
+[tool.uv]
+package = false

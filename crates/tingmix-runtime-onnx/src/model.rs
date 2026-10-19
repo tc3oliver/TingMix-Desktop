@@ -12,7 +12,7 @@ use crate::frontend::{MelStream, N_MELS};
 pub enum Error {
     #[error("onnx runtime: {0}")]
     Ort(String),
-    #[error("model does not match the Small streaming-step contract: {0}")]
+    #[error("model does not match its graph contract: {0}")]
     Contract(String),
 }
 
