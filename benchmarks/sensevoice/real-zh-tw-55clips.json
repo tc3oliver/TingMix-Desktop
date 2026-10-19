@@ -1,0 +1,153 @@
+{
+ "label": "VERIFIED-PARITY + EXPERIMENTAL accuracy: SenseVoice-Small (sherpa-onnx int8 export) through tingmix-runtime-onnx on 55 real zh-TW clips (two third-party videos, 647 s), scored like docs/research/error-attribution.md section 2. References are Whisper large-v3 drafts (provisional); the product video is also scored against its uploader subtitles (independent). No transcripts are kept here.",
+ "commands": [
+  "cargo run --release -p tingmix-runtime-onnx --no-default-features --features load-dynamic --example sensevoice_dir -- <export dir> experiments/error-attribution/out/{product,finance}/clips experiments/sensevoice/out/ea_{product,finance}.json 4   (TINGMIX_ORT_DYLIB=vendor/onnxruntime/macos-arm64/lib/libonnxruntime.1.31.0.dylib)",
+  "cd experiments/error-attribution && uv run python -m ea.other sensevoice-small product=../sensevoice/out/ea_product.json finance=../sensevoice/out/ea_finance.json",
+  "cd experiments/error-attribution && EA_REF=subtitles uv run python -m ea.other sensevoice-small product=../sensevoice/out/ea_product.json",
+  "/usr/bin/time -l target/release/examples/sensevoice_dir <export dir> experiments/error-attribution/out/finance/clips <out.json> 4"
+ ],
+ "model": {
+  "repo": "csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17",
+  "revision": "2365baeacb507f821a0c8120fcee3d484dba7a07",
+  "model.int8.onnx_sha256": "c71f0ce00bec95b07744e116345e33d8cbbe08cef896382cf907bf4b51a2cd51",
+  "tokens.txt_sha256": "f449eb28dc567533d7fa59be34e2abca8784f771850c78a47fb731a31429a1dc"
+ },
+ "settings": {
+  "language": "auto",
+  "itn": true,
+  "decode": "greedy CTC",
+  "window_s": 30,
+  "threads": 4
+ },
+ "onnxruntime": "1.31.0 (vendored Microsoft build, CPU EP, load-dynamic)",
+ "hardware": {
+  "cpu": "Apple M4 Max",
+  "logical_cpus": 16,
+  "memory_bytes": 68719476736,
+  "os": "macOS 27.0"
+ },
+ "timing": {
+  "product": {
+   "audio_s": 292.4580625,
+   "backend": "sensevoice-small-onnx int8",
+   "clips": 25,
+   "decode_s": 3.3109799580000003,
+   "load_s": 0.809129792,
+   "onnxruntime": "1.31.0",
+   "rtf": 0.011321212790979222,
+   "threads": 4
+  },
+  "finance": {
+   "audio_s": 354.4399375,
+   "backend": "sensevoice-small-onnx int8",
+   "clips": 30,
+   "decode_s": 3.9905447919999997,
+   "load_s": 0.336456625,
+   "onnxruntime": "1.31.0",
+   "rtf": 0.01125873348287677,
+   "threads": 4
+  }
+ },
+ "peak_rss_bytes": 499089408,
+ "parity": {
+  "oracle": "sherpa-onnx 1.13.8 + kaldi-native-fbank 1.22.3 (experiments/sensevoice/ref.py)",
+  "clips": 10,
+  "lfr_max_abs_diff": 0.000235,
+  "text_exact": 9,
+  "text_punctuation_only_diff": 1,
+  "note": "zh_16s: one enumeration comma whose logit leads by 0.109 differs; same result with sherpa's own ONNX Runtime 1.28.2, so it is float noise in the features (<= 2.4e-4), not the runtime"
+ },
+ "scores_vs_whisper_draft": [
+  {
+   "engine": "sensevoice-small",
+   "scope": "both",
+   "clips": 55,
+   "MER": 0.102,
+   "CER_zh": 0.092,
+   "WER_en": 0.518,
+   "S": 0.05,
+   "D": 0.019,
+   "I": 0.032
+  },
+  {
+   "engine": "tingmix-large lm (app decoder)",
+   "scope": "both",
+   "clips": 55,
+   "MER": 0.212,
+   "CER_zh": 0.203,
+   "WER_en": 0.6,
+   "S": 0.094,
+   "D": 0.111,
+   "I": 0.006
+  },
+  {
+   "engine": "sensevoice-small",
+   "scope": "product",
+   "clips": 25,
+   "MER": 0.12,
+   "CER_zh": 0.111,
+   "WER_en": 0.833,
+   "S": 0.06,
+   "D": 0.025,
+   "I": 0.036
+  },
+  {
+   "engine": "tingmix-large lm (app decoder)",
+   "scope": "product",
+   "clips": 25,
+   "MER": 0.273,
+   "CER_zh": 0.264,
+   "WER_en": 0.917,
+   "S": 0.126,
+   "D": 0.142,
+   "I": 0.006
+  },
+  {
+   "engine": "sensevoice-small",
+   "scope": "finance",
+   "clips": 30,
+   "MER": 0.085,
+   "CER_zh": 0.075,
+   "WER_en": 0.393,
+   "S": 0.042,
+   "D": 0.014,
+   "I": 0.029
+  },
+  {
+   "engine": "tingmix-large lm (app decoder)",
+   "scope": "finance",
+   "clips": 30,
+   "MER": 0.158,
+   "CER_zh": 0.148,
+   "WER_en": 0.475,
+   "S": 0.067,
+   "D": 0.084,
+   "I": 0.007
+  }
+ ],
+ "scores_vs_subtitles": [
+  {
+   "engine": "sensevoice-small",
+   "scope": "product",
+   "clips": 25,
+   "MER": 0.116,
+   "CER_zh": 0.108,
+   "WER_en": 0.692,
+   "S": 0.061,
+   "D": 0.022,
+   "I": 0.033
+  },
+  {
+   "engine": "tingmix-large lm (app decoder)",
+   "scope": "product",
+   "clips": 25,
+   "MER": 0.277,
+   "CER_zh": 0.27,
+   "WER_en": 0.769,
+   "S": 0.127,
+   "D": 0.143,
+   "I": 0.007
+  }
+ ],
+ "date": "2026-10-19"
+}

@@ -35,6 +35,7 @@ against the Whisper draft and reported as provisional; `EA_REF=subtitles` scores
 | `ea.livecaps`, `ea.winsweep` | live segment-cap and window-length tables |
 | `ea.attribute` | `out/attribution.json`, `out/worst20.md` |
 | `ea.liveparity` | `out/liveparity.json` (live segments re-decoded with PyTorch) |
+| `ea.other` | another engine's clip texts scored next to TingMix-Large's app decoder (SenseVoice: docs/research/sensevoice.md) |
 
 N-best oracles pick the hypothesis closest to the reference. They bound what a better decoder could reach and are never used
 to choose an output.
