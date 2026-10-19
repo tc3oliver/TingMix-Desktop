@@ -16,5 +16,6 @@ describe("format", () => {
   it("turns model ids into readable names", () => {
     expect(friendlyName("tingmix-large-mlx-fp32-r75071a1")).toBe("TingMix Large");
     expect(friendlyName("tingmix-small-onnx-cpu-int8")).toBe("TingMix Small");
+    expect(friendlyName("sensevoice-small-onnx-int8-r2365bae")).toBe("SenseVoice Small");
   });
 });

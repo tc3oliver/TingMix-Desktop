@@ -11,6 +11,9 @@ export function clock(seconds: number): string {
 /** Last path component, for messages that must not show a full path. */
 export const basename = (path: string): string => path.split(/[\\/]/).filter(Boolean).pop() ?? path;
 
+/** Model names whose capitalisation is not just a capital first letter. */
+const BRANDS: Record<string, string> = { tingmix: "TingMix", sensevoice: "SenseVoice", qwen3: "Qwen3", asr: "ASR" };
+
 /** "tingmix-large-mlx-fp32-r75071a1" -> "TingMix Large": revision, engine and precision tokens are technical and belong in the details. */
 export function friendlyName(id: string): string {
   const technical = /^(mlx|onnx|cpu|gpu|source|safetensors|(fp|bf|int)\d+)$/;
@@ -19,6 +22,6 @@ export function friendlyName(id: string): string {
     .split("-")
     .filter((w) => !technical.test(w));
   return (words.length ? words : id.split("-"))
-    .map((w) => (w === "tingmix" ? "TingMix" : w.charAt(0).toUpperCase() + w.slice(1)))
+    .map((w) => BRANDS[w] ?? w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
 }
