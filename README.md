@@ -5,10 +5,16 @@ files, in Taiwanese Mandarin, English, and the two mixed together. Nothing you s
 
 它是一個離線的語音轉文字桌面程式，支援台灣華語、英文和中英夾雜，可以做即時字幕，也可以轉錄音訊或影片檔。聲音和文字都只留在你的電腦上。
 
-The recognizer is [TingMix-Large](https://huggingface.co/tc3oliver/TingMix-Large), which pairs the audio encoder from
-Google's [EmbeddingGemma 2](https://huggingface.co/google/embeddinggemma-2) with a small CTC reader and a character language
-model. The app is written in Rust and TypeScript on [Tauri 2](https://v2.tauri.app/) and runs the model natively: MLX on
-Apple silicon, ONNX Runtime on Windows. There is no Python in the app.
+You pick the speech model in Settings. Three are supported:
+
+- [TingMix-Large](https://huggingface.co/tc3oliver/TingMix-Large): the audio encoder from Google's
+  [EmbeddingGemma 2](https://huggingface.co/google/embeddinggemma-2), a small CTC reader and a character language model.
+- [SenseVoice-Small](https://huggingface.co/FunAudioLLM/SenseVoiceSmall) (Alibaba): small and very fast.
+- [Qwen3-ASR-0.6B](https://huggingface.co/Qwen/Qwen3-ASR-0.6B) (Alibaba): the most accurate of the three, best on mixed
+  Chinese and English, and the slowest.
+
+The app is written in Rust and TypeScript on [Tauri 2](https://v2.tauri.app/) and runs the models natively, with MLX on
+Apple silicon and ONNX Runtime everywhere else. There is no Python in the app.
 
 ## Status
 
@@ -16,27 +22,38 @@ Early and unpolished. There are no prebuilt releases yet, so you have to build i
 signed. It works on the two machines it was developed on (an M4 Max Mac and a Ryzen 7 / RTX 5070 Ti PC); I haven't tried it
 anywhere else.
 
-Accuracy is whatever TingMix-Large gives you. On clear speech it is good. On a casual YouTube product review with background
-music it got about 32% of characters wrong, and it tends to miss brand names and rare proper nouns.
+On 11 minutes of real Taiwanese YouTube speech (a product review with music, and a finance show), live captions got this
+share of characters and words wrong:
+
+| model | error rate | speed (M4 Max CPU) | memory |
+|---|---|---|---|
+| Qwen3-ASR-0.6B | 9% | 0.15 s per second of audio | 3.4 GB |
+| SenseVoice-Small | 10% | 0.01 s | 0.5 GB |
+| TingMix-Large | 24% | | about 2 GB |
+
+The reference transcripts haven't been checked by a person yet, so take these as rough. All three miss brand names and rare
+proper nouns. Details: [docs/research/qwen3-asr.md](docs/research/qwen3-asr.md).
 
 ## Platforms
 
 - macOS 13 or later on Apple silicon
 - Windows 11, x64 (runs on the CPU; a GPU isn't needed)
 
-## The model
+## Models
 
-The model isn't in this repository or in the installer. On first launch the app offers to download it (about 1.4 GB) from
-[tc3oliver/TingMix-Desktop](https://huggingface.co/tc3oliver/TingMix-Desktop) on Hugging Face. After that it works
-offline.
+No model is in this repository or in the installer. On first launch the app offers a download from the catalog at
+[tc3oliver/TingMix-Desktop](https://huggingface.co/tc3oliver/TingMix-Desktop) on Hugging Face (TingMix-Large is about
+1.4 GB). After that it works offline. SenseVoice and Qwen3-ASR aren't in the catalog yet; until they are, you can install
+them from a folder.
 
 Every package is described by a manifest that lists each file's size and SHA-256 and is signed with an Ed25519 key built
 into the app. Anything that doesn't match is refused, and a package can never be replaced by an older one. You can also
 install a package from a folder or a zip without a network connection. The details are in
 [docs/architecture/model-management.md](docs/architecture/model-management.md).
 
-The model weights are Apache-2.0, but some of the data TingMix-Large was trained on is non-commercial (CC BY-NC) or
-share-alike (CC BY-SA). The model card lists every source. Read it before using the model for anything commercial.
+Licences differ per model. TingMix-Large weights are Apache-2.0, but some of its training data is non-commercial (CC BY-NC)
+or share-alike (CC BY-SA); the model card lists every source. SenseVoice uses the FunASR model licence, which you accept
+before downloading. Qwen3-ASR is Apache-2.0.
 
 ## Building
 

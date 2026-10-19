@@ -97,22 +97,11 @@ download straight from the sherpa-onnx repository at the pinned revision, so not
 The entry is `os: any`, `arch: any`, so it also covers Windows x86_64, where the catalog has no TingMix package yet. Parity
 was checked on Windows; the app's install, probe and live path were run on macOS only.
 
-## Compared with Qwen3-ASR (`benchmarks/qwen3-asr`)
+## Compared with Qwen3-ASR
 
-The same clips through Qwen3-ASR using a Python MLX port (`experiments/qwen3-asr`). That is not the app's code path; it was
-run to decide whether a Rust backend is worth building:
-
-| engine | MER | CER zh | WER en | product vs subtitles |
-|---|---|---|---|---|
-| Qwen3-ASR-0.6B | **0.084** | 0.079 | 0.306 | 0.092 |
-| Qwen3-ASR-1.7B | 0.083 | 0.078 | 0.282 | 0.087 |
-| SenseVoice-Small | 0.102 | 0.092 | 0.518 | 0.116 |
-| TingMix-Large | 0.212 | 0.203 | 0.600 | 0.277 |
-
-0.6B is about 18% better than SenseVoice and much better on English words, which matters for code-switched speech. 1.7B adds
-almost nothing and is 2-7 times slower. Whisper drafts may favour another autoregressive model; the subtitle column does not
-depend on Whisper and shows the same order. A Qwen3-ASR-0.6B backend (Apache-2.0, autoregressive decoder with a KV cache)
-is the next engine worth porting.
+See [qwen3-asr.md](qwen3-asr.md). On the same clips Qwen3-ASR-0.6B (the app's int4 build) scores 0.094 and 0.091 on the
+live path, mostly from better English. The 1.7B model (MLX, `benchmarks/qwen3-asr/real-zh-tw-55clips-mlx.json`) adds almost
+nothing over 0.6B and is 2 to 7 times slower.
 
 ## Open questions
 

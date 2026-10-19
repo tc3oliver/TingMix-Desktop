@@ -36,7 +36,7 @@ A selected backend that fails to load makes Start / file import fail with the er
 
 | Backend id | Crate | Status | Needs |
 |---|---|---|---|
-| `onnx-cpu` | `tingmix-runtime-onnx` (`load-dynamic`) | EXPERIMENTAL. Family `tingmix-large` -> `OnnxLarge` (CPU provider, beam+LM, up to 8 threads; probed in the `tingmix-onnx-worker` child); other families -> the Small step graph (no trained checkpoint exists) | bundled ONNX Runtime 1.31.0; components `model` (`.onnx`), `tokenizer/units.json`, `lm` |
+| `onnx-cpu` | `tingmix-runtime-onnx` (`load-dynamic`) | EXPERIMENTAL. Family `tingmix-large` -> `OnnxLarge` (CPU provider, beam+LM, up to 8 threads; probed in the `tingmix-onnx-worker` child); `tingmix-small` -> the Small step graph (no trained checkpoint exists); `sensevoice-small` -> `OnnxSenseVoice`; `qwen3-asr` -> `OnnxQwen3Asr` | bundled ONNX Runtime 1.31.0; components per family (see the manifest fixtures) |
 | `mlx` | `tingmix-runtime-mlx`, cargo feature `mlx` (off by default) | EXPERIMENTAL; slot only | Apple silicon; `model` (fp32 safetensors), `tokenizer/units.json`, `lm` components |
 
 ### MLX Large in the bundle (`tools/bundle-mlx.sh [debug|release]`)
@@ -129,7 +129,7 @@ whose engine this build lacks is shown disabled). Downloading one goes through `
 and verifies the catalog again and looks the id up, so the webview never supplies a manifest or URL; the licence card and
 `models_install` are the same as for any other install. Which engine runs a model is decided by `(manifest.family,
 manifest.backend)` in `backends::build`; a new model family is one arm there, one in `backends::runs` (what the picker and
-first run may offer) and one in `backends::probe_fixture`. Families today: `tingmix-large` (ONNX, MLX), `tingmix-small` (ONNX)
+first run may offer) and one in `backends::probe_fixture`. Families today: `tingmix-large` (ONNX, MLX), `tingmix-small` (ONNX),
 `sensevoice-small` (ONNX; docs/research/sensevoice.md) and `qwen3-asr` (ONNX; docs/research/qwen3-asr.md), the last two with
 output converted to Traditional characters. The probe compares
 letters and digits only, so engines that write punctuation pass on the same words.
