@@ -4,7 +4,7 @@ import { useI18n } from "../../i18n";
 import { hostCode, hostText, reasonText } from "../../i18n/host";
 import { api, errorText, onBackend, onModelOp } from "../../lib/api";
 import { friendlyName } from "../../lib/format";
-import type { BackendState, ModelOp, ModelsOverview, PendingInstall } from "../../types/protocol";
+import type { BackendState, CatalogOffer, ModelOp, ModelsOverview, PendingInstall } from "../../types/protocol";
 import { gigabytes, SetupScreen } from "../setup/SetupScreen";
 import { cardStatus, onboardStage } from "./onboard";
 
@@ -23,6 +23,8 @@ export function ModelsPanel({ backend, onOpenModels }: Props) {
   const [removing, setRemoving] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
+  const [offers, setOffers] = useState<CatalogOffer[] | null>(null);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const opener = useRef<HTMLElement | null>(null);
 
@@ -30,6 +32,8 @@ export function ModelsPanel({ backend, onOpenModels }: Props) {
   useEffect(() => {
     void reload();
     let alive = true;
+    // the catalog is fetched once per visit; what is installed is filtered out on this side, so a download needs no refetch
+    api.modelsCatalog().then((c) => alive && setOffers(c)).catch((e) => alive && setCatalogError(errorText(e)));
     const offs: (() => void)[] = [];
     const keep = (p: Promise<() => void>) => p.then((u) => (alive ? offs.push(u) : u()));
     keep(onModelOp((v) => setOp(v)));
@@ -81,30 +85,15 @@ export function ModelsPanel({ backend, onOpenModels }: Props) {
   const required = pending?.licenses.filter((l) => l.acceptance_required && !l.accepted) ?? [];
   const canInstall = required.every((l) => accepted.includes(l.id));
   const stage = onboardStage(op, backend, t);
-  const inUse = backend && !backend.info.mock ? o?.installed.find((m) => backend.info.label.startsWith(m.id)) : undefined;
   const hasPrevious = o?.installed.some((m) => m.previous) ?? false;
-
-  const target = inUse ?? o?.installed.find((m) => m.active) ?? o?.installed[0];
+  const toDownload = offers?.filter((c) => !c.installed && !o?.installed.some((m) => m.id === c.id));
 
   return (
     <fieldset>
       <legend><h2>{t("settings.model")}</h2></legend>
       {error && <p className="error" role="alert">{error}</p>}
       {note && <p className="muted" role="status">{note}</p>}
-
-      <article className="card summary">
-        {target ? (
-          <>
-            <div className="row between">
-              <strong>{friendlyName(target.id)}</strong>
-              <button disabled={running} onClick={() => act(() => api.modelsProbe(target.id))}>{t("models.test_again")}</button>
-            </div>
-            <p className={inUse ? "ok small" : "muted small"}>{cardStatus(target, backend, op, t)} · {t("settings.model_size", { size: gigabytes(target.size_bytes, number) })}</p>
-          </>
-        ) : (
-          o && <strong>{t("models.none")}</strong>
-        )}
-      </article>
+      {o && o.installed.length === 0 && <strong>{t("models.none")}</strong>}
 
       {op && (o?.installed.length ?? 0) > 0 && (
         <article className={`card stage ${stage?.phase ?? ""}`} aria-live="polite">
@@ -118,8 +107,6 @@ export function ModelsPanel({ backend, onOpenModels }: Props) {
       )}
 
       {o && o.installed.length === 0 && <SetupScreen backend={backend} onOpenModels={onOpenModels} />}
-      <details className="card advanced">
-        <summary>{t("models.advanced")}</summary>
       {pending && (
         <article className="card" aria-labelledby="licence-title" onKeyDown={(e) => e.key === "Escape" && closePending()}>
           <h2 id="licence-title" ref={heading} tabIndex={-1}>{t("models.licence_title", { name: friendlyName(pending.id) })}</h2>
@@ -148,6 +135,7 @@ export function ModelsPanel({ backend, onOpenModels }: Props) {
         </article>
       )}
 
+      {(o?.installed.length ?? 0) > 0 && <h3>{t("models.installed_title")}</h3>}
       {o?.installed.map((m) => {
         const inUseHere = !!backend && !backend.info.mock && backend.info.label.startsWith(m.id);
         const status = cardStatus(m, backend, op, t);
@@ -164,7 +152,7 @@ export function ModelsPanel({ backend, onOpenModels }: Props) {
                 <button className="primary" disabled={m.active || running} onClick={() => act(() => api.modelsActivate(m.id))}>{t("models.use")}</button>
               )}
             </div>
-            <p className={hostCode(backend?.info.reason) === "backend.missing_engine" || /test_failed/.test(hostCode(backend?.info.reason) ?? "") ? (m.active ? "error small" : "muted small") : "muted small"}>{status}</p>
+            <p className={inUseHere ? "ok small" : hostCode(backend?.info.reason) === "backend.missing_engine" || /test_failed/.test(hostCode(backend?.info.reason) ?? "") ? (m.active ? "error small" : "muted small") : "muted small"}>{status} · {t("settings.model_size", { size: gigabytes(m.size_bytes, number) })}</p>
             <details>
               <summary>{t("models.details")}</summary>
               <dl className="kv small">
@@ -190,6 +178,31 @@ export function ModelsPanel({ backend, onOpenModels }: Props) {
       })}
       {o?.unreadable.map(([id, why]) => <p key={id} className="error">{id}: {why}</p>)}
 
+      <h3>{t("models.catalog_title")}</h3>
+      {catalogError ? (
+        <p className="muted small">{catalogError}</p>
+      ) : !toDownload ? (
+        <p className="muted small" role="status">{t("models.catalog_loading")}</p>
+      ) : toDownload.length === 0 ? (
+        <p className="muted small">{t("models.catalog_empty")}</p>
+      ) : (
+        toDownload.map((c) => (
+          <article key={c.id} className="card model">
+            <div className="row between">
+              <strong className="ellipsis" title={c.id}>{friendlyName(c.id)}</strong>
+              <span className="spacer" />
+              <button className="primary" disabled={running || !c.engine_ready || !o?.registry_available} onClick={() => begin(() => api.modelsBeginDownload(c.id))}>
+                {t("models.download", { size: gigabytes(c.download_bytes, number) })}
+              </button>
+            </div>
+            <p className="muted small">{c.backend} · {c.precision} · {c.compat_status}</p>
+            {!c.engine_ready && <p className="muted small">{t("models.no_engine")}</p>}
+          </article>
+        ))
+      )}
+
+      <details className="card advanced">
+        <summary>{t("models.advanced")}</summary>
         <h3>{t("models.add_title")}</h3>
       <div className="row">
         <button className="primary" onClick={() => begin(() => api.modelsBeginImport("folder"))} disabled={running || !o?.registry_available}>{t("models.add_folder")}</button>

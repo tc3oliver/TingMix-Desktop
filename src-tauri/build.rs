@@ -27,6 +27,8 @@ const COMMANDS: &[&str] = &[
     "models_probe",
     "backend_state",
     "setup_check",
+    "models_catalog",
+    "models_begin_download",
     "open_licence_url",
     "updater_check",
     "updater_install",

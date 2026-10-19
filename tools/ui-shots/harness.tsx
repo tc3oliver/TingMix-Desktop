@@ -122,6 +122,7 @@ mockIPC((cmd, args) => {
     case "backend_state": return S.backend ?? READY;
     case "setup_check": return S.setup === "never" ? new Promise(() => undefined) : (S.setup ?? { state: "ready" });
     case "models_overview": return overview();
+    case "models_catalog": return [{ id: "sensevoice-small-onnx-int8-r9f8e7d6", family: "sensevoice", backend: "onnx-cpu", precision: "int8", download_bytes: 240_000_000, compat_status: "EXPERIMENTAL", installed: false, engine_ready: false }];
     case "list_input_devices": return [{ id: "mic1", name: "MacBook Pro Microphone", is_default: true, sample_rate: 48000, channels: 1 }, { id: "mic2", name: "USB Headset", is_default: false, sample_rate: 48000, channels: 1 }];
     case "live_snapshot": return { status: S.live?.status ?? idle, snapshot: { finals: S.live?.finals ?? [], open: S.live?.open ?? [] } };
     case "mic_permission_status": return S.mic ?? "authorized";

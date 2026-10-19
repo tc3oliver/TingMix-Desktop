@@ -3,6 +3,7 @@ import { hostText } from "../i18n/host";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type {
   BackendState,
+  CatalogOffer,
   Device,
   Diagnostics,
   FileMsg,
@@ -45,6 +46,8 @@ export const api = {
   modelsBeginImport: (kind: "folder" | "zip") => invoke<PendingInstall | null>("models_import", { kind }),
   modelsBeginInstall: () => invoke<PendingInstall | null>("models_begin_install"),
   modelsInstall: (token: string, accepted: string[]) => invoke<void>("models_install", { token, accepted }),
+  modelsCatalog: () => invoke<CatalogOffer[]>("models_catalog"),
+  modelsBeginDownload: (id: string) => invoke<PendingInstall>("models_begin_download", { id }),
   modelsCancel: () => invoke<void>("models_cancel"),
   modelsActivate: (id: string) => invoke<void>("models_activate", { id }),
   modelsRollback: () => invoke<string>("models_rollback"),

@@ -202,6 +202,8 @@ pub fn run() {
             commands::models_probe,
             commands::backend_state,
             commands::setup_check,
+            commands::models_catalog,
+            commands::models_begin_download,
             commands::open_licence_url,
             commands::updater_check,
             commands::updater_install,

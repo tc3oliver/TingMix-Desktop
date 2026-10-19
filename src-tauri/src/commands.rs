@@ -715,10 +715,7 @@ pub async fn mic_open_settings() -> Result<(), String> {
 /// What the first-run screen should show. Fetches the signed catalog only when no model is installed.
 #[tauri::command]
 pub async fn setup_check(state: State<'_, AppState>) -> Result<crate::setup::SetupView, String> {
-    let cfg = crate::setup::Catalog {
-        url: crate::setup::catalog_url(),
-        allow_loopback_http: false,
-    };
+    let cfg = catalog_cfg();
     let token = state.next_id("install");
     let (models, runtimes) = (state.models.clone(), state.runtimes.clone());
     // the catalog fetch blocks on the network: keep it off the async workers
@@ -727,6 +724,40 @@ pub async fn setup_check(state: State<'_, AppState>) -> Result<crate::setup::Set
     })
     .await
     .map_err(crate::coded::system)
+}
+
+/// The catalog models for this computer, for the model picker. Fetches the signed catalog.
+#[tauri::command]
+pub async fn models_catalog(
+    state: State<'_, AppState>,
+) -> Result<Vec<crate::setup::Offer>, String> {
+    let (models, runtimes) = (state.models.clone(), state.runtimes.clone());
+    tauri::async_runtime::spawn_blocking(move || {
+        crate::setup::list(&models, &runtimes, &catalog_cfg())
+    })
+    .await
+    .map_err(crate::coded::system)?
+}
+
+/// Verify catalog model `id` and return the licences to accept; `models_install` then downloads it.
+#[tauri::command]
+pub async fn models_begin_download(
+    state: State<'_, AppState>,
+    id: String,
+) -> Result<PendingInstall, String> {
+    let (models, token) = (state.models.clone(), state.next_id("install"));
+    tauri::async_runtime::spawn_blocking(move || {
+        crate::setup::begin(&models, &catalog_cfg(), &id, token)
+    })
+    .await
+    .map_err(crate::coded::system)?
+}
+
+fn catalog_cfg() -> crate::setup::Catalog<'static> {
+    crate::setup::Catalog {
+        url: crate::setup::catalog_url(),
+        allow_loopback_http: false,
+    }
 }
 
 /// Opens a licence page in the system browser. Only an https URL that appears in the licences of an offered or installed

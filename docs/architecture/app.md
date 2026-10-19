@@ -123,6 +123,13 @@ removes the screen. A cancelled or failed download keeps its bytes, and "Resume 
 the real catalog has not been fetched from the app; until then a release build shows "TingMix can't reach the model server". Tests
 use a loopback server and a throwaway key (`setup.rs` tests, `tingmix-models/tests/catalog.rs`) plus the MLX end-to-end test.
 
+The **model picker** in Settings › Speech model lists the installed models (each with "Use this model", which activates and
+tests it) and every catalog entry for this computer that is not installed (`setup::list`, command `models_catalog`; an entry
+whose engine this build lacks is shown disabled). Downloading one goes through `models_begin_download(id)`: the host fetches
+and verifies the catalog again and looks the id up, so the webview never supplies a manifest or URL; the licence card and
+`models_install` are the same as for any other install. Which engine runs a model is decided by `(manifest.family,
+manifest.backend)` in `backends::build`; a new model family is one arm there plus one in `backends::probe_fixture`.
+
 Live sessions use `SessionConfig::live_recommended()` (adaptive VAD, confidence suppression); file jobs keep `default()`. A
 suppressed segment ends with an **empty final**: the UI treats it as "remove this caption" (the reducer keeps the segment
 closed but `finalsOf` never returns it, so there is no blank row and no stale partial) and the history drops it before saving.

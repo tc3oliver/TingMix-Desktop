@@ -173,6 +173,19 @@ export interface LicenseInfo {
   notes: string;
 }
 
+/** A catalog model for this computer (`setup::Offer`). */
+export interface CatalogOffer {
+  id: string;
+  family: string;
+  backend: string;
+  precision: string;
+  download_bytes: number;
+  compat_status: string;
+  installed: boolean;
+  /** This build has the engine the model needs. */
+  engine_ready: boolean;
+}
+
 export interface PendingInstall {
   token: string;
   id: string;

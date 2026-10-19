@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use serde::Serialize;
 use serde_json::json;
-use tingmix_models::{catalog, select};
+use tingmix_models::{catalog, select, VerifiedManifest};
 
 use crate::backends::{self, Runtimes};
 use crate::coded::coded;
@@ -83,45 +83,10 @@ pub fn check(
             reason: info.reason,
         };
     }
-    let url = catalog_cfg.url;
-    let fetched = match models.reg() {
-        Ok(reg) => catalog::fetch(url, reg.verifier(), catalog_cfg.allow_loopback_http)
-            .map_err(|e| e.to_string()),
-        Err(e) => Err(e),
+    let downloadable = match offers(models, catalog_cfg) {
+        Ok(d) => d,
+        Err(reason) => return SetupView::Offline { reason },
     };
-    let cat = match fetched {
-        Ok(c) => c,
-        Err(detail) => {
-            return SetupView::Offline {
-                reason: coded(
-                    "setup.offline",
-                    json!({ "detail": detail }),
-                    format!("TingMix cannot reach the model server: {detail}"),
-                ),
-            }
-        }
-    };
-    let caps = models.caps();
-    let for_here = cat.for_platform(&caps.os, &caps.arch);
-    // the same rule as Registry::prepare, so an offered entry is never refused as a replay after the download
-    let replayed = |m: &tingmix_models::Manifest| {
-        models
-            .reg()
-            .ok()
-            .and_then(|r| r.high_water(&m.lineage()).ok())
-            .is_some_and(|(serial, id)| {
-                m.serial < serial || (m.serial == serial && id.is_some_and(|id| id != m.id))
-            })
-    };
-    let downloadable: Vec<_> = for_here
-        .into_iter()
-        .filter(|m| {
-            let mf = m.manifest();
-            mf.files.iter().all(|f| !f.url.is_empty())
-                && select::requirements_met(mf, caps, env!("CARGO_PKG_VERSION")).is_ok()
-                && !replayed(mf)
-        })
-        .collect();
     if downloadable.is_empty() {
         return no_platform();
     }
@@ -140,10 +105,102 @@ pub fn check(
             ),
         };
     };
-    match models.begin_verified(m.clone(), token) {
+    match models.begin_verified(m, token) {
         Ok(pending) => SetupView::Download { pending },
         Err(e) => SetupView::Offline { reason: e },
     }
+}
+
+/// Catalog entries this computer can download and run once its engine is present: built for this OS and CPU, every file
+/// downloadable, requirements met, and not older than what the registry has seen (the same rule as `Registry::prepare`, so an
+/// offered entry is never refused as a replay after the download). `Err` is a coded "cannot reach the server" reason.
+fn offers(models: &Arc<Models>, catalog_cfg: &Catalog) -> Result<Vec<VerifiedManifest>, String> {
+    let reg = models.reg()?;
+    let cat = catalog::fetch(
+        catalog_cfg.url,
+        reg.verifier(),
+        catalog_cfg.allow_loopback_http,
+    )
+    .map_err(|e| {
+        let detail = e.to_string();
+        coded(
+            "setup.offline",
+            json!({ "detail": detail }),
+            format!("TingMix cannot reach the model server: {detail}"),
+        )
+    })?;
+    let caps = models.caps();
+    let replayed = |m: &tingmix_models::Manifest| {
+        reg.high_water(&m.lineage())
+            .ok()
+            .is_some_and(|(serial, id)| {
+                m.serial < serial || (m.serial == serial && id.is_some_and(|id| id != m.id))
+            })
+    };
+    Ok(cat
+        .for_platform(&caps.os, &caps.arch)
+        .into_iter()
+        .filter(|m| {
+            let mf = m.manifest();
+            mf.files.iter().all(|f| !f.url.is_empty())
+                && select::requirements_met(mf, caps, env!("CARGO_PKG_VERSION")).is_ok()
+                && !replayed(mf)
+        })
+        .cloned()
+        .collect())
+}
+
+/// One model the user can pick from the catalog.
+#[derive(Debug, Clone, Serialize)]
+pub struct Offer {
+    pub id: String,
+    pub family: String,
+    pub backend: String,
+    pub precision: String,
+    pub download_bytes: u64,
+    pub compat_status: String,
+    pub installed: bool,
+    /// This build has the engine (and its test helper) the model needs.
+    pub engine_ready: bool,
+}
+
+/// Every catalog model for this computer, for the model picker.
+pub fn list(
+    models: &Arc<Models>,
+    rt: &Runtimes,
+    catalog_cfg: &Catalog,
+) -> Result<Vec<Offer>, String> {
+    let installed = models.reg()?.list().unwrap_or_default();
+    Ok(offers(models, catalog_cfg)?
+        .iter()
+        .map(|m| {
+            let mf = m.manifest();
+            Offer {
+                id: mf.id.clone(),
+                family: mf.family.clone(),
+                backend: mf.backend.clone(),
+                precision: mf.precision.clone(),
+                download_bytes: mf.files.iter().map(|f| f.size).sum(),
+                compat_status: mf.compat.status.clone(),
+                installed: installed.contains(&mf.id),
+                engine_ready: backends::engine_ready(&mf.backend, rt),
+            }
+        })
+        .collect())
+}
+
+/// Start installing catalog model `id`: the catalog is fetched and verified again, so the id is all the webview supplies.
+pub fn begin(
+    models: &Arc<Models>,
+    catalog_cfg: &Catalog,
+    id: &str,
+    token: String,
+) -> Result<PendingInstall, String> {
+    let m = offers(models, catalog_cfg)?
+        .into_iter()
+        .find(|m| m.manifest().id == id)
+        .ok_or_else(|| format!("{id} is not offered for this computer"))?;
+    models.begin_verified(m, token)
 }
 
 #[cfg(test)]
@@ -393,6 +450,36 @@ mod tests {
             check(&models, &rt, &cfg, "t2".into()),
             SetupView::Problem { .. }
         ));
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn the_picker_lists_every_model_for_this_computer_and_begins_one_by_id() {
+        let (models, dir) = models("picker");
+        let (listener, base) = bind();
+        let (a, mut docs) = manifest("model-a", &base, std::env::consts::OS, "onnx-cpu");
+        let (mut b, docs_b) = manifest("model-b", &base, std::env::consts::OS, "mlx");
+        b.family = "other".into();
+        let (elsewhere, _) = manifest("model-c", &base, "plan9", "onnx-cpu");
+        docs.extend(docs_b);
+        docs.insert("/catalog.json".into(), catalog_doc(&[&a, &b, &elsewhere]));
+        serve_on(listener, docs);
+        let url = format!("{base}/catalog.json");
+        let cfg = Catalog {
+            url: &url,
+            allow_loopback_http: true,
+        };
+        let offers = list(&models, &onnx_runtime(), &cfg).unwrap();
+        let ids: Vec<&str> = offers.iter().map(|o| o.id.as_str()).collect();
+        assert_eq!(ids.len(), 2, "{ids:?}");
+        assert!(ids.contains(&"model-a") && ids.contains(&"model-b"));
+        let a = offers.iter().find(|o| o.id == "model-a").unwrap();
+        assert!(a.engine_ready && !a.installed && a.download_bytes > 200_000);
+        assert_eq!(
+            begin(&models, &cfg, "model-b", "p".into()).unwrap().id,
+            "model-b"
+        );
+        assert!(begin(&models, &cfg, "model-c", "q".into()).is_err());
         let _ = std::fs::remove_dir_all(dir);
     }
 
