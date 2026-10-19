@@ -90,6 +90,14 @@ fn record_path(root: &Path, backend: &str, m: &Manifest) -> PathBuf {
         .join(format!("{b}--{}.json", &model_sha(m)[..16]))
 }
 
+/// Letters and digits only, lower case: models with punctuation or inverse text normalisation pass on the same words.
+fn words(s: &str) -> String {
+    s.chars()
+        .filter(|c| c.is_alphanumeric())
+        .flat_map(char::to_lowercase)
+        .collect()
+}
+
 /// Run the probe and persist the result (a failed probe is persisted too, so selection rejects it with a reason).
 pub fn run_probe(
     root: &Path,
@@ -109,7 +117,7 @@ pub fn run_probe(
     let (mut passed, mut detail, mut times) = (false, String::new(), Vec::new());
     match first {
         Err(e) => detail = format!("load/first decode failed: {e}"),
-        Ok(text) if text.trim() != fx.expected_text.trim() => {
+        Ok(text) if words(&text) != words(fx.expected_text) => {
             detail = format!(
                 "first decode text {text:?} != expected {:?}",
                 fx.expected_text
@@ -120,7 +128,7 @@ pub fn run_probe(
             for _ in 0..timed_runs.max(1) {
                 let (r, s) = run(target);
                 match r {
-                    Ok(t) if t.trim() == fx.expected_text.trim() => times.push(s),
+                    Ok(t) if words(&t) == words(fx.expected_text) => times.push(s),
                     Ok(t) => {
                         (passed, detail) = (
                             false,
@@ -216,5 +224,16 @@ pub fn fresh(
     match consult(root, backend, m, backend_version, device) {
         Consulted::Fresh(p) => Some(p),
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn words_ignore_punctuation_space_and_case() {
+        use super::words;
+        assert_eq!(words("今天天氣很好。"), words("今天天氣很好"));
+        assert_eq!(words("Good morning, everyone."), "goodmorningeveryone");
+        assert_ne!(words("今天氣很好"), words("今天天氣很好"));
     }
 }
