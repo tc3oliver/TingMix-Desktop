@@ -106,8 +106,8 @@
  ],
  "compat": {
   "status": "EXPERIMENTAL",
-  "rtf_x1000": null,
-  "notes": ""
+  "rtf_x1000": 153,
+  "notes": "EXPERIMENTAL: token ids equal the export's own Python ONNX path on 7 clips (macOS and Windows), with the first token fixed to 'language'. On 55 real zh-TW clips MER 0.094 against provisional references (SenseVoice-Small 0.102, TingMix-Large 0.212) and 0.091 on the live captioning path (0.103, 0.244); English word error 0.22 live. About 0.15 x real time on 4 CPU threads of an Apple M4 Max, 3.4 GB peak memory (benchmarks/qwen3-asr). Output is converted from Simplified to Traditional characters (OpenCC s2tw)."
  },
  "provenance": null,
  "created": "2026-10-20",

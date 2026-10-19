@@ -1,6 +1,6 @@
 //! The app's live captioning path on recordings: SessionConfig::live_recommended() (adaptive VAD, suppression, quiet-point
-//! cut, gap bridge). Engine: MLX Large fp32 with beam 16 + char LM, or SenseVoice-Small on ONNX Runtime when PACKAGE_DIR holds
-//! `model.int8.onnx` (set TINGMIX_ORT_DYLIB). Decoding is synchronous (StreamingSession), so finals do not depend on machine
+//! cut, gap bridge). Engine: MLX Large fp32 with beam 16 + char LM, SenseVoice-Small on ONNX Runtime when PACKAGE_DIR holds
+//! `model.int8.onnx`, or Qwen3-ASR when it holds `encoder[.int4].onnx` (both: set TINGMIX_ORT_DYLIB). Decoding is synchronous (StreamingSession), so finals do not depend on machine
 //! speed; the app's SessionWorker only coalesces partials, which never become finals.
 //!
 //! usage: [EA_MAX_SEG_S=12] ea-app-live PACKAGE_DIR OUT.json WAV...   (MLX: needs MLX_PREFIX at build time,
@@ -8,7 +8,7 @@
 use std::path::{Path, PathBuf};
 use tingmix_core::{AsrBackend, Reducer};
 use tingmix_runtime_mlx::{Decode, Dtype, MlxLargeBackend};
-use tingmix_runtime_onnx::OnnxSenseVoice;
+use tingmix_runtime_onnx::{OnnxQwen3Asr, OnnxSenseVoice};
 use tingmix_streaming::{SessionConfig, SessionMsg, StreamingSession};
 
 fn finals<B: AsrBackend>(b: B, wav: &Path) -> Vec<serde_json::Value> {
@@ -41,7 +41,9 @@ fn main() {
     let mut out = serde_json::Map::new();
     for wav in &a[3..] {
         let wav = Path::new(wav);
-        let f = if pkg.join("model.int8.onnx").is_file() {
+        let f = if pkg.join("encoder.int4.onnx").is_file() || pkg.join("encoder.onnx").is_file() {
+            finals(OnnxQwen3Asr::load(&pkg, 4).unwrap(), wav)
+        } else if pkg.join("model.int8.onnx").is_file() {
             finals(OnnxSenseVoice::load(&pkg.join("model.int8.onnx"), &pkg.join("tokens.txt"), 4).unwrap(), wav)
         } else {
             let lm = tingmix_decoder::CharLm::load(&pkg.join("lm/lmCN_cv_parl_ascend_ntuml.charlm.json.gz")).unwrap();

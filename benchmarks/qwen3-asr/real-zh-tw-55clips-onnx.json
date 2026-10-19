@@ -1,0 +1,190 @@
+{
+ "label": "EXPERIMENTAL: Qwen3-ASR-0.6B through tingmix-runtime-onnx (andrewleech/qwen3-asr-0.6b-onnx at 4fc24a1, int4 RTN decoders and FP32 decoders) on the 55 real zh-TW clips, scored like benchmarks/sensevoice. References: Whisper large-v3 drafts (provisional) and the product video's uploader subtitles (independent). No transcripts here.",
+ "commands": [
+  "cargo run --release -p tingmix-runtime-onnx --no-default-features --features load-dynamic --example decode_dir -- qwen3 <export dir> experiments/error-attribution/out/{product,finance}/clips <out.json> 4   (TINGMIX_ORT_DYLIB=vendor/onnxruntime/macos-arm64/lib/libonnxruntime.1.31.0.dylib; FP32: a directory without the *.int4.onnx files)",
+  "cd experiments/error-attribution && [EA_REF=subtitles] uv run python -m ea.other qwen3-onnx-<variant> product=<out_product.json> [finance=<out_finance.json>]",
+  "/usr/bin/time -l target/release/examples/decode_dir qwen3 ...",
+  "cd experiments/error-attribution/app-live && cargo build --release; for n in product finance: TINGMIX_ORT_DYLIB=<vendored 1.31.0> target/release/ea-app-live <int4 export dir> ../../qwen3-asr/out/live_$n.json ../out/$n/regions/r*.wav; cd .. && [EA_REF=subtitles] uv run python -m ea.other --live qwen3-int4-live app_live product=... finance=..."
+ ],
+ "model": {
+  "repo": "andrewleech/qwen3-asr-0.6b-onnx",
+  "revision": "4fc24a1402e74db89c4d2ef256875e71680128c4",
+  "base": "Qwen/Qwen3-ASR-0.6B 5eb144179a02acc5e5ba31e748d22b0cf3e303b0",
+  "sha256": {
+   "encoder.int4.onnx": "3c027f880f677615de85e1f6934906e1d5d77624b724096d33accef99c753eed",
+   "decoder_init.int4.onnx": "6d54633bbb9e6b1ecf372f218d04adb3bf6f2bfc442ce55c988526d532896faa",
+   "decoder_step.int4.onnx": "7eaa4f31d5eb6ae2937ff45222c32f692f2d5ac29b46cbae9046da332a9f317d",
+   "decoder_weights.int4.data": "d68cd1c0695a7ba42651d06b1bc1158e2e58af5f9adbb6dba874fbbb8a4f22cf",
+   "embed_tokens.bin": "e80150119fa5f7e56e85aed64c3a02d5c78eb7a37cfdcb973d0987316f15bee2"
+  }
+ },
+ "settings": {
+  "language": "auto (first token fixed to 'language')",
+  "decode": "greedy",
+  "window_s": 30,
+  "threads": 4
+ },
+ "onnxruntime": "1.31.0 (vendored Microsoft build, CPU EP, load-dynamic)",
+ "hardware": {
+  "cpu": "Apple M4 Max",
+  "logical_cpus": 16,
+  "memory_bytes": 68719476736,
+  "os": "macOS 27.0"
+ },
+ "timing": {
+  "int4_product": {
+   "audio_s": 292.4580625,
+   "backend": "qwen3-asr-onnx",
+   "clips": 25,
+   "decode_s": 44.35624246000001,
+   "load_s": 3.2542385,
+   "onnxruntime": "1.31.0",
+   "rtf": 0.1516670187883776,
+   "threads": 4
+  },
+  "int4_finance": {
+   "audio_s": 354.4399375,
+   "backend": "qwen3-asr-onnx",
+   "clips": 30,
+   "decode_s": 54.68617062399999,
+   "load_s": 1.673043542,
+   "onnxruntime": "1.31.0",
+   "rtf": 0.15428896362447866,
+   "threads": 4
+  },
+  "fp32_product": {
+   "audio_s": 292.4580625,
+   "backend": "qwen3-asr-onnx",
+   "clips": 25,
+   "decode_s": 142.56649191699998,
+   "load_s": 11.461291083,
+   "onnxruntime": "1.31.0",
+   "rtf": 0.487476702465674,
+   "threads": 4
+  },
+  "fp32_finance": {
+   "audio_s": 354.4399375,
+   "backend": "qwen3-asr-onnx",
+   "clips": 30,
+   "decode_s": 122.46978133499998,
+   "load_s": 7.3340345,
+   "onnxruntime": "1.31.0",
+   "rtf": 0.3455304224428715,
+   "threads": 4
+  }
+ },
+ "peak_rss_bytes": {
+  "int4": 3376529408,
+  "fp32": 7004274688
+ },
+ "parity": {
+  "oracle": "andrewleech/qwen3-asr-onnx 4aee2ae src/{mel,prompt,inference}.py on the same int4 graphs, Python onnxruntime 1.23.2 (experiments/qwen3-asr/ref_onnx.py)",
+  "clips": 7,
+  "mel_max_abs_diff": 4.4e-05,
+  "token_ids_identical": 7,
+  "note": "needs the first token fixed to 'language': on zh_02s the oracle's own first-token margin is 0.40 and 1e-5 uniform mel noise flips it in 2 of 10 trials",
+  "windows": {
+   "hardware": "AMD Ryzen 7 9700X, Windows 11 Pro build 26200",
+   "onnxruntime": "1.31.0 (vendored)",
+   "commit": "e1ae59e",
+   "mel_max_abs_diff": 6.9e-05,
+   "token_ids_identical": 7,
+   "result": "pass"
+  }
+ },
+ "scores_vs_whisper_draft": [
+  {
+   "engine": "qwen3-asr-0.6b onnx int4 (the app)",
+   "clips": 55,
+   "MER": 0.094,
+   "CER_zh": 0.085,
+   "WER_en": 0.447,
+   "S": 0.049,
+   "D": 0.011,
+   "I": 0.034
+  },
+  {
+   "engine": "qwen3-asr-0.6b onnx fp32 decoders",
+   "clips": 55,
+   "MER": 0.088,
+   "CER_zh": 0.08,
+   "WER_en": 0.459,
+   "S": 0.043,
+   "D": 0.011,
+   "I": 0.034
+  },
+  {
+   "engine": "qwen3-asr-0.6b int4",
+   "scope": "product",
+   "clips": 25,
+   "MER": 0.107
+  },
+  {
+   "engine": "qwen3-asr-0.6b int4",
+   "scope": "finance",
+   "clips": 30,
+   "MER": 0.082
+  }
+ ],
+ "scores_vs_subtitles_product": [
+  {
+   "engine": "qwen3-asr-0.6b onnx int4",
+   "clips": 25,
+   "MER": 0.108,
+   "CER_zh": 0.103,
+   "WER_en": 0.423
+  },
+  {
+   "engine": "qwen3-asr-0.6b onnx fp32 decoders",
+   "clips": 25,
+   "MER": 0.092,
+   "CER_zh": 0.09,
+   "WER_en": 0.269
+  }
+ ],
+ "date": "2026-10-20",
+ "live_path": {
+  "note": "SessionConfig::live_recommended (25 s segment cap) on the 11 regions, error-attribution section 3",
+  "vs_whisper_draft": [
+   {
+    "engine": "qwen3-asr-0.6b onnx int4",
+    "regions": 11,
+    "MER": 0.091,
+    "CER_zh": 0.088,
+    "WER_en": 0.224,
+    "S": 0.049,
+    "D": 0.012,
+    "I": 0.031
+   },
+   {
+    "engine": "sensevoice-small",
+    "regions": 11,
+    "MER": 0.103
+   },
+   {
+    "engine": "tingmix-large (MLX)",
+    "regions": 11,
+    "MER": 0.244
+   }
+  ],
+  "vs_subtitles_product": [
+   {
+    "engine": "qwen3-asr-0.6b onnx int4",
+    "regions": 5,
+    "MER": 0.098,
+    "CER_zh": 0.096,
+    "WER_en": 0.192
+   },
+   {
+    "engine": "sensevoice-small",
+    "regions": 5,
+    "MER": 0.111
+   },
+   {
+    "engine": "tingmix-large (MLX)",
+    "regions": 5,
+    "MER": 0.29
+   }
+  ]
+ }
+}

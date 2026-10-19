@@ -130,7 +130,8 @@ and verifies the catalog again and looks the id up, so the webview never supplie
 `models_install` are the same as for any other install. Which engine runs a model is decided by `(manifest.family,
 manifest.backend)` in `backends::build`; a new model family is one arm there, one in `backends::runs` (what the picker and
 first run may offer) and one in `backends::probe_fixture`. Families today: `tingmix-large` (ONNX, MLX), `tingmix-small` (ONNX)
-and `sensevoice-small` (ONNX, output converted to Traditional characters; docs/research/sensevoice.md). The probe compares
+`sensevoice-small` (ONNX; docs/research/sensevoice.md) and `qwen3-asr` (ONNX; docs/research/qwen3-asr.md), the last two with
+output converted to Traditional characters. The probe compares
 letters and digits only, so engines that write punctuation pass on the same words.
 
 Live sessions use `SessionConfig::live_recommended()` (adaptive VAD, confidence suppression); file jobs keep `default()`. A
