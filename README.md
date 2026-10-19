@@ -1,101 +1,86 @@
 # TingMix Desktop
 
-Offline speech-to-text for macOS and Windows. It does live captions from the microphone and transcribes audio and video
-files, in Taiwanese Mandarin, English, and the two mixed together. Nothing you say or transcribe leaves your computer.
+Live captions and transcription for Taiwanese Mandarin, English and the two mixed together. It runs entirely on your
+computer: no account, no cloud, and your audio never leaves the machine.
 
-它是一個離線的語音轉文字桌面程式，支援台灣華語、英文和中英夾雜，可以做即時字幕，也可以轉錄音訊或影片檔。聲音和文字都只留在你的電腦上。
+台灣華語、英文、中英夾雜都聽得懂的離線字幕工具。即時字幕、音訊和影片轉文字，全部在你的電腦上完成，不用帳號，不上雲端。
 
-You pick the speech model in Settings. Three are supported:
+## What it does
 
-- [TingMix-Large](https://huggingface.co/tc3oliver/TingMix-Large): the audio encoder from Google's
-  [EmbeddingGemma 2](https://huggingface.co/google/embeddinggemma-2), a small CTC reader and a character language model.
-- [SenseVoice-Small](https://huggingface.co/FunAudioLLM/SenseVoiceSmall) (Alibaba): small and very fast.
-- [Qwen3-ASR-0.6B](https://huggingface.co/Qwen/Qwen3-ASR-0.6B) (Alibaba): the most accurate of the three, best on mixed
-  Chinese and English, and the slowest.
+- **Live captions** from your microphone, as you speak.
+- **Transcribe files**: drop in an audio or video file and get the text.
+- **Export** to TXT or SRT subtitles. Past sessions are kept in History.
+- **Works offline** once a model is downloaded.
 
-The app is written in Rust and TypeScript on [Tauri 2](https://v2.tauri.app/) and runs the models natively, with MLX on
-Apple silicon and ONNX Runtime everywhere else. There is no Python in the app.
+## Pick your model
+
+Choose a speech model in Settings › Speech model. Each has its strengths:
+
+| model | best for | errors* | memory |
+|---|---|---|---|
+| [Qwen3-ASR-0.6B](https://huggingface.co/Qwen/Qwen3-ASR-0.6B) | accuracy, mixed Chinese and English | 9% | 3.4 GB |
+| [SenseVoice-Small](https://huggingface.co/FunAudioLLM/SenseVoiceSmall) | speed, older or smaller machines | 10% | 0.5 GB |
+| [TingMix-Large](https://huggingface.co/tc3oliver/TingMix-Large) | the original TingMix model | 24% | 2 GB |
+
+\* Live captions on 11 minutes of real Taiwanese YouTube videos: a product review with background music, and a finance show.
+The reference transcripts haven't been checked by a person yet, so treat the numbers as rough. Every model still misses
+some brand names and rare names. [How this was measured](docs/research/qwen3-asr.md).
+
+Today only TingMix-Large can be downloaded from inside the app. SenseVoice and Qwen3-ASR can be installed from a folder until
+they're added to the download list.
+
+## Requirements
+
+- Mac with Apple silicon, macOS 13 or later
+- Windows 11, x64. No GPU needed.
 
 ## Status
 
-Early and unpolished. There are no prebuilt releases yet, so you have to build it yourself, and the builds are not code
-signed. It works on the two machines it was developed on (an M4 Max Mac and a Ryzen 7 / RTX 5070 Ti PC); I haven't tried it
-anywhere else.
+This is early software. There are no ready-made installers yet, so you build it yourself (below), and the builds aren't code
+signed. It has been tested on one Mac and one Windows PC.
 
-On 11 minutes of real Taiwanese YouTube speech (a product review with music, and a finance show), live captions got this
-share of characters and words wrong:
+## Build it
 
-| model | error rate | speed (M4 Max CPU) | memory |
-|---|---|---|---|
-| Qwen3-ASR-0.6B | 9% | 0.15 s per second of audio | 3.4 GB |
-| SenseVoice-Small | 10% | 0.01 s | 0.5 GB |
-| TingMix-Large | 24% | | about 2 GB |
-
-The reference transcripts haven't been checked by a person yet, so take these as rough. All three miss brand names and rare
-proper nouns. Details: [docs/research/qwen3-asr.md](docs/research/qwen3-asr.md).
-
-## Platforms
-
-- macOS 13 or later on Apple silicon
-- Windows 11, x64 (runs on the CPU; a GPU isn't needed)
-
-## Models
-
-No model is in this repository or in the installer. On first launch the app offers a download from the catalog at
-[tc3oliver/TingMix-Desktop](https://huggingface.co/tc3oliver/TingMix-Desktop) on Hugging Face (TingMix-Large is about
-1.4 GB). After that it works offline. SenseVoice and Qwen3-ASR aren't in the catalog yet; until they are, you can install
-them from a folder.
-
-Every package is described by a manifest that lists each file's size and SHA-256 and is signed with an Ed25519 key built
-into the app. Anything that doesn't match is refused, and a package can never be replaced by an older one. You can also
-install a package from a folder or a zip without a network connection. The details are in
-[docs/architecture/model-management.md](docs/architecture/model-management.md).
-
-Licences differ per model. TingMix-Large weights are Apache-2.0, but some of its training data is non-commercial (CC BY-NC)
-or share-alike (CC BY-SA); the model card lists every source. SenseVoice uses the FunASR model licence, which you accept
-before downloading. Qwen3-ASR is Apache-2.0.
-
-## Building
-
-You need Rust 1.85 or newer, Node 24 with pnpm 10, and the
-[Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) for your platform (Xcode command line tools on macOS,
-Visual Studio Build Tools and WebView2 on Windows).
+You need Rust 1.85+, Node 24 with pnpm 10, and the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) for
+your system.
 
 ```sh
 git clone https://github.com/tc3oliver/TingMix-Desktop.git
 cd TingMix-Desktop
 pnpm install
-tools/ort-fetch/fetch.sh macos-arm64     # or windows-x64: fetches the pinned ONNX Runtime
+tools/ort-fetch/fetch.sh macos-arm64     # on Windows: windows-x64
 pnpm tauri dev
 ```
 
-To build an installer, run `pnpm bundle:windows` on Windows. The macOS app with the MLX engine is built by
-`tools/bundle-mlx.sh release`, which needs an MLX install; [docs/architecture/app.md](docs/architecture/app.md) explains
-how.
+Installers: `pnpm bundle:windows` on Windows, `tools/bundle-mlx.sh release` on a Mac (needs MLX, see
+[docs/architecture/app.md](docs/architecture/app.md)).
 
-Tests:
+## Models and licences
 
-```sh
-pnpm typecheck && pnpm test
-cargo fmt --all --check
-cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace
-```
+Models aren't bundled. The app downloads them from
+[Hugging Face](https://huggingface.co/tc3oliver/TingMix-Desktop) and checks every file against a signed list before using it.
+Anything tampered with or out of date is refused. [Details](docs/architecture/model-management.md).
 
-Tests that need the real model skip themselves unless you point them at one.
+Each model has its own licence:
 
-## Layout
+- **Qwen3-ASR**: Apache-2.0.
+- **SenseVoice**: the FunASR model licence, shown for you to accept before download.
+- **TingMix-Large**: Apache-2.0 weights, but part of the training data is non-commercial (CC BY-NC) or share-alike
+  (CC BY-SA). Check the [model card](https://huggingface.co/tc3oliver/TingMix-Large) before commercial use.
+
+## Under the hood
+
+Rust and TypeScript on [Tauri 2](https://v2.tauri.app/). Models run natively, on MLX on Apple silicon and ONNX Runtime
+elsewhere. There's no Python in the app.
 
 ```
 src/            React UI
-src-tauri/      Tauri host: audio capture, sessions, file jobs, settings, model setup
-crates/         Rust libraries: audio, streaming and VAD, decoder, mel front end,
-                model registry, MLX and ONNX Runtime engines, benchmarks
-tests/fixtures/ small test inputs (synthetic speech, decoder cases)
-experiments/    Python scripts used to port and check the model (not shipped)
+src-tauri/      app host: audio capture, sessions, files, settings, model setup
+crates/         Rust libraries: audio, streaming, decoders, model registry, engines
+experiments/    Python used to port and check models (not shipped)
 tools/          export, packaging and fixture scripts
-benchmarks/     raw benchmark results, with the command that produced each one
-docs/           architecture notes, release notes and research write-ups
+benchmarks/     raw benchmark results with the commands that produced them
+docs/           architecture, release and research notes
 ```
 
 ## Contributing
