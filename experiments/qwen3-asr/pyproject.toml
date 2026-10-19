@@ -1,0 +1,12 @@
+[project]
+name = "tingmix-qwen3-asr-eval"
+version = "0.0.0"
+description = "Qwen3-ASR (MLX port) on the error-attribution clips, to decide whether a Rust backend is worth building (research only, never shipped)"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "mlx-qwen3-asr==0.4.4",
+    "soundfile",
+]
+
+[tool.uv]
+package = false

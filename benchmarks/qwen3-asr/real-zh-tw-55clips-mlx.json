@@ -1,0 +1,118 @@
+{
+ "label": "EXPERIMENTAL accuracy probe: Qwen3-ASR 0.6B / 1.7B (mlx-qwen3-asr 0.4.4, fp16, language auto, Python research harness) on the same 55 real zh-TW clips as benchmarks/sensevoice; decides whether a Rust backend is worth building. Not the app's code path. References: Whisper large-v3 drafts (provisional) and, for the product video, uploader subtitles (independent).",
+ "commands": [
+  "cd experiments/qwen3-asr && HF_HOME=<cache> uv run python eval.py ../error-attribution/out 0.6B 1.7B",
+  "cd experiments/error-attribution && [EA_REF=subtitles] uv run python -m ea.other qwen3-asr-<size> product=../qwen3-asr/out/qwen_<size>_product.json [finance=../qwen3-asr/out/qwen_<size>_finance.json]"
+ ],
+ "models": {
+  "Qwen/Qwen3-ASR-0.6B": "5eb144179a02acc5e5ba31e748d22b0cf3e303b0",
+  "Qwen/Qwen3-ASR-1.7B": "7278e1e70fe206f11671096ffdd38061171dd6e5",
+  "license": "Apache-2.0"
+ },
+ "hardware": {
+  "cpu": "Apple M4 Max (MLX, Metal GPU)",
+  "memory_bytes": 68719476736,
+  "os": "macOS 27.0"
+ },
+ "timing": {
+  "0.6B_product": {
+   "backend": "Qwen3-ASR-0.6B mlx-qwen3-asr fp16",
+   "revision": "5eb144179a02acc5e5ba31e748d22b0cf3e303b0",
+   "load_s": 0.8261234581004828,
+   "clips": 25,
+   "audio_s": 292.4580625,
+   "decode_s": 9.280796667328104,
+   "rtf": 0.03173376923854888
+  },
+  "0.6B_finance": {
+   "backend": "Qwen3-ASR-0.6B mlx-qwen3-asr fp16",
+   "revision": "5eb144179a02acc5e5ba31e748d22b0cf3e303b0",
+   "load_s": 0.8261234581004828,
+   "clips": 30,
+   "audio_s": 354.4399375,
+   "decode_s": 8.645987288560718,
+   "rtf": 0.024393377759696504
+  },
+  "1.7B_product": {
+   "backend": "Qwen3-ASR-1.7B mlx-qwen3-asr fp16",
+   "revision": "7278e1e70fe206f11671096ffdd38061171dd6e5",
+   "load_s": 2.671316833002493,
+   "clips": 25,
+   "audio_s": 292.4580625,
+   "decode_s": 16.033598837675527,
+   "rtf": 0.05482358291173979
+  },
+  "1.7B_finance": {
+   "backend": "Qwen3-ASR-1.7B mlx-qwen3-asr fp16",
+   "revision": "7278e1e70fe206f11671096ffdd38061171dd6e5",
+   "load_s": 2.671316833002493,
+   "clips": 30,
+   "audio_s": 354.4399375,
+   "decode_s": 59.48780991625972,
+   "rtf": 0.16783608059478264
+  }
+ },
+ "scores_vs_whisper_draft": [
+  {
+   "engine": "qwen3-asr-0.6B",
+   "clips": 55,
+   "MER": 0.084,
+   "CER_zh": 0.079,
+   "WER_en": 0.306,
+   "S": 0.042,
+   "D": 0.01,
+   "I": 0.032
+  },
+  {
+   "engine": "qwen3-asr-1.7B",
+   "clips": 55,
+   "MER": 0.083,
+   "CER_zh": 0.078,
+   "WER_en": 0.282,
+   "S": 0.039,
+   "D": 0.011,
+   "I": 0.033
+  },
+  {
+   "engine": "sensevoice-small (benchmarks/sensevoice)",
+   "clips": 55,
+   "MER": 0.102,
+   "CER_zh": 0.092,
+   "WER_en": 0.518
+  },
+  {
+   "engine": "tingmix-large lm",
+   "clips": 55,
+   "MER": 0.212,
+   "CER_zh": 0.203,
+   "WER_en": 0.6
+  }
+ ],
+ "scores_vs_subtitles_product": [
+  {
+   "engine": "qwen3-asr-0.6B",
+   "clips": 25,
+   "MER": 0.092,
+   "CER_zh": 0.089,
+   "WER_en": 0.269
+  },
+  {
+   "engine": "qwen3-asr-1.7B",
+   "clips": 25,
+   "MER": 0.087,
+   "CER_zh": 0.082,
+   "WER_en": 0.423
+  },
+  {
+   "engine": "sensevoice-small",
+   "clips": 25,
+   "MER": 0.116
+  },
+  {
+   "engine": "tingmix-large lm",
+   "clips": 25,
+   "MER": 0.277
+  }
+ ],
+ "date": "2026-10-19"
+}
