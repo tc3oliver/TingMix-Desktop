@@ -4,7 +4,9 @@
   "cargo run --release -p tingmix-runtime-onnx --no-default-features --features load-dynamic --example sensevoice_dir -- <export dir> experiments/error-attribution/out/{product,finance}/clips experiments/sensevoice/out/ea_{product,finance}.json 4   (TINGMIX_ORT_DYLIB=vendor/onnxruntime/macos-arm64/lib/libonnxruntime.1.31.0.dylib)",
   "cd experiments/error-attribution && uv run python -m ea.other sensevoice-small product=../sensevoice/out/ea_product.json finance=../sensevoice/out/ea_finance.json",
   "cd experiments/error-attribution && EA_REF=subtitles uv run python -m ea.other sensevoice-small product=../sensevoice/out/ea_product.json",
-  "/usr/bin/time -l target/release/examples/sensevoice_dir <export dir> experiments/error-attribution/out/finance/clips <out.json> 4"
+  "/usr/bin/time -l target/release/examples/sensevoice_dir <export dir> experiments/error-attribution/out/finance/clips <out.json> 4",
+  "cd experiments/error-attribution/app-live && cargo build --release; for n in product finance: TINGMIX_ORT_DYLIB=<vendored 1.31.0> [EA_MAX_SEG_S=6] target/release/ea-app-live <export dir> ../../sensevoice/out/live[_cap6]_$n.json ../out/$n/regions/r*.wav",
+  "cd experiments/error-attribution && [EA_REF=subtitles] uv run python -m ea.other --live sensevoice-live app_live[_cap6] product=../sensevoice/out/live[_cap6]_product.json finance=../sensevoice/out/live[_cap6]_finance.json"
  ],
  "model": {
   "repo": "csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17",
@@ -149,5 +151,78 @@
    "I": 0.007
   }
  ],
- "date": "2026-10-19"
+ "date": "2026-10-19",
+ "live_path": {
+  "note": "the app's live path (SessionConfig::live_recommended, synchronous StreamingSession) on the 11 regions, scored against the joined clip references (error-attribution section 3)",
+  "vs_whisper_draft": [
+   {
+    "engine": "sensevoice-small",
+    "segment_cap_s": 25,
+    "regions": 11,
+    "MER": 0.103,
+    "CER_zh": 0.094,
+    "WER_en": 0.506,
+    "S": 0.055,
+    "D": 0.018,
+    "I": 0.03
+   },
+   {
+    "engine": "tingmix-large (MLX, beam+LM)",
+    "segment_cap_s": 25,
+    "regions": 11,
+    "MER": 0.244,
+    "CER_zh": 0.234,
+    "WER_en": 0.647,
+    "S": 0.087,
+    "D": 0.15,
+    "I": 0.007
+   },
+   {
+    "engine": "sensevoice-small",
+    "segment_cap_s": 6,
+    "regions": 11,
+    "MER": 0.118,
+    "CER_zh": 0.108,
+    "WER_en": 0.553,
+    "S": 0.063,
+    "D": 0.025,
+    "I": 0.031
+   },
+   {
+    "engine": "tingmix-large (MLX, beam+LM)",
+    "segment_cap_s": 6,
+    "regions": 11,
+    "MER": 0.209,
+    "CER_zh": 0.198,
+    "WER_en": 0.671,
+    "S": 0.108,
+    "D": 0.088,
+    "I": 0.014
+   }
+  ],
+  "vs_subtitles_product": [
+   {
+    "engine": "sensevoice-small",
+    "segment_cap_s": 25,
+    "regions": 5,
+    "MER": 0.111,
+    "CER_zh": 0.104,
+    "WER_en": 0.577,
+    "S": 0.062,
+    "D": 0.02,
+    "I": 0.03
+   },
+   {
+    "engine": "tingmix-large (MLX, beam+LM)",
+    "segment_cap_s": 25,
+    "regions": 5,
+    "MER": 0.29,
+    "CER_zh": 0.282,
+    "WER_en": 0.769,
+    "S": 0.119,
+    "D": 0.164,
+    "I": 0.006
+   }
+  ]
+ }
 }

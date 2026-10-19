@@ -58,6 +58,20 @@ so Simplified output costs nothing here.
 - Caveats: the references are Whisper large-v3 drafts until a human checks them, the sample is two videos, and no significance
   test was run. The subtitle check is independent of Whisper and points the same way.
 
+Live path: the app's own live captioning path (`SessionConfig::live_recommended()`, VAD segments, 25 s segment cap) on the
+11 regions, scored like error-attribution section 3:
+
+| live path | MER | D | I |
+|---|---|---|---|
+| SenseVoice-Small, cap 25 s (today's preset) | **0.103** | 0.018 | 0.030 |
+| TingMix-Large (MLX), cap 25 s | 0.244 | 0.150 | 0.007 |
+| SenseVoice-Small, cap 6 s | 0.118 | 0.025 | 0.031 |
+| TingMix-Large (MLX), cap 6 s | 0.209 | 0.088 | 0.014 |
+
+SenseVoice loses almost nothing between clips and the live path (0.102 to 0.103), while TingMix-Large loses 3.2 points. The 6 s
+cap that helps TingMix-Large makes SenseVoice worse, so the segment cap should stay where it is or become per engine. Against
+the product subtitles the live path gives 0.111 against 0.290.
+
 Speed: on an Apple M4 Max, 4 CPU threads, about 0.011× real time (647 s of audio decoded in 7.3 s). Load takes 0.3 to 0.8 s and
 peak memory is 0.5 GB. TingMix-Large on MLX needs about 2 GB.
 
@@ -84,5 +98,4 @@ tested only on macOS.
 ## Open questions
 
 - Human-verified references for the 55 clips (error-attribution section 8). They could move both engines' numbers.
-- The live path (VAD segments, segment cap) with SenseVoice on the two videos, compared with TingMix-Large's 0.244.
 - Hotwords and phrase biasing: SenseVoice has none in this export.

@@ -13,4 +13,5 @@ tingmix-audio = { path = "../../../crates/tingmix-audio" }
 tingmix-streaming = { path = "../../../crates/tingmix-streaming" }
 tingmix-decoder = { path = "../../../crates/tingmix-decoder" }
 tingmix-runtime-mlx = { path = "../../../crates/tingmix-runtime-mlx" }
+tingmix-runtime-onnx = { path = "../../../crates/tingmix-runtime-onnx", default-features = false, features = ["load-dynamic"] }
 serde_json = "1"
