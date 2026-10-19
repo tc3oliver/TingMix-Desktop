@@ -1104,6 +1104,7 @@ dependencies = [
  "libloading",
  "ort",
  "rustfft",
+ "serde_json",
  "thiserror 2.0.21",
  "tingmix-core",
  "tingmix-decoder",
