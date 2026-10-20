@@ -1,0 +1,73 @@
+{
+  "manifest": {
+    "schema_version": 2,
+    "serial": 1,
+    "id": "sensevoice-small-onnx-int8-r2365bae",
+    "family": "sensevoice-small",
+    "revision": "2365baeacb507f821a0c8120fcee3d484dba7a07",
+    "backend": "onnx-cpu",
+    "os": "any",
+    "arch": "any",
+    "precision": "int8",
+    "requirements": {
+      "min_ram_bytes": 2147483648,
+      "cpu_features": [],
+      "apple_chip_min_generation": null
+    },
+    "runtime": {
+      "name": "onnxruntime",
+      "min_version": "1.31.0"
+    },
+    "base_model": null,
+    "adapter": null,
+    "tokenizer": {
+      "id": "csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17:tokens.txt",
+      "revision": "2365baeacb507f821a0c8120fcee3d484dba7a07"
+    },
+    "lm": null,
+    "files": [
+      {
+        "path": "model.int8.onnx",
+        "component": "model",
+        "url": "https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/2365baeacb507f821a0c8120fcee3d484dba7a07/model.int8.onnx",
+        "size": 239233841,
+        "sha256": "c71f0ce00bec95b07744e116345e33d8cbbe08cef896382cf907bf4b51a2cd51"
+      },
+      {
+        "path": "tokens.txt",
+        "component": "tokenizer",
+        "url": "https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/2365baeacb507f821a0c8120fcee3d484dba7a07/tokens.txt",
+        "size": 315894,
+        "sha256": "f449eb28dc567533d7fa59be34e2abca8784f771850c78a47fb731a31429a1dc"
+      }
+    ],
+    "licenses": [
+      {
+        "id": "funasr-model-license-1.1",
+        "name": "FunASR Model Open Source License Agreement 1.1 (SenseVoice-Small)",
+        "spdx": null,
+        "url": "https://github.com/modelscope/FunASR/blob/main/MODEL_LICENSE",
+        "applies_to": [
+          "model",
+          "tokenizer"
+        ],
+        "acceptance_required": true,
+        "attribution": [
+          "SenseVoice-Small, Tongyi Lab, Alibaba Group (FunAudioLLM/SenseVoiceSmall)",
+          "ONNX export by k2-fsa / sherpa-onnx (Xiaomi Corp.)"
+        ],
+        "notes": "Free to use, copy, modify and share with attribution and the model names kept. Provided for reference and learning purposes without warranty; the terms may be revised by the publisher. The ONNX export was made by sherpa-onnx from iic/SenseVoiceSmall on ModelScope (export-onnx.py in the export repository); the exact upstream revision is not recorded there."
+      }
+    ],
+    "compat": {
+      "status": "EXPERIMENTAL",
+      "rtf_x1000": 11,
+      "notes": "EXPERIMENTAL: text equals sherpa-onnx 1.13.8 on 10 clips (one differs by one comma). On 55 real zh-TW clips MER 0.102 against provisional references (TingMix-Large 0.212), 0.116 against one video's subtitles (0.277). About 0.011 x real time on 4 CPU threads of an Apple M4 Max, 0.5 GB peak memory (benchmarks/sensevoice). Output is converted from Simplified to Traditional characters (OpenCC s2tw)."
+    },
+    "provenance": null,
+    "created": "2026-10-19",
+    "min_app_version": "0.2.0"
+  },
+  "key_id": "tingmix-release-1",
+  "signature": "d6f04ac4047edd94965578f8d24c5edaee360d5b1b55de844b04931045eb7d0489a0a7b57a432b4b119a68e9015c8c727ee331787fffc75b374f9adabe62ea08"
+}

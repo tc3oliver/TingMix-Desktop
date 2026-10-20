@@ -84,15 +84,13 @@ with attribution, as long as the model names are kept. It disclaims responsibili
 and the publisher may revise the terms. The catalog entry therefore requires acceptance before download, as the TingMix
 entries do. The terms are not an OSI licence; the owner should read them before publishing.
 
-## Publishing (owner)
+## Publishing
 
-`crates/tingmix-runtime-onnx/fixtures/sensevoice-small-onnx-int8.manifest.json` is the unsigned catalog entry. Its files
-download straight from the sherpa-onnx repository at the pinned revision, so nothing is re-hosted.
-
-1. Set `min_app_version` to the first release that contains this backend. Older builds would otherwise list the entry and
-   fail its test.
-2. `cargo run -p tingmix-models --bin manifest-sign -- sign <release key> tingmix-release-1 <manifest> <signed>`
-3. Append the signed entry to `catalog.json` in the model repository.
+`crates/tingmix-runtime-onnx/fixtures/sensevoice-small-onnx-int8.signed.json` is the catalog entry: `min_app_version` 0.2.0
+(the first release with this backend), signed with `tingmix-release-1`. Its files download straight from the sherpa-onnx
+repository at the pinned revision, so nothing is re-hosted. To change it: edit the `.manifest.json`, then
+`cargo run -p tingmix-models --bin manifest-sign -- sign <release key> tingmix-release-1 <manifest> <signed>` and replace
+the entry in `catalog.json` in the model repository.
 
 The entry is `os: any`, `arch: any`, so it also covers Windows x86_64, where the catalog has no TingMix package yet. Parity
 was checked on Windows; the app's install, probe and live path were run on macOS only.

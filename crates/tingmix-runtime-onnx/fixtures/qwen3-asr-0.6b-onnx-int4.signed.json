@@ -1,0 +1,119 @@
+{
+  "manifest": {
+    "schema_version": 2,
+    "serial": 1,
+    "id": "qwen3-asr-0.6b-onnx-int4-r4fc24a1",
+    "family": "qwen3-asr",
+    "revision": "4fc24a1402e74db89c4d2ef256875e71680128c4",
+    "backend": "onnx-cpu",
+    "os": "any",
+    "arch": "any",
+    "precision": "int4",
+    "requirements": {
+      "min_ram_bytes": 8589934592,
+      "cpu_features": [],
+      "apple_chip_min_generation": null
+    },
+    "runtime": {
+      "name": "onnxruntime",
+      "min_version": "1.31.0"
+    },
+    "base_model": {
+      "id": "Qwen/Qwen3-ASR-0.6B",
+      "revision": "5eb144179a02acc5e5ba31e748d22b0cf3e303b0"
+    },
+    "adapter": null,
+    "tokenizer": {
+      "id": "andrewleech/qwen3-asr-0.6b-onnx:vocab.json+added_tokens.json",
+      "revision": "4fc24a1402e74db89c4d2ef256875e71680128c4"
+    },
+    "lm": null,
+    "files": [
+      {
+        "path": "encoder.int4.onnx",
+        "component": "model",
+        "url": "https://huggingface.co/andrewleech/qwen3-asr-0.6b-onnx/resolve/4fc24a1402e74db89c4d2ef256875e71680128c4/encoder.int4.onnx",
+        "size": 745762694,
+        "sha256": "3c027f880f677615de85e1f6934906e1d5d77624b724096d33accef99c753eed"
+      },
+      {
+        "path": "decoder_init.int4.onnx",
+        "component": "model",
+        "url": "https://huggingface.co/andrewleech/qwen3-asr-0.6b-onnx/resolve/4fc24a1402e74db89c4d2ef256875e71680128c4/decoder_init.int4.onnx",
+        "size": 355390,
+        "sha256": "6d54633bbb9e6b1ecf372f218d04adb3bf6f2bfc442ce55c988526d532896faa"
+      },
+      {
+        "path": "decoder_step.int4.onnx",
+        "component": "model",
+        "url": "https://huggingface.co/andrewleech/qwen3-asr-0.6b-onnx/resolve/4fc24a1402e74db89c4d2ef256875e71680128c4/decoder_step.int4.onnx",
+        "size": 354888,
+        "sha256": "7eaa4f31d5eb6ae2937ff45222c32f692f2d5ac29b46cbae9046da332a9f317d"
+      },
+      {
+        "path": "decoder_weights.int4.data",
+        "component": "model",
+        "url": "https://huggingface.co/andrewleech/qwen3-asr-0.6b-onnx/resolve/4fc24a1402e74db89c4d2ef256875e71680128c4/decoder_weights.int4.data",
+        "size": 962460672,
+        "sha256": "d68cd1c0695a7ba42651d06b1bc1158e2e58af5f9adbb6dba874fbbb8a4f22cf"
+      },
+      {
+        "path": "embed_tokens.bin",
+        "component": "model",
+        "url": "https://huggingface.co/andrewleech/qwen3-asr-0.6b-onnx/resolve/4fc24a1402e74db89c4d2ef256875e71680128c4/embed_tokens.bin",
+        "size": 311164928,
+        "sha256": "e80150119fa5f7e56e85aed64c3a02d5c78eb7a37cfdcb973d0987316f15bee2"
+      },
+      {
+        "path": "vocab.json",
+        "component": "tokenizer",
+        "url": "https://huggingface.co/andrewleech/qwen3-asr-0.6b-onnx/resolve/4fc24a1402e74db89c4d2ef256875e71680128c4/vocab.json",
+        "size": 2776833,
+        "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+      },
+      {
+        "path": "added_tokens.json",
+        "component": "tokenizer",
+        "url": "https://huggingface.co/andrewleech/qwen3-asr-0.6b-onnx/resolve/4fc24a1402e74db89c4d2ef256875e71680128c4/added_tokens.json",
+        "size": 1566,
+        "sha256": "de40784677cbd1843cabe5fbee078c7e042cd0b62155f0810af5a13842e5722a"
+      },
+      {
+        "path": "config.json",
+        "component": "meta",
+        "url": "https://huggingface.co/andrewleech/qwen3-asr-0.6b-onnx/resolve/4fc24a1402e74db89c4d2ef256875e71680128c4/config.json",
+        "size": 1250,
+        "sha256": "df31c4689abe9d782366fffd2454b546291d0205d082b3fd01b99fb76a45b11f"
+      }
+    ],
+    "licenses": [
+      {
+        "id": "qwen3-asr-apache-2.0",
+        "name": "Qwen3-ASR-0.6B (Apache-2.0)",
+        "spdx": "Apache-2.0",
+        "url": "https://huggingface.co/Qwen/Qwen3-ASR-0.6B",
+        "applies_to": [
+          "model",
+          "tokenizer",
+          "meta"
+        ],
+        "acceptance_required": false,
+        "attribution": [
+          "Qwen3-ASR, Qwen Team, Alibaba Group (Qwen/Qwen3-ASR-0.6B, Apache-2.0)",
+          "ONNX export and int4 quantisation by Andrew Leech (andrewleech/qwen3-asr-onnx, Apache-2.0)"
+        ],
+        "notes": "The ONNX files are a modified form of the Qwen weights (graph export, int4 RTN quantisation of the decoder, FP16 embedding table) made by andrewleech/qwen3-asr-onnx; they are downloaded from that repository unchanged."
+      }
+    ],
+    "compat": {
+      "status": "EXPERIMENTAL",
+      "rtf_x1000": 153,
+      "notes": "EXPERIMENTAL: token ids equal the export's own Python ONNX path on 7 clips (macOS and Windows), with the first token fixed to 'language'. On 55 real zh-TW clips MER 0.094 against provisional references (SenseVoice-Small 0.102, TingMix-Large 0.212) and 0.091 on the live captioning path (0.103, 0.244); English word error 0.22 live. About 0.15 x real time on 4 CPU threads of an Apple M4 Max, 3.4 GB peak memory (benchmarks/qwen3-asr). Output is converted from Simplified to Traditional characters (OpenCC s2tw)."
+    },
+    "provenance": null,
+    "created": "2026-10-20",
+    "min_app_version": "0.2.0"
+  },
+  "key_id": "tingmix-release-1",
+  "signature": "56237ef6c97a321ef12ced0ebee203b89dafe3b609d8103fd9a9704d5f19a1729b49f1a38f8ab0f3318311593b0a529be2a6fac7c7473b997e9626e437a3bd09"
+}

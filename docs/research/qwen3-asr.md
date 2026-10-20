@@ -69,11 +69,12 @@ These are the same 55 clips, references and normalisation as [error-attribution.
 The Qwen3-ASR weights are Apache-2.0, and so is the export repository. The ONNX files are a modified form of the weights
 (graph export, int4 quantisation), which the catalog entry states in its licence notes. No acceptance step is required.
 
-## Publishing (owner)
+## Publishing
 
-`crates/tingmix-runtime-onnx/fixtures/qwen3-asr-0.6b-onnx-int4.manifest.json` is unsigned. Its files download from the export
-repository at the pinned revision. The steps are the same as for SenseVoice: set `min_app_version`, sign with the release key,
-append to `catalog.json`. The requirement is 8 GB of RAM (peak 3.4 GB plus the app and the OS).
+`crates/tingmix-runtime-onnx/fixtures/qwen3-asr-0.6b-onnx-int4.signed.json` is the catalog entry: `min_app_version` 0.2.0,
+signed with `tingmix-release-1`. Its files download from the export repository at the pinned revision. It needs 8 GB of
+RAM (peak 3.4 GB plus the app and the OS). First run offers it ahead of the other models where it fits
+(`setup::first_run_rank`).
 
 ## Open questions
 
