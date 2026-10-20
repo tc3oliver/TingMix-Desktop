@@ -75,6 +75,14 @@ fn join(parts: Vec<String>) -> String {
 
 /// The directory a test registry lives in. `TINGMIX_E2E_HOME` places it where an app run with HOME=<it> would look
 /// (`<home>/Library/Application Support/app.tingmix.desktop`), otherwise it is a temp directory.
+/// Text without spacing or case: engines that write punctuation differ there between decodes of the same words.
+fn squash(s: &str) -> String {
+    s.chars()
+        .filter(|c| !c.is_whitespace())
+        .flat_map(char::to_lowercase)
+        .collect()
+}
+
 fn scratch_dir() -> (PathBuf, Option<PathBuf>) {
     let keep = std::env::var_os("TINGMIX_E2E_HOME").map(PathBuf::from);
     let dir = keep
@@ -333,7 +341,7 @@ fn onnx_family_e2e(manifest: &str, src: &Path, want: &str) {
     assert_eq!(out.state, JobState::Done, "{:?}", out.message);
     let got = join(reducer.finals().map(|f| f.text.clone()).collect());
     println!("file ({:.2}s): {got}", t.elapsed().as_secs_f64());
-    assert!(got.contains(want), "{got}");
+    assert!(squash(&got).contains(&squash(want)), "{got}");
 
     let finals = live_session(&models, &rt, &wav);
     assert!(finals.iter().all(|f| !f.contains('这')), "{finals:?}");
@@ -485,8 +493,7 @@ fn real_first_run_download_probe_transcribe() {
     } else {
         // engines that write punctuation and spacing: the words of the same sentence (see the ONNX family tests)
         assert!(
-            got.replace(' ', "")
-                .contains("我覺得這個deadline有點太趕了"),
+            squash(&got).contains("我覺得這個deadline有點太趕了"),
             "{got}"
         );
     }

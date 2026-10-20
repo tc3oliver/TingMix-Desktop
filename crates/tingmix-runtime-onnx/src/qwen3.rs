@@ -37,6 +37,9 @@ const ASR_TEXT: i64 = 151_704;
 const NEWLINE: i64 = 198;
 /// `language`, the first token of every answer (`language Chinese<asr_text>...`).
 const LANGUAGE: i64 = 11_528;
+/// Tokens at the end of the previous answer that a growing window decodes again instead of keeping (the last words of a
+/// cut-off utterance are the ones most likely to change).
+const ROLLBACK: usize = 10;
 const SYSTEM: i64 = 9125;
 const USER: i64 = 882;
 const ASSISTANT: i64 = 77_091;
@@ -291,6 +294,9 @@ pub struct OnnxQwen3Asr {
     /// Name of the encoder's only output.
     enc_out: String,
     output: Option<TextMap>,
+    /// The latest window, its answer and each token's probability: a window that extends it (the next live partial or the
+    /// final of the same segment) keeps that answer, minus `ROLLBACK` tokens, as a prefix and only decodes what follows.
+    last: Option<(Vec<f32>, Vec<i64>, Vec<f32>)>,
 }
 
 impl OnnxQwen3Asr {
@@ -374,6 +380,7 @@ impl OnnxQwen3Asr {
             enc_out,
             embed,
             output: None,
+            last: None,
         })
     }
 
@@ -393,9 +400,30 @@ impl OnnxQwen3Asr {
 
     /// Generated token ids of one window (end token excluded) and the mean probability of the chosen tokens.
     pub fn generate(&mut self, wav: &[f32]) -> Result<(Vec<i64>, Option<f32>), Error> {
+        let (gen, probs, _) = self.generate_after(wav, &[], &[])?;
+        let conf = text_confidence(&gen, &probs);
+        Ok((gen, conf))
+    }
+
+    /// The answer kept from the previous window when `wav` extends it, with its token probabilities.
+    fn reusable_prefix(&self, wav: &[f32]) -> (Vec<i64>, Vec<f32>) {
+        self.last
+            .as_ref()
+            .map(|(audio, ids, probs)| kept_prefix(audio, ids, probs, wav))
+            .unwrap_or_default()
+    }
+
+    /// Generated ids and their probabilities, continuing after `prefix` (answer tokens fed with the prompt), and whether the
+    /// answer ended before the token limit.
+    fn generate_after(
+        &mut self,
+        wav: &[f32],
+        prefix: &[i64],
+        prefix_probs: &[f32],
+    ) -> Result<(Vec<i64>, Vec<f32>, bool), Error> {
         let (mel, frames) = self.mel.compute(wav);
         if frames == 0 {
-            return Ok((Vec::new(), None));
+            return Ok((Vec::new(), Vec::new(), true));
         }
         let mut out = self
             .encoder
@@ -416,9 +444,17 @@ impl OnnxQwen3Asr {
                 "encoder gave {n} tokens for {frames} frames"
             )));
         }
-        let (ids, start) = prompt(n);
+        let (mut ids, start) = prompt(n);
+        ids.extend_from_slice(prefix);
         let len = ids.len();
-        let max_new = 32 + wav.len() * 15 / 16_000; // ~15 tokens per second is far above any speaking rate
+        // ~15 tokens per second is far above any speaking rate. After a prefix only the rolled-back tokens and the new audio
+        // are left to write; an answer that runs past that has started repeating itself.
+        let max_new = match self.last.as_ref().filter(|_| !prefix.is_empty()) {
+            Some((audio, ..)) => {
+                prefix.len() + ROLLBACK + 8 + (wav.len() - audio.len()) * 15 / 16_000
+            }
+            None => 32 + wav.len() * 15 / 16_000,
+        };
         let pos: Vec<i64> = (0..len as i64).collect();
         let mut o = self
             .init
@@ -432,14 +468,14 @@ impl OnnxQwen3Asr {
         // The answer always opens with "language"; the int4 decoder's choice of that first token flips on 1e-5 changes of the
         // input for some clips (experiments/qwen3-asr), and a wrong first token loses the whole window. The model still picks
         // the language name.
-        let (_, mut p) = argmax_last(&o)?;
-        let mut next = LANGUAGE;
+        let (arg, mut p) = argmax_last(&o)?;
+        let mut next = if prefix.is_empty() { LANGUAGE } else { arg };
         let (mut keys, mut values) = (
             take(&mut o, "present_keys")?,
             take(&mut o, "present_values")?,
         );
         drop(o);
-        let (mut gen, mut probs) = (Vec::new(), Vec::new());
+        let (mut gen, mut probs) = (prefix.to_vec(), prefix_probs.to_vec());
         let mut at = len as i64;
         while next != IM_END && next != END_OF_TEXT && gen.len() < max_new {
             gen.push(next);
@@ -460,15 +496,18 @@ impl OnnxQwen3Asr {
             );
             at += 1;
         }
-        // confidence of the text only, not of the "language X<asr_text>" header
-        let text_from = gen.iter().position(|&t| t == ASR_TEXT).map_or(0, |i| i + 1);
-        let conf = (text_from < probs.len())
-            .then(|| probs[text_from..].iter().sum::<f32>() / (probs.len() - text_from) as f32);
-        Ok((gen, conf))
+        let ended = next == IM_END || next == END_OF_TEXT;
+        Ok((gen, probs, ended))
     }
 
     fn decode_chunk(&mut self, wav: &[f32]) -> Result<(String, Option<f32>), Error> {
-        let (gen, conf) = self.generate(wav)?;
+        let (prefix, prefix_probs) = self.reusable_prefix(wav);
+        let (mut gen, mut probs, ended) = self.generate_after(wav, &prefix, &prefix_probs)?;
+        if !ended && !prefix.is_empty() {
+            (gen, probs, _) = self.generate_after(wav, &[], &[])?;
+        }
+        let conf = text_confidence(&gen, &probs);
+        self.last = Some((wav.to_vec(), gen.clone(), probs));
         let text = match gen.iter().position(|&t| t == ASR_TEXT) {
             Some(i) => &gen[i + 1..],
             None => &gen[..], // no header: "language None" for silence writes nothing after it
@@ -480,6 +519,23 @@ impl OnnxQwen3Asr {
         };
         Ok((text, conf))
     }
+}
+
+/// What a window `wav` keeps of the previous window's answer `ids`: all but the last `ROLLBACK` tokens when `wav` extends
+/// that window's `audio` sample for sample and the kept part still reaches into the text.
+fn kept_prefix(audio: &[f32], ids: &[i64], probs: &[f32], wav: &[f32]) -> (Vec<i64>, Vec<f32>) {
+    let keep = ids.len().saturating_sub(ROLLBACK);
+    let extends = wav.len() > audio.len() && wav[..audio.len()] == *audio;
+    match extends && ids[..keep].contains(&ASR_TEXT) {
+        true => (ids[..keep].to_vec(), probs[..keep].to_vec()),
+        false => (Vec::new(), Vec::new()),
+    }
+}
+
+/// Mean probability of the text tokens, not of the "language X<asr_text>" header.
+fn text_confidence(gen: &[i64], probs: &[f32]) -> Option<f32> {
+    let from = gen.iter().position(|&t| t == ASR_TEXT).map_or(0, |i| i + 1);
+    (from < probs.len()).then(|| probs[from..].iter().sum::<f32>() / (probs.len() - from) as f32)
 }
 
 fn take(o: &mut ort::session::SessionOutputs<'_>, name: &str) -> Result<DynValue, Error> {
@@ -555,6 +611,27 @@ impl AsrBackend for OnnxQwen3Asr {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_growing_window_keeps_the_previous_text_minus_the_rollback() {
+        let audio = [0.1f32, 0.2, 0.3];
+        let mut ids = vec![LANGUAGE, 1, ASR_TEXT];
+        ids.extend(100..100 + ROLLBACK as i64 + 2);
+        let probs: Vec<f32> = (0..ids.len()).map(|i| i as f32).collect();
+        let (kept, p) = kept_prefix(&audio, &ids, &probs, &[0.1, 0.2, 0.3, 0.4]);
+        assert_eq!(kept, ids[..5]);
+        assert_eq!(p, probs[..5]);
+        // other audio, the same window again, or a kept part that ends inside the header: decode from scratch
+        assert!(kept_prefix(&audio, &ids, &probs, &[0.1, 0.9, 0.3, 0.4])
+            .0
+            .is_empty());
+        assert!(kept_prefix(&audio, &ids, &probs, &audio).0.is_empty());
+        assert!(
+            kept_prefix(&audio, &ids[..ROLLBACK + 2], &probs, &[0.1, 0.2, 0.3, 0.4])
+                .0
+                .is_empty()
+        );
+    }
 
     #[test]
     fn token_counts_follow_the_reference_formula() {
