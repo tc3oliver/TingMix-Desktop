@@ -26,8 +26,8 @@ Choose a speech model in Settings › Speech model. Each has its strengths:
 The reference transcripts haven't been checked by a person yet, so treat the numbers as rough. Every model still misses
 some brand names and rare names. [How this was measured](docs/research/qwen3-asr.md).
 
-Today only TingMix-Large can be downloaded from inside the app. SenseVoice and Qwen3-ASR are coming to the download list
-soon.
+All three download from inside the app (version 0.2.0 or later). On first launch it suggests Qwen3-ASR, or SenseVoice if
+your computer has less than 8 GB of RAM.
 
 ## Requirements
 
