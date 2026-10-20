@@ -147,6 +147,15 @@ sha256 `0c42dc4e...f4c` (equal to the pinned file, Authenticode Valid, Microsoft
 without arguments prints its usage line. The app itself was not launched this time. The PC keeps this newer install in
 `C:\Users\User\AppData\Local\TingMix`.
 
+## 0.2.0: Qwen3-ASR from the published catalog (2026-10-20)
+
+Same harness as task 35 (release `real_first_run` test, scratch registry, pinned `onnxruntime.dll`, the staged worker). First
+run offered `qwen3-asr-0.6b-onnx-int4-r4fc24a1` (release-signed, 2,022,878,221 bytes). Download, verify, activate and probe took
+47.1 s, loading 2.7 s, and `mix_08s.wav` transcribed in 4.9 s with the sentence's words intact. `pnpm bundle:windows` built
+`TingMix_0.2.0_x64-setup.exe` (12.02 MiB, unsigned); a silent per-user install over 0.1.0 exited 0. The installed app was
+started with that model active: responding, window `TingMix`, and the only ONNX Runtime module loaded was
+`...\AppData\Local\TingMix\onnxruntime\onnxruntime.dll`. The live path and microphone were not run.
+
 ## What is not done and exact manual steps for the user
 
 Not done: microphone capture and the UI on Windows, Windows privacy prompt for the microphone, SmartScreen behaviour of an unsigned
