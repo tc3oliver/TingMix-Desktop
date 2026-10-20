@@ -1054,7 +1054,7 @@ dependencies = [
 
 [[package]]
 name = "tingmix-audio"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "cpal",
  "ringbuf",
@@ -1064,7 +1064,7 @@ dependencies = [
 
 [[package]]
 name = "tingmix-core"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "serde",
  "thiserror 2.0.21",
@@ -1072,7 +1072,7 @@ dependencies = [
 
 [[package]]
 name = "tingmix-decoder"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "flate2",
  "serde",
@@ -1081,14 +1081,14 @@ dependencies = [
 
 [[package]]
 name = "tingmix-frontend-gemma"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "rustfft",
 ]
 
 [[package]]
 name = "tingmix-runtime-mlx"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "cc",
  "thiserror 2.0.21",
@@ -1099,7 +1099,7 @@ dependencies = [
 
 [[package]]
 name = "tingmix-runtime-onnx"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "libloading",
  "ort",
@@ -1113,7 +1113,7 @@ dependencies = [
 
 [[package]]
 name = "tingmix-streaming"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "tingmix-core",
 ]

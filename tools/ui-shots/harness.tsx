@@ -111,7 +111,7 @@ const overview = (): ModelsOverview => ({
   installed: S.setup ? [] : [{ id: MODEL_ID, family: "tingmix-small", revision: "1a2b3c4", backend: "onnx", precision: "fp16", size_bytes: 1_320_000_000, serial: 3, compat_status: "EXPERIMENTAL", compat_notes: "", licenses: ["apache-2.0"], active: true, previous: false }], unreadable: [], selection: null, op: S.modelOp ?? null,
 });
 const diag: Diagnostics = {
-  app_version: "0.1.0", os: "macos", arch: "aarch64", backend: "TingMix-Small", backend_reason: "", ort_library: null, updater_enabled: false,
+  app_version: "0.2.0", os: "macos", arch: "aarch64", backend: "TingMix-Small", backend_reason: "", ort_library: null, updater_enabled: false,
   input_devices: [], device_error: null, live: idle, running_jobs: 0, config_dir: "~/Library/Application Support/TingMix", data_dir: "~/Library/Application Support/TingMix", recent_errors: [],
 };
 

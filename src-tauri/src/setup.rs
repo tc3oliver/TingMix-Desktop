@@ -90,14 +90,13 @@ pub fn check(
     if downloadable.is_empty() {
         return no_platform();
     }
-    // MLX is the faster engine on Apple Silicon; do not let catalog order decide
     let Some(m) = downloadable
         .into_iter()
         .filter(|m| {
             let mf = m.manifest();
             backends::runs(&mf.family, &mf.backend) && backends::engine_ready(&mf.backend, rt)
         })
-        .min_by_key(|m| m.manifest().backend != backends::MLX)
+        .min_by_key(|m| first_run_rank(&m.manifest().family, &m.manifest().backend))
     else {
         return SetupView::Unavailable {
             why: "build".into(),
@@ -111,6 +110,18 @@ pub fn check(
     match models.begin_verified(m, token) {
         Ok(pending) => SetupView::Download { pending },
         Err(e) => SetupView::Offline { reason: e },
+    }
+}
+
+/// The model first run offers, lowest first; catalog order does not decide. Most accurate on real zh-TW speech first
+/// (docs/research/qwen3-asr.md); Qwen3's 8 GB RAM floor is in its manifest, so smaller machines get SenseVoice. Among
+/// TingMix-Large builds MLX is the faster engine on Apple silicon.
+fn first_run_rank(family: &str, backend: &str) -> u8 {
+    match (family, backend) {
+        (backends::QWEN3, _) => 0,
+        (backends::SENSEVOICE, _) => 1,
+        (_, backends::MLX) => 2,
+        _ => 3,
     }
 }
 
@@ -377,6 +388,27 @@ mod tests {
             // the engine counts as available only with its probe worker; any existing file stands in
             onnx_worker: Some(std::env::current_exe().unwrap()),
         }
+    }
+
+    #[test]
+    fn first_run_prefers_qwen3_then_sensevoice_then_mlx_large() {
+        use backends::{LARGE, MLX, ONNX, QWEN3, SENSEVOICE};
+        let mut got = [
+            (LARGE, ONNX),
+            (SENSEVOICE, ONNX),
+            (LARGE, MLX),
+            (QWEN3, ONNX),
+        ];
+        got.sort_by_key(|(f, b)| first_run_rank(f, b));
+        assert_eq!(
+            got,
+            [
+                (QWEN3, ONNX),
+                (SENSEVOICE, ONNX),
+                (LARGE, MLX),
+                (LARGE, ONNX)
+            ]
+        );
     }
 
     #[test]
