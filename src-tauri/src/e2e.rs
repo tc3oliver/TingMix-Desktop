@@ -369,11 +369,11 @@ fn qwen3_import_probe_select_transcribe_live() {
 }
 
 /// The real first-run flow against the published catalog: fetch, accept the licences (what the user's tick does), download
-/// about 1.4 GB, verify, activate, test, select and transcribe `mix_08s.wav`. Prints a timing line per stage.
+/// the model first run offers (Qwen3-ASR, about 2 GB, on a machine with 8 GB of RAM), verify, activate, test, select and transcribe `mix_08s.wav`. Prints a timing line per stage.
 /// Needs the network and TINGMIX_E2E_REAL_FIRST_RUN=1. macOS: `--features mlx`, MLX_PREFIX, TINGMIX_MLX_WORKER. Windows (ONNX):
 /// TINGMIX_ORT_DYLIB (absolute path of onnxruntime.dll) and TINGMIX_ONNX_WORKER (tingmix-onnx-worker.exe).
 #[test]
-#[ignore = "downloads ~1.4 GB from the published catalog; needs the platform engine (see the doc comment)"]
+#[ignore = "downloads up to 2 GB from the published catalog; needs the platform engine (see the doc comment)"]
 fn real_first_run_download_probe_transcribe() {
     assert_eq!(
         std::env::var("TINGMIX_E2E_REAL_FIRST_RUN").as_deref(),
@@ -480,7 +480,16 @@ fn real_first_run_download_probe_transcribe() {
         "mix_08s transcribed in {:.1}s: {got}",
         t_run.elapsed().as_secs_f64()
     ));
-    assert_eq!(got, want);
+    if pending.id.starts_with(backends::LARGE) {
+        assert_eq!(got, want);
+    } else {
+        // engines that write punctuation and spacing: the words of the same sentence (see the ONNX family tests)
+        assert!(
+            got.replace(' ', "")
+                .contains("我覺得這個deadline有點太趕了"),
+            "{got}"
+        );
+    }
     if keep.is_none() {
         let _ = std::fs::remove_dir_all(dir);
     }
