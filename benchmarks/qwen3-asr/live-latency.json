@@ -1,0 +1,99 @@
+{
+ "label": "EXPERIMENTAL: Qwen3-ASR-0.6B int4 on the live path. Latency of captions with the recording fed in real time, and live-path accuracy on the 11 error-attribution regions, before and after keeping the previous partial's answer as a decoder prefix (rollback 10 tokens, runaway guard) and raising live_recommended max_load 0.5 -> 0.8. No transcripts here.",
+ "commands": [
+  "cd experiments/error-attribution/app-live && cargo build --release --bin live-latency; EA_MAX_LOAD=<0.5|0.8> TINGMIX_ORT_DYLIB=<abs path of vendored 1.31.0> target/release/live-latency <int4 export dir> ../out/{product/regions/r0,finance/regions/r5}.wav 8",
+  "before: the same with const ROLLBACK set beyond any answer length (no prefix is ever kept) and EA_MAX_LOAD=0.5",
+  "accuracy: target/release/ea-app-live <int4 export dir> ../../qwen3-asr/out/live_$n.json ../out/$n/regions/r*.wav (n = product, finance); cd .. && [EA_REF=subtitles] uv run python -m ea.other --live <label> app_live product=... finance=..."
+ ],
+ "model": "andrewleech/qwen3-asr-0.6b-onnx at 4fc24a1402e74db89c4d2ef256875e71680128c4 (int4 decoders), see real-zh-tw-55clips-onnx.json for sha256",
+ "onnxruntime": "1.31.0 (vendored Microsoft build, CPU EP, load-dynamic)",
+ "hardware": {
+  "cpu": "Apple M4 Max",
+  "threads": 8,
+  "os": "macOS 27.0"
+ },
+ "latency": {
+  "note": "lag = wall time of a partial minus the audio time it covers; delay = wall time of a final minus its segment end. product r0 holds a 25 s segment of continuous speech, finance r5 a 22 s one.",
+  "before (no prefix, max_load 0.5)": {
+   "product r0": {
+    "partials": 35,
+    "mean_lag_s": 0.7,
+    "max_lag_s": 1.96,
+    "finals": 2,
+    "mean_final_delay_s": 2.14,
+    "max_final_delay_s": 3.19
+   },
+   "finance r5": {
+    "partials": 36,
+    "mean_lag_s": 0.68,
+    "max_lag_s": 1.93,
+    "finals": 1,
+    "mean_final_delay_s": 1.19,
+    "max_final_delay_s": 1.19
+   }
+  },
+  "after (prefix, max_load 0.8)": {
+   "product r0": {
+    "partials": 60,
+    "mean_lag_s": 0.52,
+    "max_lag_s": 1.18,
+    "finals": 2,
+    "mean_final_delay_s": 1.17,
+    "max_final_delay_s": 1.67
+   },
+   "finance r5": {
+    "partials": 63,
+    "mean_lag_s": 0.56,
+    "max_lag_s": 1.16,
+    "finals": 1,
+    "mean_final_delay_s": 1.18,
+    "max_final_delay_s": 1.18
+   }
+  },
+  "decode cost on 25.5 s of audio, 4 threads": {
+   "encoder_s": 0.4,
+   "prefill_s": 1.09,
+   "steps_s": 0.13,
+   "note": "with a 111-token prefix, 9 new tokens; without a prefix the same window generates 61 tokens in about 1.5 s of steps"
+  }
+ },
+ "accuracy_live_path": {
+  "columns": "MER, WER en over 11 regions (Whisper drafts); MER over the 5 product regions vs uploader subtitles",
+  "before": {
+   "mer": 0.091,
+   "wer_en": 0.224,
+   "mer_subtitles": 0.098
+  },
+  "prefix rollback 5, no guard": {
+   "mer": 0.211,
+   "wer_en": 0.294,
+   "mer_subtitles": 0.127,
+   "note": "two segments ran into repetition loops (insertion rate 0.147)"
+  },
+  "prefix rollback 5, guard": {
+   "mer": 0.093,
+   "wer_en": 0.259,
+   "mer_subtitles": 0.099
+  },
+  "prefix rollback 10, guard, max_load 0.5": {
+   "mer": 0.091,
+   "wer_en": 0.282,
+   "mer_subtitles": 0.101
+  },
+  "prefix rollback 10, guard, max_load 0.8 (shipped)": {
+   "mer": 0.092,
+   "wer_en": 0.247,
+   "mer_subtitles": 0.099
+  },
+  "segment cap 8 s, no prefix": {
+   "mer": 0.095,
+   "wer_en": 0.318
+  },
+  "segment cap 12 s, no prefix": {
+   "mer": 0.096,
+   "wer_en": 0.318
+  }
+ },
+ "caveats": "Provisional Whisper references, two videos, English WER rests on few words and moves by several points between runs of near-identical settings; no significance test.",
+ "date": "2026-10-20"
+}

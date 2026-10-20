@@ -62,6 +62,9 @@ impl SessionConfig {
     /// quiet-point cut at the segment cap. `Default` stays Python-identical (file mode, goldens).
     pub fn live_recommended() -> Self {
         Self {
+            // fresher captions over CPU use: Qwen3-ASR partials come every ~0.6 s instead of ~1 s late in a long segment
+            // (docs/research/qwen3-asr.md); 1.0 was no better, each decode then waited longer
+            max_load: 0.8,
             vad: VadKind::Adaptive,
             suppression: Some(Suppression::RECOMMENDED),
             max_cut_search_s: 3.0,

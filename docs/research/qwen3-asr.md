@@ -59,10 +59,41 @@ These are the same 55 clips, references and normalisation as [error-attribution.
   CPU sits close to the live scheduler's 0.5 load limit, so the app ships int4.
 - English words are where Qwen3 differs most: live WER 0.22 against 0.51 for SenseVoice. Code-switched speech is common in
   the material this app is for.
-- Speed: 6.6× faster than real time on the CPU. The live scheduler (`max_load 0.5`) lowers the partial-update rate for an
-  engine this slow, so finals are not delayed by partials.
+- Speed: 6.6× faster than real time on the CPU. See the next section for live latency.
 - Caveats: provisional Whisper references (an autoregressive model may favour another one; the subtitle column does not
   depend on Whisper and shows the same order), two videos, no significance test.
+
+## Live latency (`benchmarks/qwen3-asr/live-latency.json`)
+
+Live captions re-decode the open segment for every partial. In continuous speech a segment grows to the 25 s cap, and
+Qwen3 got slower with it: about 2 s per decode at 25 s on 4 threads, so captions lagged up to 2 s and a final came up to
+3 s after the speech. Most of that was writing the whole answer again (61 tokens) and the prefill (1.1 s).
+
+Two changes:
+
+1. A window that extends the previous one (the next partial, or the final of the same segment) keeps the previous answer
+   minus its last 10 tokens as a prefix and only generates the rest. Without a guard this sent two of 11 regions into
+   repetition loops (MER 0.211), so an answer that writes more than the new audio can hold is thrown away and decoded from
+   scratch.
+2. `SessionConfig::live_recommended()` gives partials 0.8 of real time instead of 0.5 (owner decision: fresher captions
+   over CPU use). 1.0 updated more often but each decode then waited longer.
+
+Measured with `live-latency` (8 threads, M4 Max, recording fed in real time):
+
+| | partials | mean lag | max lag | final delay (max) |
+|---|---|---|---|---|
+| before, product r0 (25 s of continuous speech) | 35 | 0.70 s | 1.96 s | 3.19 s |
+| after, product r0 | 60 | 0.52 s | 1.18 s | 1.67 s |
+| before, finance r5 | 36 | 0.68 s | 1.93 s | 1.19 s |
+| after, finance r5 | 63 | 0.56 s | 1.16 s | 1.18 s |
+
+Live-path accuracy stays where it was: MER 0.092 against 0.091, 0.099 against 0.098 on the subtitles. English WER moved
+from 0.224 to 0.247, within the run-to-run spread of the few English words in this set. A shorter segment cap was the
+other option, and cost more (8 s cap: MER 0.095, English WER 0.318).
+
+What is left is the prefill: the decoder reads every audio token again on each partial (1.1 s at 25 s on 4 threads).
+Reusing the audio part of the KV cache would remove it, but the Whisper mel is normalised over the whole window, so earlier
+features change as audio arrives.
 
 ## Licence
 
